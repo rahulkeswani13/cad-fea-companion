@@ -1,0 +1,28 @@
+{
+  "ok": true,
+  "method": "calculix_ccx",
+  "part": "brake_pedal",
+  "web_type": "solid",
+  "mesh_max_size_mm": 5.0,
+  "force_n": 500.0,
+  "node_count": 2180,
+  "max_von_mises_mpa": 18.9945,
+  "pad_deflection_mm": 0.111908,
+  "tip_deflection_mm": 0.111908,
+  "volume_mm3": 131883.01613393196,
+  "lattice_fill_volume_mm3": 64664.08645488453,
+  "pocket_volume_mm3": 64664.08645488453,
+  "relative_density": 1.0,
+  "mass_kg": 0.3560841435616163,
+  "material": "Al 6061-T6 approx E=69 GPa, nu=0.33",
+  "yield_mpa": 276.0,
+  "fixed_faces": [
+    "Face17",
+    "Face18"
+  ],
+  "load_face": "Face5",
+  "fcstd_path": "data/workspace/brake_pedal_solid_fem.FCStd",
+  "note": "Live FreeCAD FEM on brake-pedal lattice. Coarse tets under-predict peak strut stress; use as ranking KPIs.",
+  "stored_force_n": 500.0,
+  "safety_factor_vs_yield": 14.531
+}

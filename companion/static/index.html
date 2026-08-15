@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>CAD/FEA Companion</title>
+  <script src="https://cdn.jsdelivr.net/npm/marked@15.0.7/marked.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/dompurify@3.2.4/dist/purify.min.js"></script>
+  <style>
+    :root {
+      --bg: #0f1419;
+      --panel: #1a222c;
+      --ink: #e8eef4;
+      --muted: #8b9aab;
+      --accent: #3d9a7a;
+      --accent-2: #d4a24c;
+      --border: #2a3542;
+      --tool: #243041;
+      --danger: #c45c5c;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "IBM Plex Sans", "Segoe UI", sans-serif;
+      background:
+        radial-gradient(1200px 600px at 10% -10%, #1c2b28 0%, transparent 55%),
+        radial-gradient(900px 500px at 100% 0%, #2a2418 0%, transparent 50%),
+        var(--bg);
+      color: var(--ink);
+      min-height: 100vh;
+    }
+    header {
+      padding: 1.25rem 1.5rem 0.5rem;
+      border-bottom: 1px solid var(--border);
+    }
+    header h1 {
+      margin: 0;
+      font-size: 1.35rem;
+      letter-spacing: 0.02em;
+      font-weight: 600;
+    }
+    header p {
+      margin: 0.35rem 0 0;
+      color: var(--muted);
+      font-size: 0.92rem;
+    }
+    .status {
+      display: flex;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+      margin-top: 0.75rem;
+      font-size: 0.8rem;
+      color: var(--muted);
+    }
+    .pill {
+      border: 1px solid var(--border);
+      background: var(--panel);
+      padding: 0.25rem 0.6rem;
+      border-radius: 999px;
+    }
+    .pill.ok { border-color: #2f6b56; color: #8fd6b8; }
+    .pill.warn { border-color: #6b5a2f; color: #e0c27a; }
+    main {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 1rem;
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 1rem 1.25rem 2rem;
+    }
+    #log {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      min-height: 55vh;
+      max-height: 65vh;
+      overflow: auto;
+      padding: 1rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.85rem;
+    }
+    .msg {
+      padding: 0.75rem 0.9rem;
+      border-radius: 10px;
+      line-height: 1.45;
+    }
+    .msg.user,
+    .msg.status-line {
+      white-space: pre-wrap;
+    }
+    .msg.user {
+      align-self: flex-end;
+      background: #24364a;
+      max-width: 85%;
+    }
+    .msg.assistant {
+      align-self: flex-start;
+      background: #1e2a24;
+      border: 1px solid #2d4a3d;
+      max-width: 95%;
+      white-space: normal;
+      overflow: visible;
+    }
+    .msg.assistant .md-body > *:first-child { margin-top: 0; }
+    .msg.assistant .md-body > *:last-child { margin-bottom: 0; }
+    .msg.assistant .md-body p { margin: 0.55rem 0; }
+    .msg.assistant .md-body h1,
+    .msg.assistant .md-body h2,
+    .msg.assistant .md-body h3 {
+      margin: 0.75rem 0 0.4rem;
+      font-size: 1.05rem;
+      font-weight: 600;
+    }
+    .msg.assistant .md-body ul,
+    .msg.assistant .md-body ol {
+      margin: 0.4rem 0;
+      padding-left: 1.35rem;
+    }
+    .msg.assistant .md-body li { margin: 0.2rem 0; }
+    .msg.assistant .md-body strong { color: #c8e6d8; }
+    .msg.assistant .md-body code {
+      font-family: "IBM Plex Mono", ui-monospace, monospace;
+      font-size: 0.85em;
+      background: #152019;
+      padding: 0.1rem 0.35rem;
+      border-radius: 4px;
+    }
+    .msg.assistant .md-body pre {
+      background: #152019;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 0.65rem 0.75rem;
+      overflow: visible;
+      white-space: pre-wrap;
+      word-break: break-word;
+      font-size: 0.82rem;
+    }
+    .msg.assistant .md-body pre code {
+      background: transparent;
+      padding: 0;
+    }
+    .msg.assistant .md-body table {
+      border-collapse: collapse;
+      width: 100%;
+      margin: 0.65rem 0;
+      font-size: 0.78rem;
+      table-layout: auto;
+    }
+    .msg.assistant .md-body th,
+    .msg.assistant .md-body td {
+      border: 1px solid #2d4a3d;
+      padding: 0.35rem 0.45rem;
+      text-align: left;
+      word-break: break-word;
+    }
+    .msg.assistant .md-body th {
+      background: #243a32;
+      color: #c8e6d8;
+      font-weight: 600;
+    }
+    .msg.assistant .md-body tr:nth-child(even) td {
+      background: rgba(0, 0, 0, 0.18);
+    }
+    .msg.status-line {
+      align-self: flex-start;
+      background: transparent;
+      border: 1px dashed var(--border);
+      color: var(--muted);
+      font-size: 0.85rem;
+      max-width: 95%;
+    }
+    .meta {
+      margin-top: 0.75rem;
+      padding-top: 0.55rem;
+      border-top: 1px solid #2d4a3d;
+      font-size: 0.78rem;
+      color: var(--muted);
+    }
+    .meta details {
+      margin-top: 0.35rem;
+    }
+    .meta summary {
+      cursor: pointer;
+      color: #9bb5a8;
+      user-select: none;
+    }
+    .meta .cite-list {
+      margin: 0.35rem 0 0;
+      padding-left: 1.1rem;
+    }
+    .tools {
+      margin-top: 0.5rem;
+      background: var(--tool);
+      border-radius: 8px;
+      padding: 0.5rem 0.65rem;
+      font-family: "IBM Plex Mono", ui-monospace, monospace;
+      font-size: 0.75rem;
+      white-space: pre-wrap;
+      word-break: break-word;
+      overflow: visible;
+      line-height: 1.5;
+    }
+    form {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 0.6rem;
+    }
+    textarea {
+      width: 100%;
+      min-height: 72px;
+      resize: vertical;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: var(--panel);
+      color: var(--ink);
+      padding: 0.75rem;
+      font: inherit;
+    }
+    button {
+      border: 0;
+      border-radius: 10px;
+      background: var(--accent);
+      color: #04140f;
+      font-weight: 600;
+      padding: 0 1.1rem;
+      cursor: pointer;
+    }
+    button:disabled { opacity: 0.5; cursor: wait; }
+    button.danger { background: var(--danger); color: #fff; }
+    .examples {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+    }
+    .examples button {
+      background: transparent;
+      color: var(--accent-2);
+      border: 1px solid #5a4a28;
+      font-weight: 500;
+      font-size: 0.78rem;
+      padding: 0.35rem 0.65rem;
+    }
+    #confirm-bar {
+      display: none;
+      gap: 0.5rem;
+      align-items: center;
+      padding: 0.75rem;
+      border: 1px solid #5a4a28;
+      border-radius: 10px;
+      background: #2a2418;
+    }
+    #confirm-bar.visible { display: flex; flex-wrap: wrap; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>CAD/FEA Chat Companion</h1>
+    <p>LangGraph agent loop: retrieve → agent ⇄ tools, with thread memory.</p>
+    <div class="status" id="status">Loading status…</div>
+  </header>
+  <main>
+    <div class="examples">
+      <button type="button" data-q="What yield strength should I assume for aluminum 6061-T6?">Docs: Al yield</button>
+      <button type="button" data-q="Create a solid aluminum brake pedal and solve the +500 N footpad load along +X. Open FreeCAD so I can see it.">Solid pedal + FEA</button>
+      <button type="button" data-q="Rebuild the brake pedal with a 2.5D X-truss lattice web (15 mm cells, 2.5 mm struts), same envelope, then solve and show stress in FreeCAD.">X-truss + FEA</button>
+      <button type="button" data-q="Compare solid, X-truss, and FCC brake-pedal variants — which is lightest with safety factor at least 1.5?">Compare variants</button>
+      <button type="button" data-q="Open the latest model in FreeCAD.">Open FreeCAD</button>
+    </div>
+    <div id="confirm-bar">
+      <span id="confirm-text">Confirm FreeCAD tools?</span>
+      <button type="button" id="confirm-yes">Approve</button>
+      <button type="button" id="confirm-no" class="danger">Reject</button>
+    </div>
+    <div id="log"></div>
+    <form id="form">
+      <textarea id="input" placeholder="Ask about materials, or request CAD/FEA tools…"></textarea>
+      <button id="send" type="submit">Send</button>
+    </form>
+  </main>
+  <script>
+    const log = document.getElementById("log");
+    const form = document.getElementById("form");
+    const input = document.getElementById("input");
+    const send = document.getElementById("send");
+    const status = document.getElementById("status");
+    const confirmBar = document.getElementById("confirm-bar");
+    const confirmText = document.getElementById("confirm-text");
+
+    if (window.marked?.setOptions) {
+      marked.setOptions({ breaks: true, gfm: true });
+    }
+
+    const THREAD_KEY = "cad_fea_thread_id";
+    function getThreadId() {
+      let id = localStorage.getItem(THREAD_KEY);
+      if (!id) {
+        id = crypto.randomUUID();
+        localStorage.setItem(THREAD_KEY, id);
+      }
+      return id;
+    }
+
+    /** Strip simple $...$ / $$...$$ LaTeX wrappers for plain display. */
+    function stripSimpleLatex(text) {
+      return String(text || "")
+        .replace(/\$\$([\s\S]+?)\$\$/g, (_, inner) => inner.trim())
+        .replace(/\$([^$\n]+?)\$/g, (_, inner) => {
+          return inner
+            .replace(/\\text\{([^}]*)\}/g, "$1")
+            .replace(/\\mathrm\{([^}]*)\}/g, "$1")
+            .replace(/\\sigma_y/g, "σ_y")
+            .replace(/\\rho\^?\*?/g, "ρ*")
+            .replace(/\\ge/g, "≥")
+            .replace(/\\leq/g, "≤")
+            .replace(/\\times/g, "×")
+            .replace(/\\approx/g, "≈")
+            .replace(/\\nu/g, "ν")
+            .replace(/\\,/g, " ")
+            .replace(/[{}]/g, "")
+            .trim();
+        });
+    }
+
+    /** Remove inline RAG citation brackets like [docs/foo.md] or [docs/a.md, docs/b.md]. */
+    function stripDocCitations(text) {
+      return String(text || "")
+        .replace(/\s*\[[^\]]*\bdocs\/[^\]]*\]/gi, "")
+        .replace(/[ \t]+\n/g, "\n")
+        .replace(/ {2,}/g, " ")
+        .trim();
+    }
+
+    function renderMarkdown(text) {
+      let cleaned = stripDocCitations(text);
+      cleaned = stripSimpleLatex(cleaned);
+      // Bare TeX leftovers outside $...$ (common in LLM answers).
+      cleaned = cleaned
+        .replace(/\\approx/g, "≈")
+        .replace(/\\nu\b/g, "ν")
+        .replace(/\\ge\b/g, "≥")
+        .replace(/\\leq\b/g, "≤");
+      if (window.marked && window.DOMPurify) {
+        const html = marked.parse(cleaned);
+        return DOMPurify.sanitize(html);
+      }
+      const esc = cleaned
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;");
+      return `<pre style="white-space:pre-wrap;margin:0">${esc}</pre>`;
+    }
+
+    function fmtNum(v, digits) {
+      const n = Number(v);
+      if (!Number.isFinite(n)) return null;
+      return n.toFixed(digits);
+    }
+
+    function summarizeTool(t) {
+      const name = t?.name || "tool";
+      const r = t?.result;
+      if (r == null) return `${name}: (no result)`;
+      if (typeof r === "string") return `${name}: ${r.slice(0, 120)}`;
+      if (r.ok === false) {
+        const err = String(r.error || r.warning || "failed").replace(/\s+/g, " ").slice(0, 120);
+        return `${name}: failed — ${err}`;
+      }
+      const bits = [];
+      if (r.web_type) bits.push(String(r.web_type));
+      if (r.mass_kg != null) {
+        const m = fmtNum(r.mass_kg, 3);
+        if (m) bits.push(`mass ${m} kg`);
+      }
+      if (r.relative_density != null) {
+        const d = fmtNum(r.relative_density, 3);
+        if (d) bits.push(`ρ* ${d}`);
+      }
+      if (r.max_von_mises_mpa != null) {
+        const vm = fmtNum(Math.abs(r.max_von_mises_mpa), 2);
+        if (vm) bits.push(`σ ${vm} MPa`);
+      }
+      if (r.safety_factor_vs_yield != null) {
+        const sf = fmtNum(Math.abs(r.safety_factor_vs_yield), 2);
+        if (sf) bits.push(`SF ${sf}`);
+      }
+      if (r.pad_deflection_mm != null) {
+        const d = fmtNum(Math.abs(r.pad_deflection_mm), 3);
+        if (d) bits.push(`δ ${d} mm`);
+      }
+      if (Array.isArray(r.variants)) {
+        bits.push(`${r.variants.length} variants`);
+      }
+      const rec = r.recommendation?.web_type || r.recommendation;
+      if (typeof rec === "string") bits.push(`recommend ${rec}`);
+      else if (rec && typeof rec === "object" && rec.web_type) bits.push(`recommend ${rec.web_type}`);
+      if (r.method) bits.push(String(r.method));
+      const detail = bits.length ? bits.join(", ") : "ok";
+      return `${name}: ok — ${detail}`;
+    }
+
+    function escapeHtml(s) {
+      return String(s)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
+    }
+
+    function addMsg(role, text, meta) {
+      const el = document.createElement("div");
+      el.className = `msg ${role}`;
+      if (role === "assistant") {
+        const body = document.createElement("div");
+        body.className = "md-body";
+        body.innerHTML = renderMarkdown(text);
+        el.appendChild(body);
+      } else {
+        el.textContent = text;
+      }
+      if (meta) {
+        const m = document.createElement("div");
+        m.className = "meta";
+        m.innerHTML = meta;
+        el.appendChild(m);
+      }
+      log.appendChild(el);
+      log.scrollTop = log.scrollHeight;
+      return el;
+    }
+
+    function showAssistantResult(data) {
+      let meta = "";
+      if (data.tool_results?.length) {
+        const lines = data.tool_results.slice(0, 6).map(summarizeTool).map(escapeHtml);
+        meta += `<div class="tools">${lines.join("\n")}</div>`;
+      }
+      if (data.citations?.length) {
+        const sources = data.citations
+          .map((c) => c.source)
+          .filter(Boolean);
+        const unique = [...new Set(sources)];
+        const items = unique.map((s) => `<li>${escapeHtml(s)}</li>`).join("");
+        meta += `<details><summary>Citations (${unique.length})</summary><ul class="cite-list">${items}</ul></details>`;
+      }
+      addMsg("assistant", data.answer || data.error || "No answer", meta || undefined);
+    }
+
+    function showConfirm(interruptPayload) {
+      const tools = interruptPayload?.[0]?.tool_calls
+        || interruptPayload?.tool_calls
+        || [];
+      const names = tools.map(t => t.name).join(", ") || "FreeCAD tool(s)";
+      confirmText.textContent = `OK to run ${names}?`;
+      confirmBar.classList.add("visible");
+    }
+
+    function hideConfirm() {
+      confirmBar.classList.remove("visible");
+    }
+
+    async function resumeConfirm(approved) {
+      hideConfirm();
+      send.disabled = true;
+      const statusEl = addMsg("status-line", approved ? "Resuming after approve…" : "Resuming after reject…");
+      try {
+        const res = await fetch("/api/chat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            message: "",
+            thread_id: getThreadId(),
+            resume: approved ? true : false,
+          }),
+        });
+        const data = await res.json();
+        statusEl.remove();
+        if (data.interrupted) {
+          showConfirm(data.interrupt);
+          addMsg("assistant", "Waiting for FreeCAD tool confirmation…");
+        } else {
+          showAssistantResult(data);
+        }
+      } catch (err) {
+        statusEl.remove();
+        addMsg("assistant", `Resume failed: ${err}`);
+      } finally {
+        send.disabled = false;
+        refreshStatus();
+      }
+    }
+
+    document.getElementById("confirm-yes").addEventListener("click", () => resumeConfirm(true));
+    document.getElementById("confirm-no").addEventListener("click", () => resumeConfirm(false));
+
+    async function refreshStatus() {
+      try {
+        const res = await fetch("/api/health");
+        const data = await res.json();
+        const llmOk = data.llm?.configured;
+        const fc = data.freecad_cmd ? "FreeCAD found" : "FreeCAD missing";
+        const hitl = data.agent?.require_tool_confirm ? "HITL on" : "HITL off";
+        status.innerHTML = `
+          <span class="pill ${llmOk ? "ok" : "warn"}">LLM: ${data.llm?.provider || "?"} ${llmOk ? "ready" : "needs .env key"}</span>
+          <span class="pill ${data.freecad_cmd ? "ok" : "warn"}">${fc}</span>
+          <span class="pill">model: ${data.llm?.model || "-"}</span>
+          <span class="pill">${hitl}</span>
+          <span class="pill">thread: ${getThreadId().slice(0, 8)}…</span>
+        `;
+      } catch (e) {
+        status.innerHTML = `<span class="pill warn">API offline</span>`;
+      }
+    }
+
+    document.querySelectorAll(".examples button").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        input.value = btn.dataset.q;
+        input.focus();
+      });
+    });
+
+    async function sendStreaming(message) {
+      const statusEl = addMsg("status-line", "Starting…");
+      const res = await fetch("/api/chat/stream", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message, thread_id: getThreadId() }),
+      });
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
+      let finalData = null;
+
+      while (true) {
+        const { value, done } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+        const chunks = buffer.split("\n\n");
+        buffer = chunks.pop() || "";
+        for (const chunk of chunks) {
+          const line = chunk.trim();
+          if (!line.startsWith("data:")) continue;
+          const payload = JSON.parse(line.slice(5).trim());
+          if (payload.type === "node") {
+            statusEl.textContent = payload.status || payload.node || "Working…";
+          } else if (payload.type === "final") {
+            finalData = payload;
+          }
+        }
+      }
+      statusEl.remove();
+      return finalData || { answer: "No response", thread_id: getThreadId() };
+    }
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const message = input.value.trim();
+      if (!message) return;
+      addMsg("user", message);
+      input.value = "";
+      send.disabled = true;
+      hideConfirm();
+      try {
+        const data = await sendStreaming(message);
+        if (data.thread_id) localStorage.setItem(THREAD_KEY, data.thread_id);
+        if (data.interrupted) {
+          showConfirm(data.interrupt);
+          addMsg("assistant", "Paused for FreeCAD tool confirmation (HITL).");
+        } else {
+          showAssistantResult(data);
+        }
+      } catch (err) {
+        addMsg("assistant", `Request failed: ${err}`);
+      } finally {
+        send.disabled = false;
+        refreshStatus();
+      }
+    });
+
+    refreshStatus();
+  </script>
+</body>
+</html>

@@ -1,0 +1,97 @@
+{
+  "passed": 18,
+  "failed": 0,
+  "total": 18,
+  "rows": [
+    {
+      "id": "rag_steel_yield",
+      "ok": true,
+      "detail": "hits=4"
+    },
+    {
+      "id": "rag_aluminum",
+      "ok": true,
+      "detail": "hits=1"
+    },
+    {
+      "id": "rag_demo_stress_formula",
+      "ok": true,
+      "detail": "hits=4"
+    },
+    {
+      "id": "rag_units",
+      "ok": true,
+      "detail": "hits=4"
+    },
+    {
+      "id": "rag_mesh_advice",
+      "ok": true,
+      "detail": "hits=4"
+    },
+    {
+      "id": "tool_create",
+      "ok": true,
+      "detail": "{\"ok\": true, \"name\": \"CantileverBeam\", \"length_mm\": 100.0, \"width_mm\": 20.0, \"height_mm\": 5.0, \"volume_mm3\": 10000.0, \"step_path\": null, \"stl_path\": null, \"fcstd_path\": null, \"fixe"
+    },
+    {
+      "id": "tool_solve",
+      "ok": true,
+      "detail": "stress=120.0"
+    },
+    {
+      "id": "tool_get_stress",
+      "ok": true,
+      "detail": "stress=120.0"
+    },
+    {
+      "id": "agent_docs_question",
+      "ok": true,
+      "detail": "tools=[]"
+    },
+    {
+      "id": "agent_create_solve",
+      "ok": true,
+      "detail": "tools=['create_cantilever', 'apply_load_and_solve']"
+    },
+    {
+      "id": "agent_compare_50mpa",
+      "ok": true,
+      "detail": "tools=['get_max_von_mises']"
+    },
+    {
+      "id": "agent_refuse_unknown_alloy",
+      "ok": true,
+      "detail": "tools=[]"
+    },
+    {
+      "id": "rag_workflow_tools",
+      "ok": true,
+      "detail": "hits=4"
+    },
+    {
+      "id": "tool_create_custom",
+      "ok": true,
+      "detail": "{\"ok\": true, \"name\": \"CantileverBeam\", \"length_mm\": 80.0, \"width_mm\": 10.0, \"height_mm\": 4.0, \"volume_mm3\": 3200.0, \"step_path\": null, \"stl_path\": null, \"fcstd_path\": null, \"fixed_"
+    },
+    {
+      "id": "tool_solve_custom",
+      "ok": true,
+      "detail": "stress=150.0"
+    },
+    {
+      "id": "agent_material_e",
+      "ok": true,
+      "detail": "tools=[]"
+    },
+    {
+      "id": "rag_backup",
+      "ok": true,
+      "detail": "hits=3"
+    },
+    {
+      "id": "agent_units_force",
+      "ok": true,
+      "detail": "tools=[]"
+    }
+  ]
+}

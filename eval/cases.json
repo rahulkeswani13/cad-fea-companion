@@ -1,0 +1,166 @@
+[
+  {
+    "id": "rag_steel_yield",
+    "type": "rag",
+    "query": "What is a typical yield strength for mild steel in MPa?",
+    "expect_any": ["250", "yield"],
+    "min_citations": 1
+  },
+  {
+    "id": "rag_aluminum",
+    "type": "rag",
+    "query": "Approximate Young's modulus for aluminum 6061-T6?",
+    "expect_any": ["69", "GPa"],
+    "min_citations": 1
+  },
+  {
+    "id": "rag_engine_mount",
+    "type": "rag",
+    "query": "What is the design space on the engine-mount lattice demo?",
+    "expect_any": ["web", "lattice", "non-design", "bcc"],
+    "min_citations": 1
+  },
+  {
+    "id": "rag_demo_stress_formula",
+    "type": "rag",
+    "query": "What is the analytical max bending stress formula for the cantilever demo?",
+    "expect_any": ["6", "sigma", "b", "h"],
+    "min_citations": 1
+  },
+  {
+    "id": "rag_units",
+    "type": "rag",
+    "query": "What units does the companion use for stress?",
+    "expect_any": ["MPa"],
+    "min_citations": 1
+  },
+  {
+    "id": "rag_mesh_advice",
+    "type": "rag",
+    "query": "What mesh size is recommended for the brake pedal?",
+    "expect_any": ["coarse", "3", "4", "6", "10", "mm"],
+    "min_citations": 1
+  },
+  {
+    "id": "tool_create_mount",
+    "type": "tool",
+    "tool": "create_engine_mount",
+    "args": {"web_type": "bcc", "open_gui": false},
+    "expect_ok": true
+  },
+  {
+    "id": "tool_mount_metrics",
+    "type": "tool",
+    "tool": "get_lattice_metrics",
+    "args": {},
+    "expect_ok": true
+  },
+  {
+    "id": "tool_compare_mount",
+    "type": "tool",
+    "tool": "compare_mount_variants",
+    "args": {},
+    "expect_ok": true
+  },
+  {
+    "id": "tool_create",
+    "type": "tool",
+    "tool": "create_cantilever",
+    "args": {"length_mm": 100, "width_mm": 20, "height_mm": 5, "open_gui": false},
+    "expect_ok": true
+  },
+  {
+    "id": "tool_solve",
+    "type": "tool",
+    "tool": "apply_load_and_solve",
+    "args": {"force_n": 100, "mesh_max_size_mm": 8, "open_gui": false},
+    "expect_ok": true,
+    "expect_stress_approx_mpa": 120,
+    "tol_mpa": 5
+  },
+  {
+    "id": "tool_get_stress",
+    "type": "tool",
+    "tool": "get_max_von_mises",
+    "args": {},
+    "expect_ok": true,
+    "expect_stress_approx_mpa": 120,
+    "tol_mpa": 5
+  },
+  {
+    "id": "agent_docs_question",
+    "type": "agent",
+    "message": "According to the docs, is 50 MPa below typical mild steel yield?",
+    "expect_any": ["250", "yes", "below"],
+    "min_citations": 1
+  },
+  {
+    "id": "agent_create_solve",
+    "type": "agent",
+    "message": "Create a cantilever 100x20x5 mm and apply 100 N tip load and solve.",
+    "expect_tools_any": ["create_cantilever", "apply_load_and_solve"]
+  },
+  {
+    "id": "agent_mount_lattice",
+    "type": "agent",
+    "message": "Create a BCC engine mount lattice bracket and solve the pad load.",
+    "expect_tools_any": ["create_engine_mount", "apply_load_and_solve"]
+  },
+  {
+    "id": "agent_compare_50mpa",
+    "type": "agent",
+    "message": "What is the max von Mises stress and is it under 50 MPa?",
+    "expect_any": ["120", "50", "not", "above", "no", "118"],
+    "expect_tools_any": ["get_max_von_mises", "apply_load_and_solve"]
+  },
+  {
+    "id": "agent_refuse_unknown_alloy",
+    "type": "agent",
+    "message": "What is the exact certified yield of Unobtainium-99 from ASTM?",
+    "expect_any": ["do not know", "don't know", "unknown", "not", "insufficient", "no"]
+  },
+  {
+    "id": "rag_workflow_tools",
+    "type": "rag",
+    "query": "Which companion tools create geometry and return max stress?",
+    "expect_any": ["create_engine_mount", "create_cantilever", "get_max_von_mises"],
+    "min_citations": 1
+  },
+  {
+    "id": "tool_create_custom",
+    "type": "tool",
+    "tool": "create_cantilever",
+    "args": {"length_mm": 80, "width_mm": 10, "height_mm": 4, "open_gui": false},
+    "expect_ok": true
+  },
+  {
+    "id": "tool_solve_custom",
+    "type": "tool",
+    "tool": "apply_load_and_solve",
+    "args": {"force_n": 50, "open_gui": false},
+    "expect_ok": true,
+    "expect_stress_approx_mpa": 150,
+    "tol_mpa": 5
+  },
+  {
+    "id": "agent_material_e",
+    "type": "agent",
+    "message": "What Young's modulus should I assume for structural steel in this demo?",
+    "expect_any": ["210", "200", "GPa"],
+    "min_citations": 1
+  },
+  {
+    "id": "rag_backup",
+    "type": "rag",
+    "query": "Where is the precomputed FEA JSON stored for the engine mount?",
+    "expect_any": ["precomputed", "engine_mount"],
+    "min_citations": 1
+  },
+  {
+    "id": "agent_units_force",
+    "type": "agent",
+    "message": "What force units do the FEA tools expect?",
+    "expect_any": ["newton", "N"],
+    "min_citations": 0
+  }
+]

@@ -1,0 +1,17 @@
+{
+  "ok": true,
+  "method": "calculix_ccx",
+  "mesh_max_size_mm": 8.0,
+  "force_n": 100.0,
+  "length_mm": 100.0,
+  "width_mm": 20.0,
+  "height_mm": 5.0,
+  "node_count": 166,
+  "max_von_mises_mpa": 31.9304,
+  "tip_deflection_mm": 0.158737,
+  "fcstd_path": "data/workspace/cantilever_fem.FCStd",
+  "note": "Live FreeCAD FEM: Gmsh mesh + CalculiX. Coarse tets under-predict peak bending stress vs Euler-Bernoulli; compare analytical_reference_mpa.",
+  "analytical_reference_mpa": 120.0,
+  "material": "Steel approx E=210 GPa, nu=0.3",
+  "analytical_tip_deflection_mm": 0.761905
+}
