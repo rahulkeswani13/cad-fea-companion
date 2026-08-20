@@ -23,6 +23,7 @@ from companion.tools.cad_fea import (
     load_precomputed_results,
 )
 from companion.tools.freecad_runtime import find_freecad_cmd
+from companion.tools.outcome import wrap_tool_call
 
 STATIC_DIR = Path(__file__).parent / "static"
 
@@ -164,7 +165,14 @@ def rag_search(q: str, k: int = 4) -> dict[str, Any]:
 
 @app.post("/api/results/load_precomputed")
 def results_load(case: str = "auto") -> dict[str, Any]:
-    return load_precomputed_results(case=case)
+    return wrap_tool_call(
+        "load_precomputed_results",
+        {"case": case},
+        lambda name, args: load_precomputed_results(
+            case=str(args.get("case") or "auto")
+        ),
+        state_fn=get_state,
+    )
 
 
 if STATIC_DIR.exists():

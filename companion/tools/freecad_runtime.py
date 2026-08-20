@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import os
 import shutil
+import signal
 import subprocess
 import tempfile
 from pathlib import Path
@@ -106,22 +107,29 @@ def run_freecad_python(script: str, timeout: int = 120) -> dict[str, Any]:
         handle.write(script)
         script_path = handle.name
 
+    proc = subprocess.Popen(
+        [cmd, script_path],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True,
+        env=_cli_freecad_env(),
+        start_new_session=True,
+    )
     try:
-        completed = subprocess.run(
-            [cmd, script_path],
-            capture_output=True,
-            text=True,
-            timeout=timeout,
-            check=False,
-            env=_cli_freecad_env(),
-        )
+        stdout, stderr = proc.communicate(timeout=timeout)
     except subprocess.TimeoutExpired:
+        # Kill the process group so orphaned Gmsh children are cleaned up.
+        try:
+            os.killpg(proc.pid, signal.SIGKILL)
+        except OSError:
+            pass
+        proc.wait()
         return {"ok": False, "error": f"FreeCADCmd timed out after {timeout}s"}
     finally:
         Path(script_path).unlink(missing_ok=True)
 
-    stdout = completed.stdout or ""
-    stderr = completed.stderr or ""
+    stdout = stdout or ""
+    stderr = stderr or ""
     marker = "COMPANION_JSON:"
     payload: dict[str, Any] | None = None
     for line in stdout.splitlines():
@@ -134,7 +142,7 @@ def run_freecad_python(script: str, timeout: int = 120) -> dict[str, Any]:
             break
 
     if payload is None:
-        if _qt_cpu_feature_error(stdout, stderr) or completed.returncode in (-6, 134):
+        if _qt_cpu_feature_error(stdout, stderr) or proc.returncode in (-6, 134):
             error = (
                 "FreeCAD Qt aborted with an ARM CPU-feature check "
                 "(neon/crc32; often return code -6). This usually means the "
@@ -147,13 +155,13 @@ def run_freecad_python(script: str, timeout: int = 120) -> dict[str, Any]:
         return {
             "ok": False,
             "error": error,
-            "returncode": completed.returncode,
+            "returncode": proc.returncode,
             "stdout_tail": stdout[-2000:],
             "stderr_tail": stderr[-2000:],
             "freecad_cmd": cmd,
         }
     payload.setdefault("freecad_cmd", cmd)
-    payload.setdefault("returncode", completed.returncode)
+    payload.setdefault("returncode", proc.returncode)
     return payload
 
 

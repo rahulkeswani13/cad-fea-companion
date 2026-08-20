@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Smoke-test FreeCADCmd: cantilever + brake-pedal BCC + engine-mount BCC."""
+"""Smoke-test FreeCADCmd: cantilever + brake-pedal X-truss."""
 
 from __future__ import annotations
 
@@ -9,11 +9,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-from companion.tools.cad_fea import (
-    create_brake_pedal,
-    create_cantilever,
-    create_engine_mount,
-)
+from companion.tools.cad_fea import create_brake_pedal, create_cantilever
 from companion.tools.freecad_runtime import find_freecad_cmd
 
 
@@ -38,23 +34,7 @@ def main() -> int:
             )
         },
     )
-    mount = create_engine_mount(web_type="bcc", open_gui=False)
-    print(
-        "engine_mount:",
-        {
-            k: mount.get(k)
-            for k in (
-                "ok",
-                "part",
-                "web_type",
-                "relative_density",
-                "mass_kg",
-                "warning",
-                "fcstd_path",
-            )
-        },
-    )
-    ok = bool(beam.get("ok") and pedal.get("ok") and mount.get("ok"))
+    ok = bool(beam.get("ok") and pedal.get("ok"))
     return 0 if ok else 1
 
 

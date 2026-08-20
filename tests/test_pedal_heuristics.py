@@ -1,4 +1,4 @@
-"""Heuristic routing for brake-pedal and engine-mount lattice prompts."""
+"""Heuristic routing for brake-pedal lattice and cantilever prompts."""
 
 from __future__ import annotations
 
@@ -17,26 +17,12 @@ def test_heuristic_bcc_alias_pedal():
     assert calls[0]["args"].get("web_type") == "xtruss"
 
 
-def test_heuristic_create_bcc_mount():
-    calls = _heuristic_tools("Create a BCC lattice engine mount bracket")
-    assert calls[0]["name"] == "create_engine_mount"
-    assert calls[0]["args"].get("web_type") == "bcc"
-
-
 def test_heuristic_compare_pedal_variants():
     calls = _heuristic_tools(
         "Compare solid X-truss and FCC brake pedal variants and recommend the lightest"
     )
     names = [c["name"] for c in calls]
     assert "compare_brake_pedal_variants" in names
-
-
-def test_heuristic_compare_mount_variants():
-    calls = _heuristic_tools(
-        "Compare solid BCC and FCC engine mount variants and recommend the lightest"
-    )
-    names = [c["name"] for c in calls]
-    assert "compare_mount_variants" in names
 
 
 def test_heuristic_solve_pedal_creates_geometry_first():
@@ -48,16 +34,6 @@ def test_heuristic_solve_pedal_creates_geometry_first():
     )
     assert nxt[0]["name"] == "create_brake_pedal"
     assert nxt[0]["args"].get("web_type") == "xtruss"
-
-
-def test_heuristic_solve_mount_creates_geometry_first():
-    nxt = _heuristic_next_tool(
-        "Solve the engine mount lattice with 20000 N",
-        cad_geometry=None,
-        cad_results=None,
-        tool_results=[],
-    )
-    assert nxt[0]["name"] == "create_engine_mount"
 
 
 def test_heuristic_relative_density_is_not_a_tool_request():
@@ -79,3 +55,27 @@ def test_heuristic_cantilever_still_works():
     names = [c["name"] for c in calls]
     assert "create_cantilever" in names
     assert "apply_load_and_solve" in names
+
+
+def test_heuristic_create_solid_uav_arm():
+    calls = _heuristic_tools("Create a solid aluminum UAV arm")
+    assert calls[0]["name"] == "create_uav_arm"
+    assert calls[0]["args"].get("web_type") == "solid"
+
+
+def test_heuristic_create_xtruss_uav_arm():
+    calls = _heuristic_tools("Create a truss UAV arm")
+    assert calls[0]["name"] == "create_uav_arm"
+    assert calls[0]["args"].get("web_type") == "xtruss"
+
+
+def test_heuristic_uav_not_routed_to_cantilever():
+    calls = _heuristic_tools("Create a quadcopter arm with 120 N tip load")
+    names = [c["name"] for c in calls]
+    assert "create_uav_arm" in names
+    assert "create_cantilever" not in names
+
+
+def test_heuristic_drone_motor_mount_routes_to_uav():
+    calls = _heuristic_tools("Build a motor mount arm for a drone")
+    assert calls[0]["name"] == "create_uav_arm"

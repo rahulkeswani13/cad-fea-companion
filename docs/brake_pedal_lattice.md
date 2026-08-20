@@ -1,6 +1,6 @@
 # Brake-pedal lattice FEA notes
 
-Simplified **aluminum 6061-T6 brake-pedal** bracket (alongside cantilever + engine mount).
+Simplified **aluminum 6061-T6 brake-pedal** bracket (alongside the cantilever).
 
 ## Design vs non-design
 

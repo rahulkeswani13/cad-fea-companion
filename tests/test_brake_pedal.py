@@ -4,6 +4,9 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import pytest
+
+from companion.config import get_settings
 from companion.tools import brake_pedal as bp
 from companion.tools.cad_fea import (
     _STATE,
@@ -17,6 +20,14 @@ from companion.tools.cad_fea import (
 )
 
 ROOT = Path(__file__).resolve().parents[1]
+
+
+@pytest.fixture(autouse=True)
+def _workspace(tmp_path, monkeypatch):
+    """Isolate runtime writes (precomputed JSONs, F06 run history) per test."""
+    settings = get_settings()
+    monkeypatch.setattr(settings, "workspace_dir", tmp_path)
+    return tmp_path
 
 
 def setup_function() -> None:
@@ -60,7 +71,7 @@ def test_get_lattice_metrics_and_compare(monkeypatch):
 def test_apply_load_pedal_uses_defaults(monkeypatch):
     monkeypatch.setattr("companion.tools.cad_fea.find_freecad_cmd", lambda: None)
     create_brake_pedal(web_type="xtruss", open_gui=False)
-    result = call_tool("apply_load_and_solve", {})
+    result = call_tool("apply_load_and_solve", {"open_gui": False})
     assert result["ok"] is True
     assert result["part"] == "brake_pedal"
     assert result["force_n"] == bp.DEFAULT_FORCE_N
@@ -112,4 +123,5 @@ def test_solve_does_not_overwrite_golden_precomputed(monkeypatch):
     result = call_tool("apply_load_and_solve", {"force_n": 999, "open_gui": False})
     assert result["ok"] is True
     assert golden.read_bytes() == before
-    assert "workspace" in str(result.get("results_path") or "")
+    # Written to the (test-isolated) workspace, never the golden results dir.
+    assert str(get_settings().workspace_dir) in str(result.get("results_path") or "")

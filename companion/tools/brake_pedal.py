@@ -5,6 +5,8 @@ from __future__ import annotations
 import math
 from typing import Any
 
+from companion.tools.validate import FREECAD_VALIDATION_SNIPPET, gate_call_snippet
+
 # --- Demo geometry (mm) ---
 THICKNESS_Z = 15.0
 
@@ -46,6 +48,36 @@ AL_NU = 0.33
 AL_YIELD_MPA = 276.0
 
 WEB_TYPES = frozenset({"solid", "xtruss", "fcc"})
+
+
+def material_overrides(material: dict[str, Any] | None) -> dict[str, Any]:
+    """Legacy Al constants, or a full F09 material record's fields.
+
+    ``None`` keeps every pre-F09 caller byte-identical (Al 6061-T6).
+    """
+    if not material:
+        return {
+            "id": "al6061t6",
+            "name": "Al 6061-T6",
+            "desc": "Al 6061-T6 approx E=69 GPa, nu=0.33",
+            "density": AL_DENSITY_KG_M3,
+            "e_mpa": AL_E_MPA,
+            "nu": AL_NU,
+            "yield_mpa": AL_YIELD_MPA,
+        }
+    return {
+        "id": str(material["id"]),
+        "name": str(material["display_name"]),
+        "desc": (
+            f"{material['display_name']} approx "
+            f"E={float(material['youngs_modulus_mpa']) / 1000.0:g} GPa, "
+            f"nu={float(material['poissons_ratio']):g}"
+        ),
+        "density": float(material["density_kg_m3"]),
+        "e_mpa": float(material["youngs_modulus_mpa"]),
+        "nu": float(material["poissons_ratio"]),
+        "yield_mpa": float(material["yield_mpa"]),
+    }
 
 
 def normalize_web_type(web_type: str | None) -> str:
@@ -99,6 +131,7 @@ def estimate_part_volume_mm3(
     web_type: str,
     cell_size_mm: float = DEFAULT_CELL_SIZE_MM,
     strut_radius_mm: float = DEFAULT_STRUT_RADIUS_MM,
+    density_kg_m3: float = AL_DENSITY_KG_M3,
 ) -> dict[str, float]:
     wt = normalize_web_type(web_type)
     skins = solid_skins_volume_mm3()
@@ -106,7 +139,7 @@ def estimate_part_volume_mm3(
     pocket = pocket_volume_mm3()
     total = skins + fill
     rho_star = 1.0 if wt == "solid" else (fill / pocket if pocket else 0.0)
-    mass_kg = (total * 1e-9) * AL_DENSITY_KG_M3
+    mass_kg = (total * 1e-9) * density_kg_m3
     return {
         "skins_volume_mm3": round(skins, 3),
         "lattice_fill_volume_mm3": round(fill, 3),
@@ -122,9 +155,11 @@ def memory_geometry(
     cell_size_mm: float,
     strut_radius_mm: float,
     warning: str,
+    material: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     wt = normalize_web_type(web_type)
-    vols = estimate_part_volume_mm3(wt, cell_size_mm, strut_radius_mm)
+    mat = material_overrides(material)
+    vols = estimate_part_volume_mm3(wt, cell_size_mm, strut_radius_mm, mat["density"])
     return {
         "ok": True,
         "part": "brake_pedal",
@@ -135,8 +170,9 @@ def memory_geometry(
         "nx": DEFAULT_NX,
         "ny": DEFAULT_NY,
         "nz": DEFAULT_NZ,
-        "material": "Al 6061-T6 approx E=69 GPa, nu=0.33",
-        "yield_mpa": AL_YIELD_MPA,
+        "material": mat["desc"],
+        "material_id": mat["id"],
+        "yield_mpa": mat["yield_mpa"],
         "fixed_refs": "top pivot ID + pushrod clevis ID (Z-axis cylinders)",
         "load_refs": "footpad -X face (Fx=+500 N default)",
         "step_path": None,
@@ -155,13 +191,16 @@ def fallback_fea_result(
     web_type: str,
     force_n: float,
     geometry: dict[str, Any] | None = None,
+    material: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Interview-safe FEA numbers when CalculiX is unavailable."""
     wt = normalize_web_type(web_type)
+    mat = material_overrides(material)
     vols = estimate_part_volume_mm3(
         wt,
         float((geometry or {}).get("cell_size_mm", DEFAULT_CELL_SIZE_MM)),
         float((geometry or {}).get("strut_radius_mm", DEFAULT_STRUT_RADIUS_MM)),
+        mat["density"],
     )
     base = {
         "solid": (12.0, 0.18),
@@ -170,7 +209,9 @@ def fallback_fea_result(
     }[wt]
     scale = force_n / DEFAULT_FORCE_N
     vm = round(base[0] * scale, 4)
-    delta = round(base[1] * scale, 6)
+    # Demo deflections are calibrated on Al 6061-T6; re-express them at the
+    # target modulus (linear-elastic scaling; the demo stress is geometry-driven).
+    delta = round(base[1] * scale * (AL_E_MPA / mat["e_mpa"]), 6)
     return {
         "ok": True,
         "method": "precomputed_demo_estimate",
@@ -181,9 +222,10 @@ def fallback_fea_result(
         "max_von_mises_mpa": vm,
         "pad_deflection_mm": delta,
         "tip_deflection_mm": delta,
-        "material": "Al 6061-T6 approx E=69 GPa, nu=0.33",
-        "yield_mpa": AL_YIELD_MPA,
-        "safety_factor_vs_yield": round(AL_YIELD_MPA / vm, 3) if vm else None,
+        "material": mat["desc"],
+        "material_id": mat["id"],
+        "yield_mpa": mat["yield_mpa"],
+        "safety_factor_vs_yield": round(mat["yield_mpa"] / vm, 3) if vm else None,
         "fallback": True,
         "note": (
             "Demo FEA estimate when live CalculiX is unavailable. "
@@ -736,8 +778,12 @@ def build_geometry_script(
     out_step: str,
     out_stl: str,
     out_fcstd: str,
+    material: dict[str, Any] | None = None,
 ) -> str:
     """FreeCADCmd script: brake pedal with solid or lattice web."""
+    mat = material_overrides(material)
+    mat_desc, mat_id = mat["desc"], mat["id"]
+    mat_density, mat_yield = mat["density"], mat["yield_mpa"]
     helpers = _FREECAD_GEOM_HELPERS.format(
         THICKNESS_Z=THICKNESS_Z,
         PIVOT_XY=PIVOT_XY,
@@ -768,6 +814,7 @@ import FreeCAD as App
 import Part
 
 {helpers}
+{FREECAD_VALIDATION_SNIPPET}
 
 try:
     doc = App.newDocument("BrakePedal")
@@ -783,10 +830,11 @@ try:
     obj = doc.addObject("Part::Feature", "BrakePedalLattice")
     obj.Shape = body
     doc.recompute()
+{gate_call_snippet("brake_pedal", estimate_part_volume_mm3(web_type, cell_size_mm, strut_radius_mm)["volume_mm3"])}
 
     skins_est = {solid_skins_volume_mm3()}
     total_vol = float(body.Volume)
-    mass_kg = (total_vol * 1e-9) * {AL_DENSITY_KG_M3}
+    mass_kg = (total_vol * 1e-9) * {mat_density}
 
     step_path = r"{out_step}"
     stl_path = r"{out_stl}"
@@ -814,13 +862,15 @@ try:
         "pocket_volume_mm3": pocket_vol,
         "relative_density": rho,
         "mass_kg": mass_kg,
-        "material": "Al 6061-T6 approx E=69 GPa, nu=0.33",
-        "yield_mpa": {AL_YIELD_MPA},
+        "material": "{mat_desc}",
+        "material_id": "{mat_id}",
+        "yield_mpa": {mat_yield},
         "fixed_refs": "top pivot ID + pushrod clevis ID (Z-axis cylinders)",
         "load_refs": "footpad -X face (Fx=+500 N)",
         "step_path": step_path,
         "stl_path": stl_path,
         "fcstd_path": fcstd_path,
+        "validation": validation,
     }}
 except Exception:
     payload = {{"ok": False, "error": traceback.format_exc()}}
@@ -835,8 +885,13 @@ def build_fem_script(
     force_n: float,
     mesh_max_size_mm: float,
     out_fcstd: str,
+    material: dict[str, Any] | None = None,
 ) -> str:
     """FreeCADCmd FEM: rebuild pedal, fix hole IDs, load footpad -X."""
+    mat = material_overrides(material)
+    mat_desc, mat_id = mat["desc"], mat["id"]
+    mat_density, mat_yield = mat["density"], mat["yield_mpa"]
+    mat_name, mat_e, mat_nu = mat["name"], mat["e_mpa"], mat["nu"]
     helpers = _FREECAD_GEOM_HELPERS.format(
         THICKNESS_Z=THICKNESS_Z,
         PIVOT_XY=PIVOT_XY,
@@ -870,6 +925,7 @@ from femmesh import gmshtools
 from femtools import ccxtools
 
 {helpers}
+{FREECAD_VALIDATION_SNIPPET}
 
 def pick_cylinder_faces(shape, cx, cy, expected_r, tol_xy=3.0, tol_r=2.5):
     hits = []
@@ -951,6 +1007,7 @@ try:
     geom = doc.addObject("Part::Feature", "Pedal")
     geom.Shape = body
     doc.recompute()
+{gate_call_snippet("brake_pedal", estimate_part_volume_mm3(web_type, cell_size_mm, strut_radius_mm)["volume_mm3"])}
 
     pivot_faces = pick_cylinder_faces(body, {PIVOT_XY[0]}, {PIVOT_XY[1]}, {PIVOT_IR})
     clevis_faces = pick_cylinder_faces(body, {CLEVIS_XY[0]}, {CLEVIS_XY[1]}, {CLEVIS_IR})
@@ -969,10 +1026,10 @@ try:
 
     material = ObjectsFem.makeMaterialSolid(doc, "MechanicalMaterial")
     mat = dict(material.Material)
-    mat["Name"] = "Al6061-T6"
-    mat["YoungsModulus"] = "{AL_E_MPA} MPa"
-    mat["PoissonRatio"] = "{AL_NU}"
-    mat["Density"] = "{AL_DENSITY_KG_M3} kg/m^3"
+    mat["Name"] = "{mat_name}"
+    mat["YoungsModulus"] = "{mat_e} MPa"
+    mat["PoissonRatio"] = "{mat_nu}"
+    mat["Density"] = "{mat_density} kg/m^3"
     material.Material = mat
     analysis.addObject(material)
 
@@ -1024,10 +1081,12 @@ try:
 
     max_vm = None
     max_disp = None
+    result_obj = None
     for obj in doc.Objects:
         vm = getattr(obj, "vonMises", None)
         if vm:
             max_vm = float(max(vm))
+            result_obj = obj
         disp = getattr(obj, "DisplacementLengths", None)
         if disp:
             max_disp = float(max(disp))
@@ -1051,8 +1110,31 @@ try:
 
     if max_vm is None:
         raise RuntimeError("CalculiX finished but no von Mises results were found.")
+
+    # F06: locate the peak-von-Mises node (part frame, mm). NodeNumbers maps
+    # result entries onto mesh node ids; the sorted-id fallback covers result
+    # objects that omit it. Location is best-effort — None when unmappable.
+    vm_location = None
+    if result_obj is not None:
+        try:
+            vm_values = list(result_obj.vonMises)
+            node_ids = list(getattr(result_obj, "NodeNumbers", []) or [])
+            idx = max(range(len(vm_values)), key=lambda i: vm_values[i])
+            nodes = mesh_obj.FemMesh.Nodes
+            node = None
+            if len(node_ids) == len(vm_values):
+                node = nodes.get(node_ids[idx])
+            if node is None:
+                ordered = sorted(nodes)
+                if idx < len(ordered):
+                    node = nodes.get(ordered[idx])
+            if node is not None:
+                vm_location = [round(node.x, 3), round(node.y, 3), round(node.z, 3)]
+        except Exception:
+            vm_location = None
+
     total_vol = float(body.Volume)
-    mass_kg = (total_vol * 1e-9) * {AL_DENSITY_KG_M3}
+    mass_kg = (total_vol * 1e-9) * {mat_density}
     payload = {{
         "ok": True,
         "method": "calculix_ccx",
@@ -1062,6 +1144,7 @@ try:
         "force_n": force,
         "node_count": n_nodes,
         "max_von_mises_mpa": round(max_vm, 4),
+        "max_vm_location_mm": vm_location,
         "pad_deflection_mm": round(max_disp, 6) if max_disp is not None else None,
         "tip_deflection_mm": round(max_disp, 6) if max_disp is not None else None,
         "volume_mm3": total_vol,
@@ -1069,15 +1152,18 @@ try:
         "pocket_volume_mm3": pocket_vol,
         "relative_density": rho,
         "mass_kg": mass_kg,
-        "material": "Al 6061-T6 approx E=69 GPa, nu=0.33",
-        "yield_mpa": {AL_YIELD_MPA},
+        "material": "{mat_desc}",
+        "material_id": "{mat_id}",
+        "yield_mpa": {mat_yield},
         "fixed_faces": pivot_faces + clevis_faces,
         "load_face": load_face,
         "fcstd_path": fcstd_path,
         "note": (
             "Live FreeCAD FEM on brake-pedal lattice. Coarse tets under-predict "
-            "peak strut stress; use as ranking / demo KPIs."
+            "peak strut stress; use as ranking / demo KPIs. max_vm_location_mm "
+            "is the peak-stress node in the part frame (x, y, z mm)."
         ),
+        "validation": validation,
     }}
 except Exception:
     payload = {{"ok": False, "error": traceback.format_exc()}}

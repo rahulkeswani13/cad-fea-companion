@@ -24,6 +24,8 @@ from companion.llm.providers import (
     get_llm_provider,
 )
 from companion.rag.store import retrieve
+from companion.tools import materials as mats
+from companion.tools import outcome
 from companion.tools.cad_fea import TOOL_SPECS, cad_thread_scope, call_tool, get_state
 
 CallToolFn = Callable[[str, dict[str, Any] | None], dict[str, Any]]
@@ -46,7 +48,7 @@ class AgentState(TypedDict, total=False):
 
 SYSTEM_PROMPT = """You are a CAD/FEA engineering companion.
 Primary example: aluminum brake-pedal lattice bracket (pivot + clevis rings + footpad) with a
-lattice web (solid | xtruss | fcc). Also supported: engine-mount L-bracket and cantilever beam.
+lattice web (solid | xtruss | fcc). Also supported: cantilever beam.
 
 Rules:
 - Prefer grounded answers from retrieved context and tool results.
@@ -55,17 +57,26 @@ Rules:
   then observe the tool result before the next tool.
 - Prefer reusing existing geometry/results in session state; do not recreate unless asked.
 - If a tool returns ok:false, decide the next action from that observation (retry, create first, etc.).
-- create_brake_pedal / create_engine_mount / create_cantilever and apply_load_and_solve open
+- create_brake_pedal / create_uav_arm / create_cantilever and apply_load_and_solve open
   FreeCAD GUI when available.
 - For brake pedals: discuss design vs non-design regions (solid rings + footpad vs lattice pocket),
   relative density, mass, pad deflection, max von Mises vs Al 6061-T6 yield (~276 MPa), and SF.
   Default load is +500 N on the footpad opposite (-X) face (Fx=+500). Fixed on pivot ID and clevis ID.
   Prefer web_type=xtruss (2.5D diagonal X-truss); "bcc" aliases to xtruss on the pedal.
-- For engine mounts: solid bolt flange + pad vs lattice web (solid|bcc|fcc); default load 20000 N.
 - Coarse CalculiX tet meshes under-predict peak stress (especially in struts). For the
   cantilever, mention analytical_reference_mpa (~120 MPa for 100 N / 100x20x5 mm).
-- Use compare_brake_pedal_variants (or compare_mount_variants for the mount) when the user asks
+- Use compare_brake_pedal_variants when the user asks
   which lattice is best / lightest under constraints.
+- Use compare_materials for material trade-off questions ("Ti vs Al", "what
+  about printed nylon"). It scales the best available run linear-elastically;
+  state the method and quote the row sources. PA12 deflection is flagged
+  NOT VERIFIED — say so. To actually change material, use update_design_program
+  with a changes object setting "material" (rebuilds + bumps the program
+  revision).
+- Use run_convergence_study when the user asks whether results are mesh-converged
+  or wants a mesh sensitivity check; it is synchronous (costs 2-3 solves) and its
+  report states the recommended mesh size. Answers derived from it must state the
+  mesh size used (solver honesty).
 - Keep answers concise and cite sources as [source].
 
 Session CAD state:
@@ -108,21 +119,6 @@ def _pedal_oriented(message: str) -> bool:
     )
 
 
-def _mount_oriented(message: str) -> bool:
-    lower = message.lower()
-    if _pedal_oriented(lower):
-        return False
-    return any(
-        k in lower
-        for k in (
-            "engine mount",
-            "engine-mount",
-            "mount bracket",
-            "mount",
-        )
-    )
-
-
 def _lattice_oriented(message: str) -> bool:
     lower = message.lower()
     return any(
@@ -137,6 +133,22 @@ def _lattice_oriented(message: str) -> bool:
             "truss",
             "relative density",
             "bracket",
+        )
+    )
+
+
+def _uav_oriented(message: str) -> bool:
+    lower = message.lower()
+    return any(
+        k in lower
+        for k in (
+            "uav",
+            "drone",
+            "quadcopter",
+            "quad-copter",
+            "motor mount",
+            "motor-mount",
+            "motor ring",
         )
     )
 
@@ -179,13 +191,10 @@ def _heuristic_tools(message: str) -> list[dict[str, Any]]:
     wants_create_kw = any(
         k in lower for k in ("create", "make", "build", "generate", "rebuild")
     )
-    wants_pedal = _pedal_oriented(lower) and wants_create_kw
-    # Default lattice → brake pedal unless mount is explicit.
-    wants_lattice_default = (
-        not _mount_oriented(lower)
-        and _lattice_oriented(lower)
-        and wants_create_kw
-    )
+    uav = _uav_oriented(lower)
+    wants_pedal = _pedal_oriented(lower) and wants_create_kw and not uav
+    # Default lattice → brake pedal (UAV arms own their lattice routing).
+    wants_lattice_default = _lattice_oriented(lower) and wants_create_kw and not uav
     if wants_pedal or wants_lattice_default:
         args: dict[str, Any] = {}
         if "fcc" in lower:
@@ -202,16 +211,15 @@ def _heuristic_tools(message: str) -> list[dict[str, Any]]:
             args["web_type"] = "xtruss"
         calls.append({"name": "create_brake_pedal", "args": args})
 
-    wants_mount = _mount_oriented(lower) and wants_create_kw
-    if wants_mount:
-        args_m: dict[str, Any] = {}
-        if "fcc" in lower:
-            args_m["web_type"] = "fcc"
-        elif "solid" in lower and "bcc" not in lower:
-            args_m["web_type"] = "solid"
-        elif "bcc" in lower or "lattice" in lower or "mount" in lower:
-            args_m["web_type"] = "bcc"
-        calls.append({"name": "create_engine_mount", "args": args_m})
+    # F26: UAV arm flagship part. Default web is solid (the demo baseline);
+    # lattice/truss wording upgrades it to the X-truss web.
+    if uav and wants_create_kw:
+        args_u: dict[str, Any] = {}
+        if any(k in lower for k in ("xtruss", "x-truss", "x truss", "truss", "lattice", "bcc")):
+            args_u["web_type"] = "xtruss"
+        elif "solid" in lower:
+            args_u["web_type"] = "solid"
+        calls.append({"name": "create_uav_arm", "args": args_u})
 
     wants_compare = any(
         k in lower
@@ -225,16 +233,53 @@ def _heuristic_tools(message: str) -> list[dict[str, Any]]:
         )
     ) and (
         _pedal_oriented(lower)
-        or _mount_oriented(lower)
         or _lattice_oriented(lower)
         or "solid" in lower
         or "variant" in lower
     )
     if wants_compare:
-        if _mount_oriented(lower) and not _pedal_oriented(lower):
-            calls.append({"name": "compare_mount_variants", "args": {}})
-        else:
-            calls.append({"name": "compare_brake_pedal_variants", "args": {}})
+        calls.append({"name": "compare_brake_pedal_variants", "args": {}})
+
+    # F09: material questions. "Ti vs Al" style questions compare the table;
+    # "switch to Ti" style edits go through the design program.
+    _MATERIAL_HINTS = (
+        "material",
+        "titanium",
+        "ti-6al",
+        "ti6al",
+        " ti ",
+        " ti64",
+        "7075",
+        "6061",
+        "pa12",
+        "nylon",
+        "aluminum",
+        "aluminium",
+        "steel",
+        "alloy",
+    )
+    mentions_material = any(k in lower for k in _MATERIAL_HINTS)
+    if mentions_material:
+        mentioned = None
+        for token in re.findall(r"[A-Za-z0-9-]+", lower):
+            record = mats.get_material(token)
+            if record:
+                mentioned = record["id"]
+                break
+        wants_set_material = any(
+            k in lower
+            for k in ("switch", "make it", "change to", "convert", "set the material")
+        )
+        wants_material_compare = any(
+            k in lower
+            for k in ("compare", " vs ", "versus", "which material", "better", "what about")
+        )
+        if mentioned and wants_set_material:
+            calls.append(
+                {"name": "update_design_program", "args": {"changes": {"material": mentioned}}}
+            )
+        elif wants_material_compare or mentioned is None:
+            calls.append({"name": "compare_materials", "args": {}})
 
     wants_metrics = any(
         k in lower
@@ -248,8 +293,8 @@ def _heuristic_tools(message: str) -> list[dict[str, Any]]:
     ) and any(k in lower for k in ("create", "make", "build", "mm", "x"))
     if (
         not _pedal_oriented(lower)
-        and not _mount_oriented(lower)
         and not _lattice_oriented(lower)
+        and not _uav_oriented(lower)
         and (wants_create or ("cantilever" in lower and "x" in lower))
     ):
         args_c: dict[str, Any] = {}
@@ -265,6 +310,25 @@ def _heuristic_tools(message: str) -> list[dict[str, Any]]:
             }
         if "create" in lower or "make" in lower or "build" in lower or args_c:
             calls.append({"name": "create_cantilever", "args": args_c})
+
+    wants_convergence = any(
+        k in lower
+        for k in (
+            "convergence",
+            "converged",
+            "mesh study",
+            "mesh sensitivity",
+            "mesh refinement",
+            "refine the mesh",
+            "run_convergence_study",
+        )
+    )
+    if wants_convergence:
+        args_cv: dict[str, Any] = {}
+        fm_cv = re.search(r"(\d+(?:\.\d+)?)\s*n\b", lower)
+        if fm_cv:
+            args_cv["force_n"] = float(fm_cv.group(1))
+        calls.append({"name": "run_convergence_study", "args": args_cv})
 
     wants_solve = any(
         k in lower
@@ -351,12 +415,13 @@ def _heuristic_next_tool(
             "cantilever",
             "von mises",
             "lattice",
-            "mount",
             "pedal",
             "brake",
             "bcc",
             "fcc",
             "compare",
+            "uav",
+            "drone",
         )
     ):
         planned = _heuristic_tools(message)
@@ -369,10 +434,8 @@ def _heuristic_next_tool(
         and not (item.get("result") or {}).get("cancelled")
     }
     explicit_create = any(k in lower for k in ("create", "make", "build", "rebuild"))
-    pedalist = _pedal_oriented(lower) or (
-        _lattice_oriented(lower) and not _mount_oriented(lower)
-    )
-    mountish = _mount_oriented(lower)
+    pedalist = _pedal_oriented(lower) or _lattice_oriented(lower)
+    uavist = _uav_oriented(lower)
 
     for call in planned:
         name = call["name"]
@@ -382,7 +445,7 @@ def _heuristic_next_tool(
             if name in done and name not in failed:
                 continue
             return [call]
-        if name == "create_engine_mount":
+        if name == "create_uav_arm":
             if cad_geometry and not explicit_create and name not in failed:
                 continue
             if name in done and name not in failed:
@@ -397,12 +460,12 @@ def _heuristic_next_tool(
         if name == "apply_load_and_solve":
             created = (
                 "create_brake_pedal" in done
-                or "create_engine_mount" in done
+                or "create_uav_arm" in done
                 or "create_cantilever" in done
             )
             if not cad_geometry and not created:
-                if mountish:
-                    return [{"name": "create_engine_mount", "args": {"web_type": "bcc"}}]
+                if uavist:
+                    return [{"name": "create_uav_arm", "args": {"web_type": "solid"}}]
                 if pedalist:
                     return [{"name": "create_brake_pedal", "args": {"web_type": "xtruss"}}]
                 return [{"name": "create_cantilever", "args": {}}]
@@ -412,16 +475,44 @@ def _heuristic_next_tool(
         if name in (
             "get_lattice_metrics",
             "compare_brake_pedal_variants",
-            "compare_mount_variants",
+            "compare_materials",
         ):
             if name == "get_lattice_metrics" and not cad_geometry:
-                if "create_brake_pedal" not in done and "create_engine_mount" not in done:
-                    if mountish:
-                        return [
-                            {"name": "create_engine_mount", "args": {"web_type": "bcc"}}
-                        ]
+                if "create_brake_pedal" not in done:
                     return [{"name": "create_brake_pedal", "args": {"web_type": "xtruss"}}]
+            # compare_materials works from stored/precomputed runs — no live
+            # geometry required, so it falls through without a create.
             if name in done:
+                continue
+            return [call]
+        if name == "update_design_program":
+            created = (
+                "create_brake_pedal" in done
+                or "create_uav_arm" in done
+                or "create_cantilever" in done
+            )
+            if not cad_geometry and not created:
+                if uavist:
+                    return [{"name": "create_uav_arm", "args": {"web_type": "solid"}}]
+                if pedalist:
+                    return [{"name": "create_brake_pedal", "args": {"web_type": "xtruss"}}]
+                return [{"name": "create_cantilever", "args": {}}]
+            if name in done and name not in failed:
+                continue
+            return [call]
+        if name == "run_convergence_study":
+            created = (
+                "create_brake_pedal" in done
+                or "create_uav_arm" in done
+                or "create_cantilever" in done
+            )
+            if not cad_geometry and not created:
+                if uavist:
+                    return [{"name": "create_uav_arm", "args": {"web_type": "solid"}}]
+                if pedalist:
+                    return [{"name": "create_brake_pedal", "args": {"web_type": "xtruss"}}]
+                return [{"name": "create_cantilever", "args": {}}]
+            if name in done and name not in failed:
                 continue
             return [call]
         if name == "get_max_von_mises":
@@ -436,14 +527,51 @@ def _heuristic_next_tool(
 
 
 def _cad_state_blob(state: AgentState) -> str:
-    return json.dumps(
-        {
-            "geometry": state.get("cad_geometry"),
-            "results": state.get("cad_results"),
-        },
-        indent=2,
-        default=str,
-    )
+    """KPI-only summary for the system prompt (F02: keep LLM context compact)."""
+    geo = state.get("cad_geometry") or {}
+    res = state.get("cad_results") or {}
+
+    def pick(source: dict[str, Any], keys: tuple[str, ...]) -> dict[str, Any]:
+        return {k: source[k] for k in keys if source.get(k) is not None}
+
+    blob = {
+        "geometry": pick(
+            geo,
+            (
+                "part",
+                "web_type",
+                "cell_size_mm",
+                "strut_radius_mm",
+                "material",
+                "material_id",
+                "volume_mm3",
+                "mass_kg",
+                "relative_density",
+                "step_path",
+                "fcstd_path",
+            ),
+        ),
+        "results": pick(
+            res,
+            (
+                "part",
+                "web_type",
+                "method",
+                "force_n",
+                "mesh_max_size_mm",
+                "max_von_mises_mpa",
+                "safety_factor_vs_yield",
+                "material",
+                "material_id",
+                "pad_deflection_mm",
+                "tip_deflection_mm",
+                "fallback",
+            ),
+        ),
+    }
+    if not blob["geometry"] and not blob["results"]:
+        return "(none)"
+    return json.dumps(blob, default=str)
 
 
 def _tool_specs_to_pending(calls: list[ToolCallSpec] | list[dict[str, Any]]) -> list[dict[str, Any]]:
@@ -675,11 +803,16 @@ def build_graph(
                 cancelled = []
                 tool_messages = []
                 for p in pending:
-                    result = {
-                        "ok": False,
-                        "cancelled": True,
-                        "error": "User rejected FreeCAD tool confirmation.",
-                    }
+                    result = outcome.envelope(
+                        {
+                            "ok": False,
+                            "cancelled": True,
+                            "error": "User rejected FreeCAD tool confirmation.",
+                            "error_class": "user_cancelled",
+                        },
+                        tool=str(p.get("name") or "freecad_tools"),
+                        elapsed_s=0.0,
+                    )
                     cancelled.append(
                         {"name": p["name"], "args": p.get("args") or {}, "result": result}
                     )
@@ -719,7 +852,6 @@ def build_graph(
             # Mirror important CAD facts into graph state
             if name in (
                 "create_cantilever",
-                "create_engine_mount",
                 "create_brake_pedal",
             ) and result.get("ok"):
                 geometry = result
@@ -729,8 +861,8 @@ def build_graph(
                 results = {**(results or {}), **result}
             if name in (
                 "get_lattice_metrics",
-                "compare_mount_variants",
                 "compare_brake_pedal_variants",
+                "compare_materials",
             ) and result.get("ok"):
                 # Keep geometry; metrics/compare are observational.
                 pass

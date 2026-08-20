@@ -15,3 +15,4 @@ data/exports/
 .chroma/
 dist/
 build/
+.zcode/

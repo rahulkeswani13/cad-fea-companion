@@ -18,22 +18,7 @@
 
 See `docs/brake_pedal_lattice.md` for KPIs and design vs non-design regions.
 
-## Engine-mount lattice demo (secondary)
-
-- Simplified **L-bracket** engine mount: solid flange + upright pad; web = solid | BCC | FCC.
-- Keep meshes **coarse** (about 3–4 mm max element size on the solid; lattice may fall back to precomputed).
-- FCC FEA KPIs are precomputed by design (geometry/metrics still live).
-
-### Recommended mount load case
-
-- Material: Al 6061-T6 approx `E = 69 GPa`, `nu = 0.33`
-- Fixed: flange bottom face
-- Load: **20000 N** on upright top (pad)
-- Lattice defaults: cell 15 mm, strut radius **2.2 mm**, 2×2×1 cells
-
-See `docs/engine_mount_lattice.md` for KPIs and design vs non-design regions.
-
-## Cantilever demo setup (tertiary / regression)
+## Cantilever demo setup (secondary / regression)
 
 - Use a **rectangular beam** along X with root fixed at `x = 0` and tip load at `x = L`.
 - Keep meshes **coarse** (for example max element size 6–10 mm on a 100 mm beam).
@@ -63,12 +48,12 @@ Tip deflection:
 ## Workflow tools in this companion
 
 1. `create_brake_pedal` — brake pedal with solid/xtruss/fcc web; STEP/STL; FreeCAD GUI.
-2. `create_engine_mount` — L-bracket with solid/bcc/fcc web; STEP/STL; FreeCAD GUI.
-3. `get_lattice_metrics` — relative density, volumes, mass (pedal or mount).
-4. `compare_brake_pedal_variants` / `compare_mount_variants` — solid vs X-truss/BCC vs FCC KPI table + SF recommendation.
-5. `create_cantilever` — builds a `Part::Box` in FreeCAD, exports STEP/STL, opens FreeCAD GUI.
-6. `apply_load_and_solve` — Gmsh mesh + CalculiX (`ccx`) for current geometry.
-7. `get_max_von_mises` — latest max stress in MPa (plus SF / analytical reference when present).
+2. `get_lattice_metrics` — relative density, volumes, mass (pedal).
+3. `compare_brake_pedal_variants` — solid vs X-truss vs FCC KPI table + SF recommendation.
+4. `create_cantilever` — builds a `Part::Box` in FreeCAD, exports STEP/STL, opens FreeCAD GUI.
+5. `apply_load_and_solve` — Gmsh mesh + CalculiX (`ccx`) for current geometry.
+6. `get_max_von_mises` — latest max stress in MPa (plus SF / analytical reference when present).
+7. `query_results` — per-run solve history (F06).
 8. `open_in_freecad` — re-opens the latest document in FreeCAD GUI.
 
 ## GUI visibility / camera

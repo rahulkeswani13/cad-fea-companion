@@ -100,7 +100,7 @@ def test_cond_rag_lattice_question_skips_tools(monkeypatch):
     def fake_retrieve(query: str, k: int = 4):
         return [
             {
-                "source": "engine_mount_lattice.md",
+                "source": "brake_pedal_lattice.md",
                 "text": "Typical AM strut fills often sit around 0.15–0.40 ρ*",
                 "score": 0.9,
             }
@@ -204,43 +204,6 @@ def test_cad_state_mirrored_in_graph():
     assert out["cad_geometry"]["length_mm"] == 100
     assert out["cad_results"] is not None
     assert out["cad_results"]["max_von_mises_mpa"] == 120.0
-
-
-def test_loop_engine_mount_create_solve_compare():
-    tools = StubTools()
-    llm = ScriptedLLMProvider(
-        turns=[
-            AgentTurn(
-                content="creating mount",
-                tool_calls=[tc("create_engine_mount", {"web_type": "bcc"})],
-            ),
-            AgentTurn(
-                content="solving",
-                tool_calls=[tc("apply_load_and_solve", {"force_n": 20000})],
-            ),
-            AgentTurn(
-                content="comparing",
-                tool_calls=[tc("compare_mount_variants")],
-            ),
-            AgentTurn(
-                content="BCC is lightest with SF above 1.5.",
-                tool_calls=[],
-            ),
-        ]
-    )
-    g = _graph(llm, tools)
-    out = run_agent(
-        "Create BCC engine mount lattice, solve, and compare variants",
-        thread_id="mount-loop",
-        graph=g,
-    )
-    assert tools.names == [
-        "create_engine_mount",
-        "apply_load_and_solve",
-        "compare_mount_variants",
-    ]
-    assert out["cad_geometry"]["part"] == "engine_mount"
-    assert out["cad_results"]["max_von_mises_mpa"] == 36.0
 
 
 def test_loop_brake_pedal_create_solve_compare():

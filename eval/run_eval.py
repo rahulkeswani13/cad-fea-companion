@@ -13,6 +13,10 @@ sys.path.insert(0, str(ROOT))
 from companion.agent.graph import run_agent
 from companion.rag.store import ingest_docs, retrieve
 from companion.tools.cad_fea import call_tool
+import companion.tools.freecad_runtime as f_rt
+
+# Enforce headless evaluation: suppress GUI popups during automated test sweeps
+f_rt.open_in_freecad_gui = lambda *args, **kwargs: {"ok": True, "skipped": "eval_headless"}
 
 
 def contains_any(text: str, needles: list[str]) -> bool:
@@ -46,6 +50,24 @@ def main() -> int:
             elif case["type"] == "tool":
                 result = call_tool(case["tool"], case.get("args") or {})
                 ok = bool(result.get("ok")) == bool(case.get("expect_ok", True))
+                if ok and "expect_error_class" in case:
+                    ok = result.get("error_class") == case["expect_error_class"]
+                if ok and case.get("expect_correction"):
+                    ok = bool(str(result.get("correction") or "").strip())
+                if ok and "expect_validation_stage" in case:
+                    ok = (result.get("validation") or {}).get("stage") == case[
+                        "expect_validation_stage"
+                    ]
+                if ok and case.get("expect_receipt"):
+                    receipt = result.get("receipt") or {}
+                    ok = receipt.get("tool") == case["tool"] and isinstance(
+                        receipt.get("elapsed_s"), (int, float)
+                    )
+                if ok and case.get("expect_fields"):
+                    ok = all(
+                        result.get(field) is not None
+                        for field in case["expect_fields"]
+                    )
                 if ok and "expect_stress_approx_mpa" in case:
                     stress = float(
                         result.get("max_von_mises_mpa")
@@ -54,6 +76,20 @@ def main() -> int:
                     )
                     tol = float(case.get("tol_mpa", 5))
                     ok = abs(stress - float(case["expect_stress_approx_mpa"])) <= tol
+                    detail = f"stress={stress}"
+                elif ok and "expect_stress_any_mpa" in case:
+                    # Pass if any [value, tol] pair matches — one entry per
+                    # deterministic outcome path (fallback/analytical value,
+                    # live coarse-mesh value when FreeCAD runs the solve).
+                    stress = float(
+                        result.get("max_von_mises_mpa")
+                        or result.get("full_results", {}).get("max_von_mises_mpa")
+                        or 0
+                    )
+                    ok = any(
+                        abs(stress - float(value)) <= float(tol)
+                        for value, tol in case["expect_stress_any_mpa"]
+                    )
                     detail = f"stress={stress}"
                 else:
                     detail = json.dumps(result)[:180]

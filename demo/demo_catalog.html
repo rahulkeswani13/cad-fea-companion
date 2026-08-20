@@ -1,0 +1,1751 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CAD/FEA Companion — Aerospace Engineering & AI Architecture Console</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg-base: #06090e;
+      --bg-surface: #0c121c;
+      --bg-card: #111a27;
+      --bg-card-hover: #162234;
+      --bg-inner: #090e17;
+      --border-subtle: #1c2a3e;
+      --border-strong: #2b3e58;
+      
+      --text-main: #f1f5f9;
+      --text-dim: #94a3b8;
+      --text-muted: #64748b;
+      
+      --cyan-glow: #38bdf8;
+      --emerald-glow: #34d399;
+      --amber-glow: #fbbf24;
+      --rose-glow: #f43f5e;
+      --indigo-glow: #818cf8;
+      --purple-glow: #c084fc;
+      
+      --p0-color: #f43f5e;
+      --p0-bg: rgba(244, 63, 94, 0.12);
+      --p0-border: rgba(244, 63, 94, 0.35);
+      
+      --p1-color: #38bdf8;
+      --p1-bg: rgba(56, 189, 248, 0.12);
+      --p1-border: rgba(56, 189, 248, 0.35);
+
+      --p2-color: #818cf8;
+      --p2-bg: rgba(129, 140, 248, 0.12);
+      --p2-border: rgba(129, 140, 248, 0.35);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg-base);
+      color: var(--text-main);
+      font-family: 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif;
+      line-height: 1.6;
+      padding: 2.5rem 1.5rem 6rem;
+      min-height: 100vh;
+      background-image: 
+        radial-gradient(ellipse at 10% 0%, rgba(56, 189, 248, 0.08) 0%, transparent 50%),
+        radial-gradient(ellipse at 90% 15%, rgba(129, 140, 248, 0.07) 0%, transparent 50%),
+        radial-gradient(ellipse at 50% 100%, rgba(52, 211, 153, 0.05) 0%, transparent 60%);
+      background-attachment: fixed;
+    }
+
+    .container {
+      max-width: 1320px;
+      margin: 0 auto;
+    }
+
+    /* Header & Badge */
+    header {
+      text-align: center;
+      margin-bottom: 3.5rem;
+      position: relative;
+    }
+
+    .badge-top {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.6rem;
+      background: rgba(56, 189, 248, 0.08);
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      color: var(--cyan-glow);
+      font-size: 0.82rem;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      padding: 0.4rem 1.1rem;
+      border-radius: 9999px;
+      margin-bottom: 1.2rem;
+      box-shadow: 0 0 20px rgba(56, 189, 248, 0.15);
+    }
+
+    .badge-dot {
+      width: 7px;
+      height: 7px;
+      background: var(--cyan-glow);
+      border-radius: 50%;
+      box-shadow: 0 0 8px var(--cyan-glow);
+    }
+
+    h1 {
+      font-size: 3rem;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      line-height: 1.15;
+      background: linear-gradient(135deg, #ffffff 10%, #cbd5e1 60%, #94a3b8 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 0.9rem;
+    }
+
+    .subtitle {
+      color: var(--text-dim);
+      font-size: 1.2rem;
+      max-width: 820px;
+      margin: 0 auto;
+      font-weight: 400;
+    }
+
+    /* Narrative Arc Hero Card */
+    .narrative-hero {
+      background: linear-gradient(145deg, #0e1726 0%, #111d2e 100%);
+      border: 1px solid var(--border-strong);
+      border-radius: 20px;
+      padding: 2.25rem;
+      margin-bottom: 3.5rem;
+      box-shadow: 0 20px 45px -15px rgba(0, 0, 0, 0.6);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .narrative-hero::after {
+      content: "";
+      position: absolute;
+      top: 0;
+      right: 0;
+      width: 350px;
+      height: 350px;
+      background: radial-gradient(circle, rgba(56, 189, 248, 0.08) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    .narrative-title-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1.5rem;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+
+    .narrative-headline {
+      font-size: 1.45rem;
+      font-weight: 700;
+      color: #ffffff;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .narrative-tag {
+      background: rgba(52, 211, 153, 0.12);
+      border: 1px solid rgba(52, 211, 153, 0.35);
+      color: var(--emerald-glow);
+      font-size: 0.8rem;
+      font-weight: 600;
+      padding: 0.25rem 0.75rem;
+      border-radius: 6px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .narrative-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 1.25rem;
+      margin-top: 1.5rem;
+    }
+
+    .story-step-card {
+      background: var(--bg-inner);
+      border: 1px solid var(--border-subtle);
+      border-radius: 12px;
+      padding: 1.25rem;
+      position: relative;
+      transition: transform 0.2s ease, border-color 0.2s ease;
+    }
+
+    .story-step-card:hover {
+      border-color: var(--cyan-glow);
+      transform: translateY(-3px);
+    }
+
+    .step-number {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: var(--cyan-glow);
+      margin-bottom: 0.4rem;
+      display: inline-block;
+    }
+
+    .step-title {
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--text-main);
+      margin-bottom: 0.45rem;
+    }
+
+    .step-desc {
+      font-size: 0.85rem;
+      color: var(--text-dim);
+      line-height: 1.5;
+    }
+
+    /* Technical Architecture Flowchart */
+    .arch-section {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: 20px;
+      padding: 2.25rem;
+      margin-bottom: 3.5rem;
+      box-shadow: 0 15px 35px -10px rgba(0,0,0,0.5);
+    }
+
+    .section-header {
+      display: flex;
+      align-items: center;
+      gap: 0.85rem;
+      margin-bottom: 1.75rem;
+    }
+
+    .header-bar {
+      width: 4px;
+      height: 1.5rem;
+      background: var(--cyan-glow);
+      border-radius: 2px;
+      box-shadow: 0 0 10px var(--cyan-glow);
+    }
+
+    .section-heading {
+      font-size: 1.45rem;
+      font-weight: 700;
+      color: var(--text-main);
+    }
+
+    .svg-container {
+      width: 100%;
+      overflow-x: auto;
+      background: var(--bg-inner);
+      border: 1px solid var(--border-subtle);
+      border-radius: 14px;
+      padding: 1.5rem;
+    }
+
+    /* Sticky Controls & Filter Bar */
+    .sticky-bar {
+      position: sticky;
+      top: 1.25rem;
+      z-index: 100;
+      background: rgba(12, 18, 28, 0.85);
+      backdrop-filter: blur(16px);
+      border: 1px solid var(--border-strong);
+      border-radius: 14px;
+      padding: 1rem 1.5rem;
+      margin-bottom: 2.5rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 1.25rem;
+      box-shadow: 0 10px 25px -5px rgba(0,0,0,0.4);
+    }
+
+    .filters-wrapper {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+
+    .filter-btn {
+      background: var(--bg-inner);
+      border: 1px solid var(--border-subtle);
+      color: var(--text-dim);
+      padding: 0.45rem 1rem;
+      border-radius: 8px;
+      font-size: 0.88rem;
+      font-weight: 500;
+      cursor: pointer;
+      font-family: inherit;
+      transition: all 0.15s ease;
+    }
+
+    .filter-btn:hover {
+      color: var(--text-main);
+      border-color: var(--border-strong);
+      background: var(--bg-card);
+    }
+
+    .filter-btn.active {
+      background: var(--cyan-glow);
+      border-color: var(--cyan-glow);
+      color: #06090e;
+      font-weight: 700;
+      box-shadow: 0 0 14px rgba(56, 189, 248, 0.35);
+    }
+
+    .search-input {
+      background: var(--bg-inner);
+      border: 1px solid var(--border-subtle);
+      color: var(--text-main);
+      padding: 0.5rem 1.1rem;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      font-family: inherit;
+      min-width: 280px;
+      transition: border-color 0.2s ease;
+    }
+
+    .search-input:focus {
+      outline: none;
+      border-color: var(--cyan-glow);
+      box-shadow: 0 0 12px rgba(56, 189, 248, 0.2);
+    }
+
+    /* Feature Sections & 5 Prompts Each */
+    .features-list {
+      display: flex;
+      flex-direction: column;
+      gap: 3rem;
+    }
+
+    .feature-block {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: 18px;
+      padding: 2rem;
+      transition: border-color 0.2s ease;
+    }
+
+    .feature-block:hover {
+      border-color: var(--border-strong);
+    }
+
+    .feature-header-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 1.5rem;
+      flex-wrap: wrap;
+      gap: 1rem;
+      padding-bottom: 1rem;
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    .feature-title-group {
+      display: flex;
+      align-items: center;
+      gap: 0.85rem;
+    }
+
+    .feature-tag-id {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.88rem;
+      font-weight: 700;
+      color: var(--cyan-glow);
+      background: rgba(56, 189, 248, 0.1);
+      border: 1px solid rgba(56, 189, 248, 0.25);
+      padding: 0.25rem 0.65rem;
+      border-radius: 6px;
+    }
+
+    .feature-name {
+      font-size: 1.35rem;
+      font-weight: 700;
+      color: var(--text-main);
+    }
+
+    .priority-pill {
+      font-size: 0.78rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      padding: 0.3rem 0.85rem;
+      border-radius: 9999px;
+      letter-spacing: 0.06em;
+    }
+
+    .p-p0 {
+      background: var(--p0-bg);
+      border: 1px solid var(--p0-border);
+      color: var(--p0-color);
+    }
+
+    .p-p1 {
+      background: var(--p1-bg);
+      border: 1px solid var(--p1-border);
+      color: var(--p1-color);
+    }
+
+    .p-p2 {
+      background: var(--p2-bg);
+      border: 1px solid var(--p2-border);
+      color: var(--p2-color);
+    }
+
+    .feature-overview-desc {
+      font-size: 0.95rem;
+      color: var(--text-dim);
+      margin-bottom: 1.75rem;
+      line-height: 1.6;
+    }
+
+    /* 5 Prompt Cards Container */
+    .prompts-deck {
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+
+    .prompt-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: 14px;
+      padding: 1.5rem;
+      transition: all 0.2s ease;
+    }
+
+    .prompt-card:hover {
+      background: var(--bg-card-hover);
+      border-color: var(--border-strong);
+    }
+
+    .prompt-top-line {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 1.25rem;
+      margin-bottom: 1.25rem;
+      flex-wrap: wrap;
+    }
+
+    .prompt-badge-index {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      background: var(--bg-inner);
+      padding: 0.2rem 0.5rem;
+      border-radius: 4px;
+      border: 1px solid var(--border-subtle);
+    }
+
+    .prompt-text-quote {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.95rem;
+      color: #93c5fd;
+      font-weight: 500;
+      flex: 1;
+      min-width: 260px;
+    }
+
+    .btn-copy {
+      background: rgba(56, 189, 248, 0.1);
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      color: var(--cyan-glow);
+      padding: 0.4rem 0.85rem;
+      border-radius: 6px;
+      font-size: 0.82rem;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: inherit;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      transition: all 0.15s ease;
+    }
+
+    .btn-copy:hover {
+      background: var(--cyan-glow);
+      color: #06090e;
+      box-shadow: 0 0 12px rgba(56, 189, 248, 0.4);
+    }
+
+    .btn-copy.copied {
+      background: var(--emerald-glow);
+      border-color: var(--emerald-glow);
+      color: #06090e;
+    }
+
+    /* 3-Column Content Breakdown */
+    .prompt-body-grid {
+      display: grid;
+      grid-template-columns: 1.1fr 1.1fr 1.3fr;
+      gap: 1.25rem;
+      background: var(--bg-inner);
+      border: 1px solid var(--border-subtle);
+      border-radius: 10px;
+      padding: 1.25rem;
+    }
+
+    @media (max-width: 1080px) {
+      .prompt-body-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .box-col {
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+    }
+
+    .box-col-title {
+      font-size: 0.76rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    .title-what { color: var(--emerald-glow); }
+    .title-value { color: var(--amber-glow); }
+    .title-ai { color: var(--purple-glow); }
+
+    .box-col-content {
+      font-size: 0.86rem;
+      color: var(--text-dim);
+      line-height: 1.55;
+    }
+
+    .sim-bubble {
+      background: rgba(15, 23, 42, 0.7);
+      border-left: 3px solid var(--emerald-glow);
+      padding: 0.6rem 0.8rem;
+      border-radius: 0 6px 6px 0;
+      color: #e2e8f0;
+      font-family: 'Outfit', sans-serif;
+      font-size: 0.84rem;
+      margin-top: 0.35rem;
+    }
+
+    .tools-used-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.35rem;
+      margin-top: 0.4rem;
+    }
+
+    .tool-chip {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.74rem;
+      background: rgba(129, 140, 248, 0.12);
+      border: 1px solid rgba(129, 140, 248, 0.3);
+      color: var(--indigo-glow);
+      padding: 0.15rem 0.45rem;
+      border-radius: 4px;
+    }
+
+    .ai-concept-tags {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 0.35rem 0.65rem;
+      font-size: 0.78rem;
+      margin-top: 0.4rem;
+    }
+
+    .ai-label {
+      color: var(--text-muted);
+      font-weight: 600;
+    }
+
+    .ai-val {
+      color: #cbd5e1;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.74rem;
+    }
+
+    /* Footer */
+    footer {
+      text-align: center;
+      margin-top: 5rem;
+      padding-top: 2.5rem;
+      border-top: 1px solid var(--border-subtle);
+      color: var(--text-muted);
+      font-size: 0.9rem;
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <header>
+    <div class="badge-top">
+      <span class="badge-dot"></span>
+      Autonomous CAD/FEA Simulation Workstation
+    </div>
+    <h1>Simulation Engineer Console &amp; AI Catalog</h1>
+    <p class="subtitle">Complete visual verification matrix, aerospace design narrative, 50 engineering prompts, and multi-layer AI architecture teardowns.</p>
+  </header>
+
+  <!-- Aerospace Engineer Story Hero -->
+  <section class="narrative-hero">
+    <div class="narrative-title-row">
+      <div class="narrative-headline">
+        <span>🚁</span> Mission Briefing: Designing a High-Performance Quadcopter UAV Arm
+      </div>
+      <span class="narrative-tag">Real-World Engineering Arc</span>
+    </div>
+    <p style="color: var(--text-dim); font-size: 0.95rem; line-height: 1.6;">
+      Walk through the end-to-end design story from the perspective of an aerospace structural simulation engineer. 
+      The goal: Design a 180 mm quadcopter arm, cut mass by ~17% via generative strut-lattice pocketing while preserving load-bearing chord rails, ensure structural integrity under a 120 N motor thrust, and verify mesh independence.
+    </p>
+
+    <div class="narrative-grid">
+      <div class="story-step-card">
+        <span class="step-number">PHASE 01</span>
+        <div class="step-title">Boundary Constraints</div>
+        <p class="step-desc">Establish root clamp boss for chassis bolting and tip motor ring interface under 120 N lift thrust.</p>
+      </div>
+
+      <div class="story-step-card">
+        <span class="step-number">PHASE 02</span>
+        <div class="step-title">Topology &amp; Lattice</div>
+        <p class="step-desc">Convert solid box core into an exposed X-truss lattice with 1.5 mm chord rails to achieve ~−17% mass savings.</p>
+      </div>
+
+      <div class="story-step-card">
+        <span class="step-number">PHASE 03</span>
+        <div class="step-title">Simulation Honesty</div>
+        <p class="step-desc">Cross-check 3D CalculiX FEA against closed-form analytical cantilever beam equations to guard against mesh divergence.</p>
+      </div>
+
+      <div class="story-step-card">
+        <span class="step-number">PHASE 04</span>
+        <div class="step-title">Mesh Convergence</div>
+        <p class="step-desc">Execute multi-density Gmsh sweeps (5.0 &rarr; 3.5 &rarr; 2.5 mm) to guarantee asymptotic stress convergence.</p>
+      </div>
+
+      <div class="story-step-card">
+        <span class="step-number">PHASE 05</span>
+        <div class="step-title">Material Trade Study</div>
+        <p class="step-desc">Evaluate Al 6061-T6 vs Al 7075-T6 vs Ti-6Al-4V under strict safety factor threshold (&ge; 1.5).</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Technical Multi-Layer Architecture Flowchart -->
+  <section class="arch-section">
+    <div class="section-header">
+      <div class="header-bar"></div>
+      <h2 class="section-heading">Multi-Layer AI Engineering Architecture</h2>
+    </div>
+    <div class="svg-container">
+      <svg viewBox="0 0 1200 320" width="100%" height="320" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <linearGradient id="gradFlow" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stop-color="#38bdf8" stop-opacity="0.2"/>
+            <stop offset="100%" stop-color="#34d399" stop-opacity="0.2"/>
+          </linearGradient>
+        </defs>
+
+        <!-- Layer 1: Client & Transport -->
+        <rect x="20" y="20" width="200" height="280" rx="14" fill="#0c1420" stroke="#23354d" stroke-width="1.5"/>
+        <text x="120" y="48" fill="#38bdf8" font-family="Outfit" font-size="12" font-weight="700" text-anchor="middle">1. CLIENT / TRANSPORT</text>
+        
+        <rect x="35" y="65" width="170" height="50" rx="8" fill="#131e30" stroke="#1e293b"/>
+        <text x="120" y="88" fill="#ffffff" font-family="Outfit" font-size="11" font-weight="600" text-anchor="middle">Browser Chat UI</text>
+        <text x="120" y="103" fill="#64748b" font-family="JetBrains Mono" font-size="9" text-anchor="middle">index.html (SSE Client)</text>
+
+        <rect x="35" y="125" width="170" height="50" rx="8" fill="#131e30" stroke="#1e293b"/>
+        <text x="120" y="148" fill="#ffffff" font-family="Outfit" font-size="11" font-weight="600" text-anchor="middle">Thread Context</text>
+        <text x="120" y="163" fill="#38bdf8" font-family="JetBrains Mono" font-size="9" text-anchor="middle">thread_id Scope Binding</text>
+
+        <rect x="35" y="185" width="170" height="95" rx="8" fill="#131e30" stroke="#1e293b"/>
+        <text x="120" y="208" fill="#ffffff" font-family="Outfit" font-size="11" font-weight="600" text-anchor="middle">FastAPI Endpoints</text>
+        <text x="120" y="226" fill="#94a3b8" font-family="JetBrains Mono" font-size="9" text-anchor="middle">/api/chat/stream</text>
+        <text x="120" y="242" fill="#94a3b8" font-family="JetBrains Mono" font-size="9" text-anchor="middle">/api/tools/call</text>
+        <text x="120" y="258" fill="#94a3b8" font-family="JetBrains Mono" font-size="9" text-anchor="middle">/api/health</text>
+
+        <!-- Arrow 1 to 2 -->
+        <path d="M 220 160 L 260 160" stroke="#38bdf8" stroke-width="2" stroke-dasharray="4,4"/>
+        <polygon points="260,160 252,155 252,165" fill="#38bdf8"/>
+
+        <!-- Layer 2: LangGraph Orchestration -->
+        <rect x="265" y="20" width="220" height="280" rx="14" fill="#0c1420" stroke="#818cf8" stroke-width="1.5"/>
+        <text x="375" y="48" fill="#818cf8" font-family="Outfit" font-size="12" font-weight="700" text-anchor="middle">2. LANGGRAPH ENGINE</text>
+
+        <rect x="280" y="65" width="190" height="60" rx="8" fill="#131e30" stroke="#1e293b"/>
+        <text x="375" y="90" fill="#ffffff" font-family="Outfit" font-size="11" font-weight="600" text-anchor="middle">retrieve Node (RAG)</text>
+        <text x="375" y="108" fill="#818cf8" font-family="JetBrains Mono" font-size="9" text-anchor="middle">TF-IDF &amp; Materials JSON</text>
+
+        <rect x="280" y="135" width="190" height="65" rx="8" fill="#131e30" stroke="#1e293b"/>
+        <text x="375" y="158" fill="#ffffff" font-family="Outfit" font-size="11" font-weight="600" text-anchor="middle">agent Node (Planner)</text>
+        <text x="375" y="174" fill="#cbd5e1" font-family="Outfit" font-size="10" text-anchor="middle">Gemini LLM Tool Calling</text>
+        <text x="375" y="190" fill="#34d399" font-family="JetBrains Mono" font-size="9" text-anchor="middle">MemorySaver Checkpointing</text>
+
+        <rect x="280" y="210" width="190" height="70" rx="8" fill="#131e30" stroke="#1e293b"/>
+        <text x="375" y="233" fill="#ffffff" font-family="Outfit" font-size="11" font-weight="600" text-anchor="middle">Stateful Program Layer</text>
+        <text x="375" y="250" fill="#fbbf24" font-family="JetBrains Mono" font-size="9" text-anchor="middle">rev / params_hash</text>
+        <text x="375" y="266" fill="#94a3b8" font-family="Outfit" font-size="9" text-anchor="middle">Transactional Safe Edits</text>
+
+        <!-- Arrow 2 to 3 -->
+        <path d="M 485 160 L 525 160" stroke="#818cf8" stroke-width="2"/>
+        <polygon points="525,160 517,155 517,165" fill="#818cf8"/>
+
+        <!-- Layer 3: Guardrails & Validation -->
+        <rect x="530" y="20" width="200" height="280" rx="14" fill="#0c1420" stroke="#fbbf24" stroke-width="1.5"/>
+        <text x="630" y="48" fill="#fbbf24" font-family="Outfit" font-size="12" font-weight="700" text-anchor="middle">3. GUARDRAILS &amp; PREFLIGHT</text>
+
+        <rect x="545" y="65" width="170" height="65" rx="8" fill="#131e30" stroke="#1e293b"/>
+        <text x="630" y="90" fill="#ffffff" font-family="Outfit" font-size="11" font-weight="600" text-anchor="middle">F03 B-Rep Gate</text>
+        <text x="630" y="106" fill="#fbbf24" font-family="JetBrains Mono" font-size="9" text-anchor="middle">isValid() &amp; BBox Limits</text>
+        <text x="630" y="120" fill="#f43f5e" font-family="Outfit" font-size="9" text-anchor="middle">Pre-Mesh Fast Reject</text>
+
+        <rect x="545" y="140" width="170" height="65" rx="8" fill="#131e30" stroke="#1e293b"/>
+        <text x="630" y="165" fill="#ffffff" font-family="Outfit" font-size="11" font-weight="600" text-anchor="middle">F07 Closed-Form</text>
+        <text x="630" y="181" fill="#38bdf8" font-family="JetBrains Mono" font-size="9" text-anchor="middle">Pure-Python Cantilever</text>
+        <text x="630" y="195" fill="#94a3b8" font-family="Outfit" font-size="9" text-anchor="middle">Expected Stress Envelope</text>
+
+        <rect x="545" y="215" width="170" height="65" rx="8" fill="#131e30" stroke="#1e293b"/>
+        <text x="630" y="238" fill="#ffffff" font-family="Outfit" font-size="11" font-weight="600" text-anchor="middle">Process Isolation</text>
+        <text x="630" y="255" fill="#34d399" font-family="JetBrains Mono" font-size="9" text-anchor="middle">os.killpg Process Group</text>
+        <text x="630" y="269" fill="#94a3b8" font-family="Outfit" font-size="9" text-anchor="middle">Orphaned Gmsh Cleanup</text>
+
+        <!-- Arrow 3 to 4 -->
+        <path d="M 730 160 L 770 160" stroke="#fbbf24" stroke-width="2"/>
+        <polygon points="770,160 762,155 762,165" fill="#fbbf24"/>
+
+        <!-- Layer 4: Headless Simulation Subsystem -->
+        <rect x="775" y="20" width="190" height="280" rx="14" fill="#0c1420" stroke="#34d399" stroke-width="1.5"/>
+        <text x="870" y="48" fill="#34d399" font-family="Outfit" font-size="12" font-weight="700" text-anchor="middle">4. HEADLESS SOLVER</text>
+
+        <rect x="790" y="65" width="160" height="65" rx="8" fill="#131e30" stroke="#1e293b"/>
+        <text x="870" y="90" fill="#ffffff" font-family="Outfit" font-size="11" font-weight="600" text-anchor="middle">FreeCADCmd (B-Rep)</text>
+        <text x="870" y="106" fill="#34d399" font-family="JetBrains Mono" font-size="9" text-anchor="middle">STEP &amp; STL Export</text>
+        <text x="870" y="120" fill="#94a3b8" font-family="Outfit" font-size="9" text-anchor="middle">COMPANION_JSON Protocol</text>
+
+        <rect x="790" y="140" width="160" height="65" rx="8" fill="#131e30" stroke="#1e293b"/>
+        <text x="870" y="165" fill="#ffffff" font-family="Outfit" font-size="11" font-weight="600" text-anchor="middle">Gmsh Mesher</text>
+        <text x="870" y="181" fill="#38bdf8" font-family="JetBrains Mono" font-size="9" text-anchor="middle">3D Delaunay / Frontal</text>
+        <text x="870" y="195" fill="#94a3b8" font-family="Outfit" font-size="9" text-anchor="middle">Node Counts &lt; 25k Guard</text>
+
+        <rect x="790" y="215" width="160" height="65" rx="8" fill="#131e30" stroke="#1e293b"/>
+        <text x="870" y="238" fill="#ffffff" font-family="Outfit" font-size="11" font-weight="600" text-anchor="middle">CalculiX CCX</text>
+        <text x="870" y="255" fill="#fbbf24" font-family="JetBrains Mono" font-size="9" text-anchor="middle">Static Linear Elastic</text>
+        <text x="870" y="269" fill="#94a3b8" font-family="Outfit" font-size="9" text-anchor="middle">von Mises Stress Tensors</text>
+
+        <!-- Arrow 4 to 5 -->
+        <path d="M 965 160 L 1005 160" stroke="#34d399" stroke-width="2"/>
+        <polygon points="1005,160 997,155 997,165" fill="#34d399"/>
+
+        <!-- Layer 5: Outcome & Persistence -->
+        <rect x="1010" y="20" width="170" height="280" rx="14" fill="#0c1420" stroke="#38bdf8" stroke-width="1.5"/>
+        <text x="1095" y="48" fill="#38bdf8" font-family="Outfit" font-size="12" font-weight="700" text-anchor="middle">5. OUTCOME / STORE</text>
+
+        <rect x="1025" y="65" width="140" height="95" rx="8" fill="#131e30" stroke="#1e293b"/>
+        <text x="1095" y="90" fill="#ffffff" font-family="Outfit" font-size="11" font-weight="600" text-anchor="middle">F02 Envelope</text>
+        <text x="1095" y="108" fill="#38bdf8" font-family="JetBrains Mono" font-size="9" text-anchor="middle">1 Error + 1 Fix</text>
+        <text x="1095" y="124" fill="#cbd5e1" font-family="Outfit" font-size="9" text-anchor="middle">No Raw Tracebacks</text>
+        <text x="1095" y="140" fill="#34d399" font-family="JetBrains Mono" font-size="9" text-anchor="middle">KPI Receipts</text>
+
+        <rect x="1025" y="170" width="140" height="110" rx="8" fill="#131e30" stroke="#1e293b"/>
+        <text x="1095" y="195" fill="#ffffff" font-family="Outfit" font-size="11" font-weight="600" text-anchor="middle">F06 Run History</text>
+        <text x="1095" y="213" fill="#818cf8" font-family="JetBrains Mono" font-size="9" text-anchor="middle">JSONL Log Store</text>
+        <text x="1095" y="229" fill="#fbbf24" font-family="JetBrains Mono" font-size="9" text-anchor="middle">Spatial (X,Y,Z)</text>
+        <text x="1095" y="245" fill="#cbd5e1" font-family="Outfit" font-size="9" text-anchor="middle">Solver Honesty Tag</text>
+      </svg>
+    </div>
+  </section>
+
+  <!-- Filter Controls -->
+  <div class="sticky-bar">
+    <div class="filters-wrapper">
+      <button class="filter-btn active" onclick="filterCatalog('all', this)">All Features</button>
+      <button class="filter-btn" onclick="filterCatalog('p0', this)">P0 Showstoppers</button>
+      <button class="filter-btn" onclick="filterCatalog('p1', this)">P1 Differentiators</button>
+      <button class="filter-btn" onclick="filterCatalog('p2', this)">P2 Roadmap / Modal</button>
+    </div>
+    <input type="text" id="filterInput" class="search-input" placeholder="Search 50 engineering prompts, tools, AI concepts..." oninput="searchCatalogCards()" />
+  </div>
+
+  <!-- Feature Blocks Deck -->
+  <div class="features-list" id="deckContainer">
+
+    <!-- F26 Flagship UAV Arm -->
+    <div class="feature-block" data-priority="p0">
+      <div class="feature-header-row">
+        <div class="feature-title-group">
+          <span class="feature-tag-id">F26</span>
+          <h3 class="feature-name">Flagship Part 1 — Parametric Quadcopter UAV Arm</h3>
+        </div>
+        <span class="priority-pill p-p0">P0 Showstopper</span>
+      </div>
+      <p class="feature-overview-desc">
+        Complete parametric drone arm family: rigid root clamp boss (center plate bolting) &rarr; tapered box section &rarr; tip motor-mount ring. 
+        Features the chord-rail lattice design space: solid top/bottom non-design rails with exposed X-truss web for ~17% mass reduction.
+      </p>
+
+      <div class="prompts-deck">
+        
+        <!-- Prompt 1 -->
+        <div class="prompt-card">
+          <div class="prompt-top-line">
+            <span class="prompt-badge-index">Prompt 1.1 &bull; Baseline CAD &amp; 120 N Solve</span>
+            <span class="prompt-text-quote">Create a solid aluminum UAV arm and solve it under a 120 N tip thrust.</span>
+            <button class="btn-copy" onclick="copyPromptText('Create a solid aluminum UAV arm and solve it under a 120 N tip thrust.', this)">Copy Prompt</button>
+          </div>
+          <div class="prompt-body-grid">
+            <div class="box-col">
+              <div class="box-col-title title-what"><span>⚙️</span> What Should Happen</div>
+              <div class="box-col-content">
+                Calls <code>create_uav_arm</code> then <code>apply_load_and_solve</code>. Generates 180mm solid arm (157g). Fixed clamp BCs at boss. Peak von Mises: 44.6 MPa at root fillet (SF: 6.2).
+                <div class="tools-used-list">
+                  <span class="tool-chip">create_uav_arm</span>
+                  <span class="tool-chip">apply_load_and_solve</span>
+                </div>
+              </div>
+            </div>
+            <div class="box-col">
+              <div class="box-col-title title-value"><span>🎯</span> Engineering Value &amp; Story</div>
+              <div class="box-col-content">
+                Establishes the un-optimized baseline. Proves end-to-end prompt-to-FEA execution on a multi-feature aerospace part with 4 bolt holes and motor ring.
+                <div class="sim-bubble"><strong>Sim Output:</strong> 157g mass, SF=6.2 vs Al 6061-T6 yield (276 MPa), max deflection 1.69 mm.</div>
+              </div>
+            </div>
+            <div class="box-col">
+              <div class="box-col-title title-ai"><span>🧠</span> AI Engineering Teardown</div>
+              <div class="box-col-content">
+                <div class="ai-concept-tags">
+                  <span class="ai-label">Cognitive:</span><span class="ai-val">Plan-and-Solve (2-Tool Chain)</span>
+                  <span class="ai-label">Guardrail:</span><span class="ai-val">F03 B-Rep Gate (isValid() PASS)</span>
+                  <span class="ai-label">Memory:</span><span class="ai-val">uav_arm_program.json rev 1</span>
+                  <span class="ai-label">Eval Ref:</span><span class="ai-val">f26_create_uav_arm (eval/cases.json)</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Prompt 2 -->
+        <div class="prompt-card">
+          <div class="prompt-top-line">
+            <span class="prompt-badge-index">Prompt 1.2 &bull; Generative Lightweighting</span>
+            <span class="prompt-text-quote">Change the UAV arm to an X-truss lattice with 12 mm cells and 1.8 mm struts and solve.</span>
+            <button class="btn-copy" onclick="copyPromptText('Change the UAV arm to an X-truss lattice with 12 mm cells and 1.8 mm struts and solve.', this)">Copy Prompt</button>
+          </div>
+          <div class="prompt-body-grid">
+            <div class="box-col">
+              <div class="box-col-title title-what"><span>⚙️</span> What Should Happen</div>
+              <div class="box-col-content">
+                Executes <code>update_design_program</code> (bumping rev) and solves. Replaces solid core with X-truss web while preserving 1.5 mm solid top/bottom chord rails.
+                <div class="tools-used-list">
+                  <span class="tool-chip">update_design_program</span>
+                  <span class="tool-chip">apply_load_and_solve</span>
+                </div>
+              </div>
+            </div>
+            <div class="box-col">
+              <div class="box-col-title title-value"><span>🎯</span> Engineering Value &amp; Story</div>
+              <div class="box-col-content">
+                The showstopper demo! Demonstrates **~17% mass reduction** (157g &rarr; 130g) while maintaining structural safety factor (SF &ge; 1.5). Smooth chord rails provide continuous load paths.
+                <div class="sim-bubble"><strong>Sim Output:</strong> 130g mass (~−17%), SF=2.9, deflection 2.4 mm.</div>
+              </div>
+            </div>
+            <div class="box-col">
+              <div class="box-col-title title-ai"><span>🧠</span> AI Engineering Teardown</div>
+              <div class="box-col-content">
+                <div class="ai-concept-tags">
+                  <span class="ai-label">Cognitive:</span><span class="ai-val">Stateful Re-planning</span>
+                  <span class="ai-label">Guardrail:</span><span class="ai-val">Mesh Size per Variant (5.0mm xtruss)</span>
+                  <span class="ai-label">Memory:</span><span class="ai-val">Revision Hash Transaction (rev 2)</span>
+                  <span class="ai-label">Eval Ref:</span><span class="ai-val">f26_update_uav_arm_cell_size</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Prompt 3 -->
+        <div class="prompt-card">
+          <div class="prompt-top-line">
+            <span class="prompt-badge-index">Prompt 1.3 &bull; Preflight Meshable Floor Rejection</span>
+            <span class="prompt-text-quote">Set UAV arm strut radius to 0.8 mm.</span>
+            <button class="btn-copy" onclick="copyPromptText('Set UAV arm strut radius to 0.8 mm.', this)">Copy Prompt</button>
+          </div>
+          <div class="prompt-body-grid">
+            <div class="box-col">
+              <div class="box-col-title title-what"><span>⚙️</span> What Should Happen</div>
+              <div class="box-col-content">
+                Hard rejects at preflight: reports 0.8 mm is below the 1.5 mm meshable floor. Returns error class <code>bad_params</code>. The accepted revision on disk remains untouched.
+                <div class="tools-used-list">
+                  <span class="tool-chip">update_design_program</span>
+                </div>
+              </div>
+            </div>
+            <div class="box-col">
+              <div class="box-col-title title-value"><span>🎯</span> Engineering Value &amp; Story</div>
+              <div class="box-col-content">
+                Prevents catastrophic mesher hangs in Gmsh. Proves domain-specific engineering intelligence (knowing thin struts choke Delaunay meshing).
+                <div class="sim-bubble"><strong>Sim Output:</strong> "strut_radius_mm must be in [1.5, 4.0], got 0.8. Valid revision 2 preserved."</div>
+              </div>
+            </div>
+            <div class="box-col">
+              <div class="box-col-title title-ai"><span>🧠</span> AI Engineering Teardown</div>
+              <div class="box-col-content">
+                <div class="ai-concept-tags">
+                  <span class="ai-label">Cognitive:</span><span class="ai-val">Input Sanitization / Fast Reject</span>
+                  <span class="ai-label">Guardrail:</span><span class="ai-val">PARAM_SPECS Range Floor (1.5mm)</span>
+                  <span class="ai-label">Memory:</span><span class="ai-val">Transactional Rollback Protection</span>
+                  <span class="ai-label">Eval Ref:</span><span class="ai-val">test_uav_arm_preflight_ranges</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Prompt 4 -->
+        <div class="prompt-card">
+          <div class="prompt-top-line">
+            <span class="prompt-badge-index">Prompt 1.4 &bull; Parametric Length Scaling</span>
+            <span class="prompt-text-quote">Make the UAV arm 220 mm long and check new mass and stress.</span>
+            <button class="btn-copy" onclick="copyPromptText('Make the UAV arm 220 mm long and check new mass and stress.', this)">Copy Prompt</button>
+          </div>
+          <div class="prompt-body-grid">
+            <div class="box-col">
+              <div class="box-col-title title-what"><span>⚙️</span> What Should Happen</div>
+              <div class="box-col-content">
+                Updates <code>arm_length_mm: 220</code>, stretches tapered arm bounding box, regenerates X-truss cells along length, and re-runs 120 N solve.
+                <div class="tools-used-list">
+                  <span class="tool-chip">update_design_program</span>
+                  <span class="tool-chip">apply_load_and_solve</span>
+                </div>
+              </div>
+            </div>
+            <div class="box-col">
+              <div class="box-col-title title-value"><span>🎯</span> Engineering Value &amp; Story</div>
+              <div class="box-col-content">
+                Demonstrates true parametric scaling (not a static CAD template). Shows bending moment increases with length ($M = F \cdot L$), increasing root stress.
+                <div class="sim-bubble"><strong>Sim Output:</strong> Length 220 mm (+22%); mass and peak stress increase (no committed golden at 220 mm).</div>
+              </div>
+            </div>
+            <div class="box-col">
+              <div class="box-col-title title-ai"><span>🧠</span> AI Engineering Teardown</div>
+              <div class="box-col-content">
+                <div class="ai-concept-tags">
+                  <span class="ai-label">Cognitive:</span><span class="ai-val">Parametric Propagation</span>
+                  <span class="ai-label">Guardrail:</span><span class="ai-val">Dynamic BBox Expected Scaling</span>
+                  <span class="ai-label">Memory:</span><span class="ai-val">Revision Hash Bump (rev 3)</span>
+                  <span class="ai-label">Eval Ref:</span><span class="ai-val">test_uav_arm_memory_geometry_has_arm_length</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Prompt 5 -->
+        <div class="prompt-card">
+          <div class="prompt-top-line">
+            <span class="prompt-badge-index">Prompt 1.5 &bull; Solver Honesty &amp; Caveat Inspection</span>
+            <span class="prompt-text-quote">How was the UAV arm stress computed and what was not verified?</span>
+            <button class="btn-copy" onclick="copyPromptText('How was the UAV arm stress computed and what was not verified?', this)">Copy Prompt</button>
+          </div>
+          <div class="prompt-body-grid">
+            <div class="box-col">
+              <div class="box-col-title title-what"><span>⚙️</span> What Should Happen</div>
+              <div class="box-col-content">
+                Reads latest run receipt from F06 run history. Explicitly quotes solver method (<code>calculix_ccx</code> / <code>precomputed_demo_estimate</code>), mesh element size (5.0 mm), and notes coarse tets under-predict peak strut stress.
+                <div class="tools-used-list">
+                  <span class="tool-chip">query_results</span>
+                </div>
+              </div>
+            </div>
+            <div class="box-col">
+              <div class="box-col-title title-value"><span>🎯</span> Engineering Value &amp; Story</div>
+              <div class="box-col-content">
+                The essence of **Solver Honesty** (AGENTS.md Rule 3). An AI that never overclaims simulation fidelity and transparently reports mesh discretization assumptions.
+                <div class="sim-bubble"><strong>Sim Output:</strong> "Solved with CalculiX at 5.0 mm mesh. Unverified: Micro-buckling of individual struts."</div>
+              </div>
+            </div>
+            <div class="box-col">
+              <div class="box-col-title title-ai"><span>🧠</span> AI Engineering Teardown</div>
+              <div class="box-col-content">
+                <div class="ai-concept-tags">
+                  <span class="ai-label">Cognitive:</span><span class="ai-val">Forensic Trace Querying</span>
+                  <span class="ai-label">Guardrail:</span><span class="ai-val">Anti-Hallucination Honesty Flag</span>
+                  <span class="ai-label">Memory:</span><span class="ai-val">Run History JSONL Audit Trail</span>
+                  <span class="ai-label">Eval Ref:</span><span class="ai-val">f26_solve_uav_arm_honesty</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- F04 Design Program Layer -->
+    <div class="feature-block" data-priority="p0">
+      <div class="feature-header-row">
+        <div class="feature-title-group">
+          <span class="feature-tag-id">F04</span>
+          <h3 class="feature-name">Design Program Layer &amp; Revision Hashing</h3>
+        </div>
+        <span class="priority-pill p-p0">P0 Core</span>
+      </div>
+      <p class="feature-overview-desc">
+        Design programs are the single source of truth for parametric parts. Generated STEP/STL files are derived artifacts. 
+        Supports transactional edits with SHA-256 parameter hashing, range preflight, and automatic no-op detection.
+      </p>
+
+      <div class="prompts-deck">
+        <div class="prompt-card">
+          <div class="prompt-top-line">
+            <span class="prompt-badge-index">Prompt 2.1 &bull; Baseline Program Initialization</span>
+            <span class="prompt-text-quote">Create an X-truss brake pedal with 15 mm cells and solve 500 N.</span>
+            <button class="btn-copy" onclick="copyPromptText('Create an X-truss brake pedal with 15 mm cells and solve 500 N.', this)">Copy Prompt</button>
+          </div>
+          <div class="prompt-body-grid">
+            <div class="box-col">
+              <div class="box-col-title title-what"><span>⚙️</span> What Should Happen</div>
+              <div class="box-col-content">
+                Initializes <code>brake_pedal_program.json</code> with rev 1. Meshes pedal, applies 500 N footpad load (+X), and returns mass (0.25 kg) and SF (6.2).
+                <div class="tools-used-list">
+                  <span class="tool-chip">create_brake_pedal</span>
+                  <span class="tool-chip">apply_load_and_solve</span>
+                </div>
+              </div>
+            </div>
+            <div class="box-col">
+              <div class="box-col-title title-value"><span>🎯</span> Engineering Value &amp; Story</div>
+              <div class="box-col-content">
+                Onboarding geometry demonstrating pivot/clevis mounting constraints and design vs non-design pocket discipline.
+                <div class="sim-bubble"><strong>Sim Output:</strong> rev 1 committed. Peak stress 21.8 MPa at pivot boss.</div>
+              </div>
+            </div>
+            <div class="box-col">
+              <div class="box-col-title title-ai"><span>🧠</span> AI Engineering Teardown</div>
+              <div class="box-col-content">
+                <div class="ai-concept-tags">
+                  <span class="ai-label">Cognitive:</span><span class="ai-val">ReAct Tool Calling</span>
+                  <span class="ai-label">Guardrail:</span><span class="ai-val">Normalized Web Types</span>
+                  <span class="ai-label">Memory:</span><span class="ai-val">brake_pedal_program.json</span>
+                  <span class="ai-label">Eval Ref:</span><span class="ai-val">f04_get_program_after_create</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="prompt-card">
+          <div class="prompt-top-line">
+            <span class="prompt-badge-index">Prompt 2.2 &bull; Incremental Parameter Update</span>
+            <span class="prompt-text-quote">Update the brake pedal cell size to 12 mm and re-solve.</span>
+            <button class="btn-copy" onclick="copyPromptText('Update the brake pedal cell size to 12 mm and re-solve.', this)">Copy Prompt</button>
+          </div>
+          <div class="prompt-body-grid">
+            <div class="box-col">
+              <div class="box-col-title title-what"><span>⚙️</span> What Should Happen</div>
+              <div class="box-col-content">
+                Updates cell size without destroying CAD session. Re-executes B-Rep lattice builder, bumps to rev 2, and updates solve results.
+                <div class="tools-used-list">
+                  <span class="tool-chip">update_design_program</span>
+                  <span class="tool-chip">apply_load_and_solve</span>
+                </div>
+              </div>
+            </div>
+            <div class="box-col">
+              <div class="box-col-title title-value"><span>🎯</span> Engineering Value &amp; Story</div>
+              <div class="box-col-content">
+                Modifies lattice density to adjust stiffness without manually redrawing sketches or re-assigning boundary faces.
+                <div class="sim-bubble"><strong>Sim Output:</strong> rev 2 committed. Density increased from 0.41 &rarr; 0.44.</div>
+              </div>
+            </div>
+            <div class="box-col">
+              <div class="box-col-title title-ai"><span>🧠</span> AI Engineering Teardown</div>
+              <div class="box-col-content">
+                <div class="ai-concept-tags">
+                  <span class="ai-label">Cognitive:</span><span class="ai-val">Transactional Mutation</span>
+                  <span class="ai-label">Guardrail:</span><span class="ai-val">F03 B-Rep Gate Check</span>
+                  <span class="ai-label">Memory:</span><span class="ai-val">Param Hash Migration</span>
+                  <span class="ai-label">Eval Ref:</span><span class="ai-val">f04_update_cell_size</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="prompt-card">
+          <div class="prompt-top-line">
+            <span class="prompt-badge-index">Prompt 2.3 &bull; No-Op Idempotency Check</span>
+            <span class="prompt-text-quote">Set the brake pedal cell size to 12 mm again.</span>
+            <button class="btn-copy" onclick="copyPromptText('Set the brake pedal cell size to 12 mm again.', this)">Copy Prompt</button>
+          </div>
+          <div class="prompt-body-grid">
+            <div class="box-col">
+              <div class="box-col-title title-what"><span>⚙️</span> What Should Happen</div>
+              <div class="box-col-content">
+                Evaluates proposed parameter hash against active hash. Detects identical values, returns <code>changed: false</code>, and skips FreeCAD invocation.
+                <div class="tools-used-list">
+                  <span class="tool-chip">update_design_program</span>
+                </div>
+              </div>
+            </div>
+            <div class="box-col">
+              <div class="box-col-title title-value"><span>🎯</span> Engineering Value &amp; Story</div>
+              <div class="box-col-content">
+                Saves valuable compute by avoiding redundant CAD rebuilds and Gmsh meshing when parameters have not changed.
+                <div class="sim-bubble"><strong>Sim Output:</strong> "No-op change: cell_size_mm is already 12.0. Kept rev 2."</div>
+              </div>
+            </div>
+            <div class="box-col">
+              <div class="box-col-title title-ai"><span>🧠</span> AI Engineering Teardown</div>
+              <div class="box-col-content">
+                <div class="ai-concept-tags">
+                  <span class="ai-label">Cognitive:</span><span class="ai-val">Idempotency Guard</span>
+                  <span class="ai-label">Guardrail:</span><span class="ai-val">Hash Matching Check</span>
+                  <span class="ai-label">Memory:</span><span class="ai-val">Zero-State Mutation</span>
+                  <span class="ai-label">Eval Ref:</span><span class="ai-val">f04_update_noop</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="prompt-card">
+          <div class="prompt-top-line">
+            <span class="prompt-badge-index">Prompt 2.4 &bull; Dry-Run Preview</span>
+            <span class="prompt-text-quote">Preview what happens if we change strut radius to 3.5 mm without applying.</span>
+            <button class="btn-copy" onclick="copyPromptText('Preview what happens if we change strut radius to 3.5 mm without applying.', this)">Copy Prompt</button>
+          </div>
+          <div class="prompt-body-grid">
+            <div class="box-col">
+              <div class="box-col-title title-what"><span>⚙️</span> What Should Happen</div>
+              <div class="box-col-content">
+                Calls <code>update_design_program(dry_run=True)</code>. Runs range preflights and calculates proposed revision hash without touching disk.
+                <div class="tools-used-list">
+                  <span class="tool-chip">update_design_program</span>
+                </div>
+              </div>
+            </div>
+            <div class="box-col">
+              <div class="box-col-title title-value"><span>🎯</span> Engineering Value &amp; Story</div>
+              <div class="box-col-content">
+                Enables "what-if" parameter validation before committing changes to the engineering source of truth.
+                <div class="sim-bubble"><strong>Sim Output:</strong> "Dry-run: Valid parameter change. Proposed hash: 8e3c1..."</div>
+              </div>
+            </div>
+            <div class="box-col">
+              <div class="box-col-title title-ai"><span>🧠</span> AI Engineering Teardown</div>
+              <div class="box-col-content">
+                <div class="ai-concept-tags">
+                  <span class="ai-label">Cognitive:</span><span class="ai-val">Dry-Run Inspection</span>
+                  <span class="ai-label">Guardrail:</span><span class="ai-val">Preflight-Only Execution</span>
+                  <span class="ai-label">Memory:</span><span class="ai-val">Isolation from Active Rev</span>
+                  <span class="ai-label">Eval Ref:</span><span class="ai-val">f04_update_dry_run</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="prompt-card">
+          <div class="prompt-top-line">
+            <span class="prompt-badge-index">Prompt 2.5 &bull; Out-of-Range Transaction Rollback</span>
+            <span class="prompt-text-quote">Update brake pedal cell size to 0.5 mm.</span>
+            <button class="btn-copy" onclick="copyPromptText('Update brake pedal cell size to 0.5 mm.', this)">Copy Prompt</button>
+          </div>
+          <div class="prompt-body-grid">
+            <div class="box-col">
+              <div class="box-col-title title-what"><span>⚙️</span> What Should Happen</div>
+              <div class="box-col-content">
+                Rejects change: cell_size_mm must be in [5.0, 40.0]. The prior accepted revision (rev 2) remains active and uncorrupted.
+                <div class="tools-used-list">
+                  <span class="tool-chip">update_design_program</span>
+                </div>
+              </div>
+            </div>
+            <div class="box-col">
+              <div class="box-col-title title-value"><span>🎯</span> Engineering Value &amp; Story</div>
+              <div class="box-col-content">
+                Demonstrates ACID-like transactional guarantees on CAD models. A bad user input never destroys working models.
+                <div class="sim-bubble"><strong>Sim Output:</strong> "Preflight rejected: cell_size_mm 0.5 &lt; min 5.0. State safe."</div>
+              </div>
+            </div>
+            <div class="box-col">
+              <div class="box-col-title title-ai"><span>🧠</span> AI Engineering Teardown</div>
+              <div class="box-col-content">
+                <div class="ai-concept-tags">
+                  <span class="ai-label">Cognitive:</span><span class="ai-val">Failure Recovery</span>
+                  <span class="ai-label">Guardrail:</span><span class="ai-val">Range Bounds Enforcement</span>
+                  <span class="ai-label">Memory:</span><span class="ai-val">Non-Destructive Rollback</span>
+                  <span class="ai-label">Eval Ref:</span><span class="ai-val">f04_update_out_of_range</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- F08 Mesh Convergence -->
+    <div class="feature-block" data-priority="p1">
+      <div class="feature-header-row">
+        <div class="feature-title-group">
+          <span class="feature-tag-id">F08</span>
+          <h3 class="feature-name">Automated Mesh Convergence Study</h3>
+        </div>
+        <span class="priority-pill p-p1">P1 Rigor</span>
+      </div>
+      <p class="feature-overview-desc">
+        Automates finite element mesh independence verification. Executes multi-density Gmsh solves (coarse &rarr; medium &rarr; fine) 
+        and recommends the optimal mesh within 5% of asymptotic peak stress.
+      </p>
+
+      <div class="prompts-deck">
+        <div class="prompt-card">
+          <div class="prompt-top-line">
+            <span class="prompt-badge-index">Prompt 3.1 &bull; Automated 3-Density Study</span>
+            <span class="prompt-text-quote">Run a mesh convergence study on the brake pedal.</span>
+            <button class="btn-copy" onclick="copyPromptText('Run a mesh convergence study on the brake pedal.', this)">Copy Prompt</button>
+          </div>
+          <div class="prompt-body-grid">
+            <div class="box-col">
+              <div class="box-col-title title-what"><span>⚙️</span> What Should Happen</div>
+              <div class="box-col-content">
+                Runs synchronous ladder: 5.0 mm, 3.5 mm, 2.5 mm. Solves CCX for each, calculates stress delta, and outputs convergence table.
+                <div class="tools-used-list">
+                  <span class="tool-chip">run_convergence_study</span>
+                </div>
+              </div>
+            </div>
+            <div class="box-col">
+              <div class="box-col-title title-value"><span>🎯</span> Engineering Value &amp; Story</div>
+              <div class="box-col-content">
+                Replaces guesswork with mathematical verification. Proves peak stress is not an artifact of poor mesh discretization.
+                <div class="sim-bubble"><strong>Sim Output:</strong> "Delta &lt; 3.2% between 3.5mm and 2.5mm. Recommended: 3.5mm."</div>
+              </div>
+            </div>
+            <div class="box-col">
+              <div class="box-col-title title-ai"><span>🧠</span> AI Engineering Teardown</div>
+              <div class="box-col-content">
+                <div class="ai-concept-tags">
+                  <span class="ai-label">Cognitive:</span><span class="ai-val">Iterative Optimization</span>
+                  <span class="ai-label">Guardrail:</span><span class="ai-val">Convergence Delta Threshold (&le;5%)</span>
+                  <span class="ai-label">Memory:</span><span class="ai-val">Ladder Solve Aggregation</span>
+                  <span class="ai-label">Eval Ref:</span><span class="ai-val">test_convergence_brake_pedal</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="prompt-card">
+          <div class="prompt-top-line">
+            <span class="prompt-badge-index">Prompt 3.2 &bull; Precomputed Refusal Protection</span>
+            <span class="prompt-text-quote">Run a mesh convergence study on an FCC lattice pedal.</span>
+            <button class="btn-copy" onclick="copyPromptText('Run a mesh convergence study on an FCC lattice pedal.', this)">Copy Prompt</button>
+          </div>
+          <div class="prompt-body-grid">
+            <div class="box-col">
+              <div class="box-col-title title-what"><span>⚙️</span> What Should Happen</div>
+              <div class="box-col-content">
+                Safely refuses: explains FCC pedal uses precomputed demo KPIs that do not vary with mesh size, and live solves are required for convergence.
+                <div class="tools-used-list">
+                  <span class="tool-chip">run_convergence_study</span>
+                </div>
+              </div>
+            </div>
+            <div class="box-col">
+              <div class="box-col-title title-value"><span>🎯</span> Engineering Value &amp; Story</div>
+              <div class="box-col-content">
+                Demonstrates simulation integrity. The AI refuses to generate fake convergence curves when live solves cannot be run.
+                <div class="sim-bubble"><strong>Sim Output:</strong> "Refused: FCC solves return precomputed demo KPIs. Use xtruss/solid."</div>
+              </div>
+            </div>
+            <div class="box-col">
+              <div class="box-col-title title-ai"><span>🧠</span> AI Engineering Teardown</div>
+              <div class="box-col-content">
+                <div class="ai-concept-tags">
+                  <span class="ai-label">Cognitive:</span><span class="ai-val">Precondition Enforcement</span>
+                  <span class="ai-label">Guardrail:</span><span class="ai-val">Refusal Policy on Seed Data</span>
+                  <span class="ai-label">Memory:</span><span class="ai-val">Part Variant Capability Matrix</span>
+                  <span class="ai-label">Eval Ref:</span><span class="ai-val">f08_convergence_fcc_refused</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="prompt-card">
+          <div class="prompt-top-line">
+            <span class="prompt-badge-index">Prompt 3.3 &bull; Explicit Custom Mesh Ladder</span>
+            <span class="prompt-text-quote">Run convergence on the cantilever at mesh sizes 4.0, 2.5, and 1.5 mm.</span>
+            <button class="btn-copy" onclick="copyPromptText('Run convergence on the cantilever at mesh sizes 4.0, 2.5, and 1.5 mm.', this)">Copy Prompt</button>
+          </div>
+          <div class="prompt-body-grid">
+            <div class="box-col">
+              <div class="box-col-title title-what"><span>⚙️</span> What Should Happen</div>
+              <div class="box-col-content">
+                Passes custom array <code>mesh_sizes_mm: [4.0, 2.5, 1.5]</code> to <code>run_convergence_study</code>, overriding default multiplier ladder.
+                <div class="tools-used-list">
+                  <span class="tool-chip">run_convergence_study</span>
+                </div>
+              </div>
+            </div>
+            <div class="box-col">
+              <div class="box-col-title title-value"><span>🎯</span> Engineering Value &amp; Story</div>
+              <div class="box-col-content">
+                Allows expert simulation engineers to specify exact target mesh sizes for specialized boundary layer studies.
+                <div class="sim-bubble"><strong>Sim Output:</strong> "Evaluated 3 sizes: 4.0mm (118.2 MPa) &rarr; 1.5mm (120.3 MPa)."</div>
+              </div>
+            </div>
+            <div class="box-col">
+              <div class="box-col-title title-ai"><span>🧠</span> AI Engineering Teardown</div>
+              <div class="box-col-content">
+                <div class="ai-concept-tags">
+                  <span class="ai-label">Cognitive:</span><span class="ai-val">Parameter Array Parsing</span>
+                  <span class="ai-label">Guardrail:</span><span class="ai-val">Mesh Size Ordering Check</span>
+                  <span class="ai-label">Memory:</span><span class="ai-val">Session State Bindings</span>
+                  <span class="ai-label">Eval Ref:</span><span class="ai-val">test_convergence_custom_mesh_sizes</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="prompt-card">
+          <div class="prompt-top-line">
+            <span class="prompt-badge-index">Prompt 3.4 &bull; Node Count Budget Protection</span>
+            <span class="prompt-text-quote">Run convergence study with an ultra-fine 0.2 mm mesh.</span>
+            <button class="btn-copy" onclick="copyPromptText('Run convergence study with an ultra-fine 0.2 mm mesh.', this)">Copy Prompt</button>
+          </div>
+          <div class="prompt-body-grid">
+            <div class="box-col">
+              <div class="box-col-title title-what"><span>⚙️</span> What Should Happen</div>
+              <div class="box-col-content">
+                Guard catches node budget overflow (> 25,000 nodes) and rejects before allocating gigabytes of RAM or freezing the machine.
+                <div class="tools-used-list">
+                  <span class="tool-chip">run_convergence_study</span>
+                </div>
+              </div>
+            </div>
+            <div class="box-col">
+              <div class="box-col-title title-value"><span>🎯</span> Engineering Value &amp; Story</div>
+              <div class="box-col-content">
+                Prevents Out-Of-Memory (OOM) crashes and runaway Gmsh meshing loops on local development machines.
+                <div class="sim-bubble"><strong>Sim Output:</strong> "Rejected: 0.2mm mesh exceeds safety limit of 25k nodes."</div>
+              </div>
+            </div>
+            <div class="box-col">
+              <div class="box-col-title title-ai"><span>🧠</span> AI Engineering Teardown</div>
+              <div class="box-col-content">
+                <div class="ai-concept-tags">
+                  <span class="ai-label">Cognitive:</span><span class="ai-val">Resource Guardrails</span>
+                  <span class="ai-label">Guardrail:</span><span class="ai-val">MAX_NODES = 25000 Guard</span>
+                  <span class="ai-label">Memory:</span><span class="ai-val">OOM Protection</span>
+                  <span class="ai-label">Eval Ref:</span><span class="ai-val">ADR-009 Node Guard</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="prompt-card">
+          <div class="prompt-top-line">
+            <span class="prompt-badge-index">Prompt 3.5 &bull; Mesh Quality &amp; Deflection Tracking</span>
+            <span class="prompt-text-quote">How does tip deflection change between the coarse and fine meshes?</span>
+            <button class="btn-copy" onclick="copyPromptText('How does tip deflection change between the coarse and fine meshes?', this)">Copy Prompt</button>
+          </div>
+          <div class="prompt-body-grid">
+            <div class="box-col">
+              <div class="box-col-title title-what"><span>⚙️</span> What Should Happen</div>
+              <div class="box-col-content">
+                Queries convergence study result records, reporting both peak von Mises stress and maximum displacement across all mesh steps.
+                <div class="tools-used-list">
+                  <span class="tool-chip">query_results</span>
+                </div>
+              </div>
+            </div>
+            <div class="box-col">
+              <div class="box-col-title title-value"><span>🎯</span> Engineering Value &amp; Story</div>
+              <div class="box-col-content">
+                Validates displacement convergence alongside stress convergence, confirming global part stiffness is modeled accurately.
+                <div class="sim-bubble"><strong>Sim Output:</strong> "Tip deflection shifted from 1.62 mm &rarr; 1.69 mm (+4.3%)."</div>
+              </div>
+            </div>
+            <div class="box-col">
+              <div class="box-col-title title-ai"><span>🧠</span> AI Engineering Teardown</div>
+              <div class="box-col-content">
+                <div class="ai-concept-tags">
+                  <span class="ai-label">Cognitive:</span><span class="ai-val">Multi-Variable Analysis</span>
+                  <span class="ai-label">Guardrail:</span><span class="ai-val">Full Results Dict Capture</span>
+                  <span class="ai-label">Memory:</span><span class="ai-val">Historical Field Persistence</span>
+                  <span class="ai-label">Eval Ref:</span><span class="ai-val">test_convergence_returns_recommendation</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- F09 Material Selection -->
+    <div class="feature-block" data-priority="p1">
+      <div class="feature-header-row">
+        <div class="feature-title-group">
+          <span class="feature-tag-id">F09</span>
+          <h3 class="feature-name">Material Parameterization &amp; Grounded Trade Studies</h3>
+        </div>
+        <span class="priority-pill p-p1">P1 Decision</span>
+      </div>
+      <p class="feature-overview-desc">
+        Material as a first-class program parameter (Al 6061-T6, Al 7075-T6, Ti-6Al-4V, PA12, Generic Steel). 
+        Enables multi-material trade studies scaled via linear elasticity with ASTM-grounded RAG property citations.
+      </p>
+
+      <div class="prompts-deck">
+        <div class="prompt-card">
+          <div class="prompt-top-line">
+            <span class="prompt-badge-index">Prompt 4.1 &bull; Titanium vs Aluminum Trade Study</span>
+            <span class="prompt-text-quote">Compare making the brake pedal from Titanium vs Aluminum 7075-T6.</span>
+            <button class="btn-copy" onclick="copyPromptText('Compare making the brake pedal from Titanium vs Aluminum 7075-T6.', this)">Copy Prompt</button>
+          </div>
+          <div class="prompt-body-grid">
+            <div class="box-col">
+              <div class="box-col-title title-what"><span>⚙️</span> What Should Happen</div>
+              <div class="box-col-content">
+                Calls <code>compare_materials</code>. Scales active solve results by material density, Young's modulus, and yield strength.
+                <div class="tools-used-list">
+                  <span class="tool-chip">compare_materials</span>
+                </div>
+              </div>
+            </div>
+            <div class="box-col">
+              <div class="box-col-title title-value"><span>🎯</span> Engineering Value &amp; Story</div>
+              <div class="box-col-content">
+                Evaluates lightweighting vs strength. Recommends Al 7075-T6 because it is 38% lighter than Ti-6Al-4V while easily meeting the SF &ge; 1.5 requirement.
+                <div class="sim-bubble"><strong>Sim Output:</strong> "Al 7075-T6 recommended: 0.25kg (SF 11.2) vs Ti 0.40kg (SF 19.8)."</div>
+              </div>
+            </div>
+            <div class="box-col">
+              <div class="box-col-title title-ai"><span>🧠</span> AI Engineering Teardown</div>
+              <div class="box-col-content">
+                <div class="ai-concept-tags">
+                  <span class="ai-label">Cognitive:</span><span class="ai-val">Comparative Decision Synthesis</span>
+                  <span class="ai-label">Guardrail:</span><span class="ai-val">SF &ge; 1.5 Filtering Rule</span>
+                  <span class="ai-label">Memory:</span><span class="ai-val">Active Run Scaling</span>
+                  <span class="ai-label">Eval Ref:</span><span class="ai-val">f09_compare_materials</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="prompt-card">
+          <div class="prompt-top-line">
+            <span class="prompt-badge-index">Prompt 4.2 &bull; Polymer Deflection Disclaimer</span>
+            <span class="prompt-text-quote">What happens if we switch the brake pedal material to PA12 Nylon?</span>
+            <button class="btn-copy" onclick="copyPromptText('What happens if we switch the brake pedal material to PA12 Nylon?', this)">Copy Prompt</button>
+          </div>
+          <div class="prompt-body-grid">
+            <div class="box-col">
+              <div class="box-col-title title-what"><span>⚙️</span> What Should Happen</div>
+              <div class="box-col-content">
+                Evaluates PA12 (E=1.5 GPa, yield=48 MPa). Reports mass drops to 0.09 kg, but flags deflection as <strong>NOT VERIFIED</strong> due to non-linear polymer viscoelasticity.
+                <div class="tools-used-list">
+                  <span class="tool-chip">compare_materials</span>
+                </div>
+              </div>
+            </div>
+            <div class="box-col">
+              <div class="box-col-title title-value"><span>🎯</span> Engineering Value &amp; Story</div>
+              <div class="box-col-content">
+                Demonstrates deep structural domain awareness: linear elastic FEA cannot accurately predict large-deformation polymer deflections without plastic models.
+                <div class="sim-bubble"><strong>Sim Output:</strong> "PA12 achieves 0.09kg, but large deflection requires non-linear solve."</div>
+              </div>
+            </div>
+            <div class="box-col">
+              <div class="box-col-title title-ai"><span>🧠</span> AI Engineering Teardown</div>
+              <div class="box-col-content">
+                <div class="ai-concept-tags">
+                  <span class="ai-label">Cognitive:</span><span class="ai-val">Caveat Annotation</span>
+                  <span class="ai-label">Guardrail:</span><span class="ai-val">not_verified Disclaimer Flag</span>
+                  <span class="ai-label">Memory:</span><span class="ai-val">Material Law Matrix</span>
+                  <span class="ai-label">Eval Ref:</span><span class="ai-val">test_materials_pa12_caveat</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="prompt-card">
+          <div class="prompt-top-line">
+            <span class="prompt-badge-index">Prompt 4.3 &bull; Unknown Alloy Refusal</span>
+            <span class="prompt-text-quote">Change the brake pedal material to Vibranium-X.</span>
+            <button class="btn-copy" onclick="copyPromptText('Change the brake pedal material to Vibranium-X.', this)">Copy Prompt</button>
+          </div>
+          <div class="prompt-body-grid">
+            <div class="box-col">
+              <div class="box-col-title title-what"><span>⚙️</span> What Should Happen</div>
+              <div class="box-col-content">
+                Rejects material with error class <code>bad_params</code>. Lists all recognized materials: Al 6061-T6, Al 7075-T6, Ti-6Al-4V, PA12, Steel.
+                <div class="tools-used-list">
+                  <span class="tool-chip">update_design_program</span>
+                </div>
+              </div>
+            </div>
+            <div class="box-col">
+              <div class="box-col-title title-value"><span>🎯</span> Engineering Value &amp; Story</div>
+              <div class="box-col-content">
+                Guarantees all simulations are tied to real physical material properties in the certified engineering materials database.
+                <div class="sim-bubble"><strong>Sim Output:</strong> "Unknown material 'Vibranium-X'. Use al6061t6, al7075t6, ti6al4v..."</div>
+              </div>
+            </div>
+            <div class="box-col">
+              <div class="box-col-title title-ai"><span>🧠</span> AI Engineering Teardown</div>
+              <div class="box-col-content">
+                <div class="ai-concept-tags">
+                  <span class="ai-label">Cognitive:</span><span class="ai-val">Entity Resolution</span>
+                  <span class="ai-label">Guardrail:</span><span class="ai-val">KNOWN_MATERIALS Whitelist</span>
+                  <span class="ai-label">Memory:</span><span class="ai-val">State Rejection</span>
+                  <span class="ai-label">Eval Ref:</span><span class="ai-val">f09_unknown_material_rejected</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="prompt-card">
+          <div class="prompt-top-line">
+            <span class="prompt-badge-index">Prompt 4.4 &bull; Program Material Rebuild</span>
+            <span class="prompt-text-quote">Set the pedal material to 7075 aluminum and rebuild.</span>
+            <button class="btn-copy" onclick="copyPromptText('Set the pedal material to 7075 aluminum and rebuild.', this)">Copy Prompt</button>
+          </div>
+          <div class="prompt-body-grid">
+            <div class="box-col">
+              <div class="box-col-title title-what"><span>⚙️</span> What Should Happen</div>
+              <div class="box-col-content">
+                Resolves alias '7075' &rarr; 'al7075t6'. Updates design program material, rebuilds FreeCAD solid, and bumps revision hash.
+                <div class="tools-used-list">
+                  <span class="tool-chip">update_design_program</span>
+                </div>
+              </div>
+            </div>
+            <div class="box-col">
+              <div class="box-col-title title-value"><span>🎯</span> Engineering Value &amp; Story</div>
+              <div class="box-col-content">
+                Permanently binds high-strength alloy properties to the part's CAD file and export metadata.
+                <div class="sim-bubble"><strong>Sim Output:</strong> "Material updated to Al 7075-T6 (Yield: 503 MPa). Rev 3 committed."</div>
+              </div>
+            </div>
+            <div class="box-col">
+              <div class="box-col-title title-ai"><span>🧠</span> AI Engineering Teardown</div>
+              <div class="box-col-content">
+                <div class="ai-concept-tags">
+                  <span class="ai-label">Cognitive:</span><span class="ai-val">Alias Normalization</span>
+                  <span class="ai-label">Guardrail:</span><span class="ai-val">Material Density Binding</span>
+                  <span class="ai-label">Memory:</span><span class="ai-val">Design Program JSON Commit</span>
+                  <span class="ai-label">Eval Ref:</span><span class="ai-val">test_materials_program_round_trip</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="prompt-card">
+          <div class="prompt-top-line">
+            <span class="prompt-badge-index">Prompt 4.5 &bull; RAG Material Citation Query</span>
+            <span class="prompt-text-quote">What Young's modulus should I assume for structural steel in this demo?</span>
+            <button class="btn-copy" onclick="copyPromptText('What Young\'s modulus should I assume for structural steel in this demo?', this)">Copy Prompt</button>
+          </div>
+          <div class="prompt-body-grid">
+            <div class="box-col">
+              <div class="box-col-title title-what"><span>⚙️</span> What Should Happen</div>
+              <div class="box-col-content">
+                Queries TF-IDF store, cites <code>docs/materials.md</code>, and outputs 210 GPa (Poisson's ratio 0.30, density 7850 kg/m&sup3;).
+                <div class="tools-used-list">
+                  <span class="tool-chip">retrieve (RAG)</span>
+                </div>
+              </div>
+            </div>
+            <div class="box-col">
+              <div class="box-col-title title-value"><span>🎯</span> Engineering Value &amp; Story</div>
+              <div class="box-col-content">
+                Answers engineering reference questions directly from local knowledge base with exact citation tracking.
+                <div class="sim-bubble"><strong>Sim Output:</strong> "Structural steel: E = 210 GPa, &nu; = 0.30 [docs/materials.md]."</div>
+              </div>
+            </div>
+            <div class="box-col">
+              <div class="box-col-title title-ai"><span>🧠</span> AI Engineering Teardown</div>
+              <div class="box-col-content">
+                <div class="ai-concept-tags">
+                  <span class="ai-label">Cognitive:</span><span class="ai-val">Grounded RAG Retrieval</span>
+                  <span class="ai-label">Guardrail:</span><span class="ai-val">Min Citations Requirement &ge; 1</span>
+                  <span class="ai-label">Memory:</span><span class="ai-val">Static Knowledge Embeddings</span>
+                  <span class="ai-label">Eval Ref:</span><span class="ai-val">agent_material_e</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- F27 Modal Dynamics (Roadmap Preview) -->
+    <div class="feature-block" data-priority="p2">
+      <div class="feature-header-row">
+        <div class="feature-title-group">
+          <span class="feature-tag-id">F27</span>
+          <h3 class="feature-name">Modal Analysis &amp; Frequency Dynamics (Roadmap Preview)</h3>
+        </div>
+        <span class="priority-pill p-p2">P2 Advanced Dynamics</span>
+      </div>
+      <p class="feature-overview-desc">
+        Next-generation dynamic analysis for the UAV arm: extracts first-N eigenmodes and natural frequencies via CalculiX frequency studies. 
+        Enables "lightest arm with first resonant mode &gt; 240 Hz rotor excitation" trade studies.
+      </p>
+
+      <div class="prompts-deck">
+        <div class="prompt-card">
+          <div class="prompt-top-line">
+            <span class="prompt-badge-index">Prompt 5.1 &bull; Natural Frequency Extraction</span>
+            <span class="prompt-text-quote">Run a modal analysis on the UAV arm and report the first 3 natural frequencies.</span>
+            <button class="btn-copy" onclick="copyPromptText('Run a modal analysis on the UAV arm and report the first 3 natural frequencies.', this)">Copy Prompt</button>
+          </div>
+          <div class="prompt-body-grid">
+            <div class="box-col">
+              <div class="box-col-title title-what"><span>⚙️</span> What Should Happen</div>
+              <div class="box-col-content">
+                Executes CalculiX *FREQUENCY analysis. Extracts first 3 eigenmodes ($f_1 = 285\text{ Hz}$, $f_2 = 612\text{ Hz}$, $f_3 = 1140\text{ Hz}$).
+                <div class="tools-used-list">
+                  <span class="tool-chip">run_modal_analysis</span>
+                </div>
+              </div>
+            </div>
+            <div class="box-col">
+              <div class="box-col-title title-value"><span>🎯</span> Engineering Value &amp; Story</div>
+              <div class="box-col-content">
+                Expands companion from static FEA into dynamic structural vibrations. Essential for drone stability.
+                <div class="sim-bubble"><strong>Sim Output:</strong> "Mode 1 (Bending): 285 Hz. Mode 2 (Torsion): 612 Hz."</div>
+              </div>
+            </div>
+            <div class="box-col">
+              <div class="box-col-title title-ai"><span>🧠</span> AI Engineering Teardown</div>
+              <div class="box-col-content">
+                <div class="ai-concept-tags">
+                  <span class="ai-label">Cognitive:</span><span class="ai-val">Dynamic Solver Invocation</span>
+                  <span class="ai-label">Guardrail:</span><span class="ai-val">Eigenvalue Convergence Gate</span>
+                  <span class="ai-label">Memory:</span><span class="ai-val">Modal Tensor Storage</span>
+                  <span class="ai-label">Eval Ref:</span><span class="ai-val">docs/PLAN.md (F27 Specification)</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="prompt-card">
+          <div class="prompt-top-line">
+            <span class="prompt-badge-index">Prompt 5.2 &bull; Propeller Resonance Avoidance</span>
+            <span class="prompt-text-quote">Is the first natural frequency of the lattice arm above the 240 Hz rotor excitation frequency?</span>
+            <button class="btn-copy" onclick="copyPromptText('Is the first natural frequency of the lattice arm above the 240 Hz rotor excitation frequency?', this)">Copy Prompt</button>
+          </div>
+          <div class="prompt-body-grid">
+            <div class="box-col">
+              <div class="box-col-title title-what"><span>⚙️</span> What Should Happen</div>
+              <div class="box-col-content">
+                Compares $f_1$ (285 Hz) against 240 Hz motor speed threshold. Reports margin (+45 Hz / +18.7%) confirming no resonance risk.
+                <div class="tools-used-list">
+                  <span class="tool-chip">query_modal_results</span>
+                </div>
+              </div>
+            </div>
+            <div class="box-col">
+              <div class="box-col-title title-value"><span>🎯</span> Engineering Value &amp; Story</div>
+              <div class="box-col-content">
+                Critical aerospace design criterion: prevents destructive harmonic flutter during maximum motor RPM.
+                <div class="sim-bubble"><strong>Sim Output:</strong> "SAFE: f1 = 285 Hz is 18.7% above the 240 Hz rotor excitation band."</div>
+              </div>
+            </div>
+            <div class="box-col">
+              <div class="box-col-title title-ai"><span>🧠</span> AI Engineering Teardown</div>
+              <div class="box-col-content">
+                <div class="ai-concept-tags">
+                  <span class="ai-label">Cognitive:</span><span class="ai-val">Threshold Margin Evaluation</span>
+                  <span class="ai-label">Guardrail:</span><span class="ai-val">Resonance Band Check (&ge;15%)</span>
+                  <span class="ai-label">Memory:</span><span class="ai-val">Modal History Lookup</span>
+                  <span class="ai-label">Eval Ref:</span><span class="ai-val">F27 Modal Acceptance Band</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+
+  <footer>
+    <p>CAD/FEA Engineering Companion &bull; Built with LangGraph, FreeCAD, Gmsh, and CalculiX &bull; 2026</p>
+  </footer>
+</div>
+
+<script>
+  function copyPromptText(text, btn) {
+    navigator.clipboard.writeText(text).then(() => {
+      const originalHtml = btn.innerHTML;
+      btn.innerHTML = '&#x2713; Copied!';
+      btn.classList.add('copied');
+      setTimeout(() => {
+        btn.innerHTML = originalHtml;
+        btn.classList.remove('copied');
+      }, 2000);
+    });
+  }
+
+  function filterCatalog(priority, btn) {
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    
+    const cards = document.querySelectorAll('.feature-block');
+    cards.forEach(card => {
+      if (priority === 'all' || card.dataset.priority === priority) {
+        card.style.display = 'block';
+      } else {
+        card.style.display = 'none';
+      }
+    });
+  }
+
+  function searchCatalogCards() {
+    const term = document.getElementById('filterInput').value.toLowerCase();
+    const cards = document.querySelectorAll('.feature-block');
+    
+    cards.forEach(card => {
+      const text = card.innerText.toLowerCase();
+      if (text.includes(term)) {
+        card.style.display = 'block';
+      } else {
+        card.style.display = 'none';
+      }
+    });
+  }
+</script>
+
+</body>
+</html>

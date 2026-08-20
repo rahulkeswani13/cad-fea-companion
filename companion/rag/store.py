@@ -13,6 +13,9 @@ from sklearn.metrics.pairwise import cosine_similarity
 
 from companion.config import get_settings
 
+# Roadmap / historical notes — not product corpus (would leak into chat RAG).
+_SKIP_INGEST_NAMES = frozenset({"PLAN.md", "PLAN_F26.md"})
+
 
 @dataclass
 class Chunk:
@@ -137,6 +140,8 @@ def ingest_docs(docs_dir: Path | None = None) -> dict[str, Any]:
     ingested = []
     for path in files:
         if path.suffix.lower() not in {".md", ".txt"}:
+            continue
+        if path.name in _SKIP_INGEST_NAMES:
             continue
         text = path.read_text(encoding="utf-8")
         source = str(path.relative_to(settings.docs_dir.parent))

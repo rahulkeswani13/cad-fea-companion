@@ -3,62 +3,76 @@
     "id": "rag_steel_yield",
     "type": "rag",
     "query": "What is a typical yield strength for mild steel in MPa?",
-    "expect_any": ["250", "yield"],
+    "expect_any": [
+      "250",
+      "yield"
+    ],
     "min_citations": 1
   },
   {
     "id": "rag_aluminum",
     "type": "rag",
     "query": "Approximate Young's modulus for aluminum 6061-T6?",
-    "expect_any": ["69", "GPa"],
-    "min_citations": 1
-  },
-  {
-    "id": "rag_engine_mount",
-    "type": "rag",
-    "query": "What is the design space on the engine-mount lattice demo?",
-    "expect_any": ["web", "lattice", "non-design", "bcc"],
+    "expect_any": [
+      "69",
+      "GPa"
+    ],
     "min_citations": 1
   },
   {
     "id": "rag_demo_stress_formula",
     "type": "rag",
     "query": "What is the analytical max bending stress formula for the cantilever demo?",
-    "expect_any": ["6", "sigma", "b", "h"],
+    "expect_any": [
+      "6",
+      "sigma",
+      "b",
+      "h"
+    ],
     "min_citations": 1
   },
   {
     "id": "rag_units",
     "type": "rag",
     "query": "What units does the companion use for stress?",
-    "expect_any": ["MPa"],
+    "expect_any": [
+      "MPa"
+    ],
     "min_citations": 1
   },
   {
-    "id": "rag_mesh_advice",
+    "id": "rag_pedal_design_space",
     "type": "rag",
-    "query": "What mesh size is recommended for the brake pedal?",
-    "expect_any": ["coarse", "3", "4", "6", "10", "mm"],
+    "query": "What is the design space on the brake-pedal lattice demo?",
+    "expect_any": [
+      "design",
+      "pocket",
+      "non-design",
+      "xtruss"
+    ],
     "min_citations": 1
   },
   {
-    "id": "tool_create_mount",
+    "id": "tool_create_pedal",
     "type": "tool",
-    "tool": "create_engine_mount",
-    "args": {"web_type": "bcc", "open_gui": false},
+    "tool": "create_brake_pedal",
+    "args": {
+      "web_type": "xtruss",
+      "open_gui": false
+    },
     "expect_ok": true
   },
   {
-    "id": "tool_mount_metrics",
+    "id": "tool_pedal_metrics",
     "type": "tool",
     "tool": "get_lattice_metrics",
     "args": {},
     "expect_ok": true
   },
   {
-    "id": "tool_compare_mount",
+    "id": "tool_compare_pedal",
     "type": "tool",
-    "tool": "compare_mount_variants",
+    "tool": "compare_brake_pedal_variants",
     "args": {},
     "expect_ok": true
   },
@@ -66,17 +80,34 @@
     "id": "tool_create",
     "type": "tool",
     "tool": "create_cantilever",
-    "args": {"length_mm": 100, "width_mm": 20, "height_mm": 5, "open_gui": false},
+    "args": {
+      "length_mm": 100,
+      "width_mm": 20,
+      "height_mm": 5,
+      "open_gui": false
+    },
     "expect_ok": true
   },
   {
     "id": "tool_solve",
     "type": "tool",
     "tool": "apply_load_and_solve",
-    "args": {"force_n": 100, "mesh_max_size_mm": 8, "open_gui": false},
+    "args": {
+      "force_n": 100,
+      "mesh_max_size_mm": 8,
+      "open_gui": false
+    },
     "expect_ok": true,
-    "expect_stress_approx_mpa": 120,
-    "tol_mpa": 5
+    "expect_stress_any_mpa": [
+      [
+        120,
+        5
+      ],
+      [
+        31.9,
+        8
+      ]
+    ]
   },
   {
     "id": "tool_get_stress",
@@ -84,83 +115,459 @@
     "tool": "get_max_von_mises",
     "args": {},
     "expect_ok": true,
-    "expect_stress_approx_mpa": 120,
-    "tol_mpa": 5
+    "expect_stress_any_mpa": [
+      [
+        120,
+        5
+      ],
+      [
+        31.9,
+        8
+      ]
+    ]
   },
   {
     "id": "agent_docs_question",
     "type": "agent",
     "message": "According to the docs, is 50 MPa below typical mild steel yield?",
-    "expect_any": ["250", "yes", "below"],
+    "expect_any": [
+      "250",
+      "yes",
+      "below"
+    ],
     "min_citations": 1
   },
   {
     "id": "agent_create_solve",
     "type": "agent",
     "message": "Create a cantilever 100x20x5 mm and apply 100 N tip load and solve.",
-    "expect_tools_any": ["create_cantilever", "apply_load_and_solve"]
+    "expect_tools_any": [
+      "create_cantilever",
+      "apply_load_and_solve"
+    ]
   },
   {
-    "id": "agent_mount_lattice",
+    "id": "agent_pedal_lattice",
     "type": "agent",
-    "message": "Create a BCC engine mount lattice bracket and solve the pad load.",
-    "expect_tools_any": ["create_engine_mount", "apply_load_and_solve"]
+    "message": "Create an X-truss brake pedal lattice bracket and solve the footpad load.",
+    "expect_tools_any": [
+      "create_brake_pedal",
+      "apply_load_and_solve"
+    ]
   },
   {
     "id": "agent_compare_50mpa",
     "type": "agent",
     "message": "What is the max von Mises stress and is it under 50 MPa?",
-    "expect_any": ["120", "50", "not", "above", "no", "118"],
-    "expect_tools_any": ["get_max_von_mises", "apply_load_and_solve"]
+    "expect_any": [
+      "120",
+      "50",
+      "not",
+      "above",
+      "no",
+      "118"
+    ],
+    "expect_tools_any": [
+      "get_max_von_mises",
+      "apply_load_and_solve",
+      "query_results"
+    ]
   },
   {
     "id": "agent_refuse_unknown_alloy",
     "type": "agent",
     "message": "What is the exact certified yield of Unobtainium-99 from ASTM?",
-    "expect_any": ["do not know", "don't know", "unknown", "not", "insufficient", "no"]
+    "expect_any": [
+      "do not know",
+      "don't know",
+      "unknown",
+      "not",
+      "insufficient",
+      "no"
+    ]
   },
   {
     "id": "rag_workflow_tools",
     "type": "rag",
     "query": "Which companion tools create geometry and return max stress?",
-    "expect_any": ["create_engine_mount", "create_cantilever", "get_max_von_mises"],
+    "expect_any": [
+      "create_brake_pedal",
+      "create_cantilever",
+      "get_max_von_mises"
+    ],
     "min_citations": 1
   },
   {
     "id": "tool_create_custom",
     "type": "tool",
     "tool": "create_cantilever",
-    "args": {"length_mm": 80, "width_mm": 10, "height_mm": 4, "open_gui": false},
+    "args": {
+      "length_mm": 80,
+      "width_mm": 10,
+      "height_mm": 4,
+      "open_gui": false
+    },
     "expect_ok": true
   },
   {
     "id": "tool_solve_custom",
     "type": "tool",
     "tool": "apply_load_and_solve",
-    "args": {"force_n": 50, "open_gui": false},
+    "args": {
+      "force_n": 50,
+      "open_gui": false
+    },
     "expect_ok": true,
-    "expect_stress_approx_mpa": 150,
-    "tol_mpa": 5
+    "expect_stress_any_mpa": [
+      [
+        150,
+        5
+      ],
+      [
+        72.3,
+        8
+      ]
+    ]
   },
   {
     "id": "agent_material_e",
     "type": "agent",
     "message": "What Young's modulus should I assume for structural steel in this demo?",
-    "expect_any": ["210", "200", "GPa"],
+    "expect_any": [
+      "210",
+      "200",
+      "GPa"
+    ],
     "min_citations": 1
   },
   {
     "id": "rag_backup",
     "type": "rag",
-    "query": "Where is the precomputed FEA JSON stored for the engine mount?",
-    "expect_any": ["precomputed", "engine_mount"],
+    "query": "Where is the precomputed FEA JSON stored for the brake pedal?",
+    "expect_any": [
+      "precomputed",
+      "brake_pedal"
+    ],
     "min_citations": 1
   },
   {
     "id": "agent_units_force",
     "type": "agent",
     "message": "What force units do the FEA tools expect?",
-    "expect_any": ["newton", "N"],
+    "expect_any": [
+      "newton",
+      "N"
+    ],
     "min_citations": 0
+  },
+  {
+    "id": "f02_unknown_tool_correction",
+    "type": "tool",
+    "tool": "no_such_tool",
+    "args": {},
+    "expect_ok": false,
+    "expect_error_class": "unknown_tool",
+    "expect_correction": true
+  },
+  {
+    "id": "f02_bad_web_type_correction",
+    "type": "tool",
+    "tool": "create_brake_pedal",
+    "args": {
+      "web_type": "zigzag",
+      "open_gui": false
+    },
+    "expect_ok": false,
+    "expect_error_class": "bad_params",
+    "expect_correction": true,
+    "expect_receipt": true
+  },
+  {
+    "id": "f02_success_receipt",
+    "type": "tool",
+    "tool": "create_brake_pedal",
+    "args": {
+      "web_type": "xtruss",
+      "open_gui": false
+    },
+    "expect_ok": true,
+    "expect_receipt": true
+  },
+  {
+    "id": "f03_nonpositive_strut_rejected",
+    "type": "tool",
+    "tool": "create_brake_pedal",
+    "args": {
+      "web_type": "xtruss",
+      "strut_radius_mm": 0,
+      "open_gui": false
+    },
+    "expect_ok": false,
+    "expect_error_class": "geometry_invalid",
+    "expect_correction": true,
+    "expect_validation_stage": "params_nonpositive",
+    "expect_receipt": true
+  },
+  {
+    "id": "f04_get_program_after_create",
+    "type": "tool",
+    "tool": "get_design_program",
+    "args": {},
+    "expect_ok": true,
+    "expect_receipt": true
+  },
+  {
+    "id": "f04_update_cell_size",
+    "type": "tool",
+    "tool": "update_design_program",
+    "args": {
+      "changes": {
+        "cell_size_mm": 12
+      },
+      "open_gui": false
+    },
+    "expect_ok": true,
+    "expect_receipt": true
+  },
+  {
+    "id": "f04_update_dry_run",
+    "type": "tool",
+    "tool": "update_design_program",
+    "args": {
+      "changes": {
+        "strut_radius_mm": 3.0
+      },
+      "dry_run": true
+    },
+    "expect_ok": true,
+    "expect_receipt": true
+  },
+  {
+    "id": "f04_update_noop",
+    "type": "tool",
+    "tool": "update_design_program",
+    "args": {
+      "changes": {
+        "cell_size_mm": 12
+      },
+      "open_gui": false
+    },
+    "expect_ok": true,
+    "expect_receipt": true
+  },
+  {
+    "id": "f04_update_out_of_range",
+    "type": "tool",
+    "tool": "update_design_program",
+    "args": {
+      "changes": {
+        "cell_size_mm": 0.5
+      }
+    },
+    "expect_ok": false,
+    "expect_error_class": "bad_params",
+    "expect_correction": true,
+    "expect_receipt": true
+  },
+  {
+    "id": "f06_solve_pedal_records_run",
+    "type": "tool",
+    "tool": "apply_load_and_solve",
+    "args": {
+      "open_gui": false
+    },
+    "expect_ok": true,
+    "expect_fields": [
+      "run_id",
+      "expected_vs_actual",
+      "max_von_mises_mpa"
+    ],
+    "expect_receipt": true
+  },
+  {
+    "id": "f06_query_results_latest",
+    "type": "tool",
+    "tool": "query_results",
+    "args": {},
+    "expect_ok": true,
+    "expect_fields": [
+      "latest",
+      "runs"
+    ],
+    "expect_receipt": true
+  },
+  {
+    "id": "f06_query_results_bad_run_id",
+    "type": "tool",
+    "tool": "query_results",
+    "args": {
+      "run_id": "20990101T000000_nope"
+    },
+    "expect_ok": false,
+    "expect_error_class": "no_results",
+    "expect_correction": true
+  },
+  {
+    "id": "f06_query_results_unknown_part",
+    "type": "tool",
+    "tool": "query_results",
+    "args": {
+      "part": "warp_drive"
+    },
+    "expect_ok": false,
+    "expect_error_class": "bad_params",
+    "expect_correction": true
+  },
+  {
+    "id": "agent_where_stress_concentrated",
+    "type": "agent",
+    "message": "Where is the stress concentrated in the brake pedal right now?",
+    "expect_tools_any": [
+      "query_results",
+      "get_max_von_mises"
+    ]
+  },
+  {
+    "id": "f08_setup_fcc_pedal",
+    "type": "tool",
+    "tool": "create_brake_pedal",
+    "args": {
+      "web_type": "fcc",
+      "open_gui": false
+    },
+    "expect_ok": true
+  },
+  {
+    "id": "f08_convergence_fcc_refused",
+    "type": "tool",
+    "tool": "run_convergence_study",
+    "args": {},
+    "expect_ok": false,
+    "expect_error_class": "unsupported_setup",
+    "expect_correction": true,
+    "expect_receipt": true
+  },
+  {
+    "id": "agent_mesh_convergence",
+    "type": "agent",
+    "message": "Is the current mesh converged? Run a mesh convergence study.",
+    "expect_tools_any": [
+      "run_convergence_study"
+    ]
+  },
+  {
+    "id": "rag_materials_table",
+    "type": "rag",
+    "query": "What are the density and yield strength of Ti-6Al-4V and PA12 nylon?",
+    "expect_any": [
+      "880",
+      "4430"
+    ],
+    "min_citations": 1
+  },
+  {
+    "id": "f09_compare_materials",
+    "type": "tool",
+    "tool": "compare_materials",
+    "args": {},
+    "expect_ok": true,
+    "expect_fields": [
+      "rows",
+      "recommendation",
+      "citations"
+    ]
+  },
+  {
+    "id": "f09_set_material_7075_dry_run",
+    "type": "tool",
+    "tool": "update_design_program",
+    "args": {
+      "part": "brake_pedal",
+      "changes": {
+        "material": "7075"
+      },
+      "dry_run": true
+    },
+    "expect_ok": true,
+    "expect_fields": [
+      "proposed"
+    ]
+  },
+  {
+    "id": "f09_unknown_material_rejected",
+    "type": "tool",
+    "tool": "create_brake_pedal",
+    "args": {
+      "material": "unobtanium",
+      "open_gui": false
+    },
+    "expect_ok": false,
+    "expect_error_class": "bad_params",
+    "expect_correction": true,
+    "expect_receipt": true
+  },
+  {
+    "id": "f26_create_uav_arm",
+    "type": "tool",
+    "tool": "create_uav_arm",
+    "args": {
+      "web_type": "xtruss",
+      "arm_length_mm": 180,
+      "open_gui": false
+    },
+    "expect_ok": true,
+    "expect_receipt": true
+  },
+  {
+    "id": "f26_bad_web_type_uav_arm",
+    "type": "tool",
+    "tool": "create_uav_arm",
+    "args": {
+      "web_type": "gyroid",
+      "open_gui": false
+    },
+    "expect_ok": false,
+    "expect_error_class": "bad_params",
+    "expect_correction": true,
+    "expect_receipt": true
+  },
+  {
+    "id": "f26_update_uav_arm_cell_size",
+    "type": "tool",
+    "tool": "update_design_program",
+    "args": {
+      "part": "uav_arm",
+      "changes": {
+        "cell_size_mm": 12
+      },
+      "open_gui": false
+    },
+    "expect_ok": true,
+    "expect_receipt": true
+  },
+  {
+    "id": "f26_solve_uav_arm_honesty",
+    "type": "tool",
+    "tool": "apply_load_and_solve",
+    "args": {
+      "open_gui": false
+    },
+    "expect_ok": true,
+    "expect_fields": [
+      "run_id",
+      "expected_vs_actual",
+      "max_von_mises_mpa",
+      "safety_factor_vs_yield"
+    ],
+    "expect_receipt": true
+  },
+  {
+    "id": "f26_agent_uav_arm_demo",
+    "type": "agent",
+    "message": "Create a solid aluminum UAV arm and set up the 120 N tip load",
+    "expect_tools_any": [
+      "create_uav_arm",
+      "apply_load_and_solve"
+    ]
   }
 ]

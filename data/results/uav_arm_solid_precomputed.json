@@ -1,0 +1,71 @@
+{
+  "ok": true,
+  "method": "calculix_ccx",
+  "part": "uav_arm",
+  "web_type": "solid",
+  "arm_length_mm": 180.0,
+  "cell_size_mm": 12.0,
+  "strut_radius_mm": 1.8,
+  "mesh_max_size_mm": 3.5,
+  "force_n": 120.0,
+  "node_count": 4180,
+  "max_von_mises_mpa": 44.5902,
+  "max_vm_location_mm": [
+    218.391,
+    9.356,
+    4.0
+  ],
+  "tip_deflection_mm": 1.687447,
+  "volume_mm3": 58250.56656361093,
+  "chord_rails_volume_mm3": 0.0,
+  "lattice_fill_volume_mm3": 36480.00000000001,
+  "pocket_volume_mm3": 36480.00000000001,
+  "relative_density": 1.0,
+  "mass_kg": 0.15727652972174955,
+  "material": "Al 6061-T6 approx E=69 GPa, nu=0.33",
+  "material_id": "al6061t6",
+  "yield_mpa": 276.0,
+  "fixed_faces": [
+    "Face7",
+    "Face8",
+    "Face9",
+    "Face10",
+    "Face1"
+  ],
+  "load_faces": [
+    "Face17"
+  ],
+  "fcstd_path": "data/workspace/uav_arm_solid_fem.FCStd",
+  "note": "Live FreeCAD FEM on the UAV arm. Coarse tets under-predict peak strut stress; use as ranking / demo KPIs. max_vm_location_mm is the peak-stress node in the part frame (x, y, z mm).",
+  "validation": {
+    "stage": "passed",
+    "checks": {
+      "shape_nonnull": true,
+      "is_valid": true,
+      "volume_mm3": 58250.56656361093,
+      "bbox_mm": {
+        "x": [
+          0.0,
+          245.0
+        ],
+        "y": [
+          -17.0,
+          17.0
+        ],
+        "z": [
+          -10.0,
+          10.0
+        ]
+      },
+      "bbox_dims_mm": [
+        245.0,
+        34.0,
+        20.0
+      ],
+      "volume_vs_estimate": 1.0023
+    },
+    "warnings": []
+  },
+  "stored_force_n": 120.0,
+  "safety_factor_vs_yield": 6.19
+}

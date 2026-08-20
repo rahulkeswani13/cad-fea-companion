@@ -1,0 +1,100 @@
+{
+  "schema_version": 1,
+  "note": [
+    "F09 source of truth for material properties (ADR-010).",
+    "Room-temperature handbook/datasheet values for bulk material — NOT as-built",
+    "additive-manufacturing allowables (no surface-roughness, porosity, or",
+    "build-orientation knockdowns). docs/materials.md mirrors this file for",
+    "RAG citations; tests/test_materials.py asserts the two stay in sync.",
+    "Canonical ids are lowercase alphanumeric; aliases are matched after",
+    "normalization (lowercase, non-alphanumerics stripped): 'Ti-6Al-4V', 'ti64',",
+    "'titanium' all resolve to ti6al4v."
+  ],
+  "materials": [
+    {
+      "id": "al6061t6",
+      "display_name": "Al 6061-T6",
+      "aliases": ["al", "aluminum", "aluminium", "6061", "6061t6"],
+      "family": "metal",
+      "youngs_modulus_mpa": 69000.0,
+      "poissons_ratio": 0.33,
+      "density_kg_m3": 2700.0,
+      "yield_mpa": 276.0,
+      "cost_class": "low",
+      "note": "Workhorse aluminum alloy: good machinability and weldability, moderate strength. The repo default for the brake pedal.",
+      "sources": {
+        "elasticity": "MatWeb datasheet: Aluminum Al 6061-T6 (room temperature)",
+        "density": "MatWeb datasheet: Aluminum Al 6061-T6",
+        "yield": "MatWeb / MMPDS: 6061-T6 compressive/tensile yield Rp0.2 = 276 MPa (RT)"
+      }
+    },
+    {
+      "id": "al7075t6",
+      "display_name": "Al 7075-T6",
+      "aliases": ["7075", "7075t6"],
+      "family": "metal",
+      "youngs_modulus_mpa": 71700.0,
+      "poissons_ratio": 0.33,
+      "density_kg_m3": 2810.0,
+      "yield_mpa": 503.0,
+      "cost_class": "medium",
+      "note": "High-strength aerospace aluminum; ~1.8x the yield of 6061-T6 at similar density, but lower fracture toughness and poor weldability.",
+      "sources": {
+        "elasticity": "MatWeb datasheet: Aluminum Al 7075-T6 (room temperature)",
+        "density": "MatWeb datasheet: Aluminum Al 7075-T6",
+        "yield": "MatWeb / MMPDS: 7075-T6 tensile yield Rp0.2 = 503 MPa (RT)"
+      }
+    },
+    {
+      "id": "ti6al4v",
+      "display_name": "Ti-6Al-4V (Grade 5, annealed)",
+      "aliases": ["ti", "ti64", "titanium", "grade5", "ti6al4vgrade5"],
+      "family": "metal",
+      "youngs_modulus_mpa": 113800.0,
+      "poissons_ratio": 0.342,
+      "density_kg_m3": 4430.0,
+      "yield_mpa": 880.0,
+      "cost_class": "high",
+      "note": "Best strength-to-weight of the table; ~56% denser than aluminum but 3.2x the yield. High material + machining cost; the classic lattice/AM material.",
+      "sources": {
+        "elasticity": "MatWeb datasheet: Titanium Ti-6Al-4V Grade 5 annealed (room temperature)",
+        "density": "MatWeb datasheet: Titanium Ti-6Al-4V",
+        "yield": "MatWeb / MMPDS: Ti-6Al-4V annealed tensile yield Rp0.2 = 880 MPa (RT)"
+      }
+    },
+    {
+      "id": "pa12",
+      "display_name": "PA12 (nylon, SLS, dry)",
+      "aliases": ["nylon", "pa", "pa12nylon", "slsnylon"],
+      "family": "polymer",
+      "youngs_modulus_mpa": 1800.0,
+      "poissons_ratio": 0.4,
+      "density_kg_m3": 1010.0,
+      "yield_mpa": 45.0,
+      "cost_class": "low",
+      "note": "Laser-sintered polymer: cheapest per part and lightest, but E is ~38x lower than aluminum — deflections leave the small-strain regime, so scaled deflection is NOT VERIFIED. Moisture-dependent properties.",
+      "sources": {
+        "elasticity": "MatWeb / EOS PA12 datasheet: tensile modulus ~1.8 GPa (dry, RT)",
+        "density": "EOS PA12 datasheet: 1.01 g/cm3",
+        "yield": "EOS/MatWeb PA12: tensile yield ~45 MPa (dry, RT)"
+      }
+    },
+    {
+      "id": "steel",
+      "display_name": "Steel-Generic",
+      "aliases": ["mildsteel", "steelgeneric", "s235", "genericsteel"],
+      "family": "metal",
+      "youngs_modulus_mpa": 210000.0,
+      "poissons_ratio": 0.3,
+      "density_kg_m3": 7900.0,
+      "yield_mpa": 250.0,
+      "cost_class": "low",
+      "note": "FreeCAD's generic steel card (matches the cantilever defaults in this repo); yield is typical mild steel (S235), not defined by the FreeCAD card itself.",
+      "sources": {
+        "elasticity": "FreeCAD material database: Steel-Generic (E=210 GPa, nu=0.30)",
+        "density": "FreeCAD material database: Steel-Generic (7900 kg/m^3)",
+        "yield": "Typical mild steel S235 yield = 250 MPa (engineering standard value)"
+      }
+    }
+  ]
+}

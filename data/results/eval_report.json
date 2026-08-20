@@ -1,7 +1,7 @@
 {
-  "passed": 18,
+  "passed": 48,
   "failed": 0,
-  "total": 18,
+  "total": 48,
   "rows": [
     {
       "id": "rag_steel_yield",
@@ -11,7 +11,7 @@
     {
       "id": "rag_aluminum",
       "ok": true,
-      "detail": "hits=1"
+      "detail": "hits=4"
     },
     {
       "id": "rag_demo_stress_formula",
@@ -24,14 +24,29 @@
       "detail": "hits=4"
     },
     {
-      "id": "rag_mesh_advice",
+      "id": "rag_pedal_design_space",
       "ok": true,
       "detail": "hits=4"
     },
     {
+      "id": "tool_create_pedal",
+      "ok": true,
+      "detail": "{\"ok\": true, \"part\": \"brake_pedal\", \"name\": \"BrakePedalLattice\", \"web_type\": \"xtruss\", \"cell_size_mm\": 15.0, \"strut_radius_mm\": 2.5, \"nx\": 3, \"ny\": 6, \"nz\": 1, \"material\": \"Al 6061"
+    },
+    {
+      "id": "tool_pedal_metrics",
+      "ok": true,
+      "detail": "{\"ok\": true, \"part\": \"brake_pedal\", \"web_type\": \"xtruss\", \"cell_size_mm\": 15.0, \"strut_radius_mm\": 2.5, \"nx\": 3, \"ny\": 6, \"nz\": 1, \"material\": \"Al 6061-T6 approx E=69 GPa, nu=0.33\""
+    },
+    {
+      "id": "tool_compare_pedal",
+      "ok": true,
+      "detail": "{\"ok\": true, \"part\": \"brake_pedal\", \"material\": \"Al 6061-T6\", \"yield_mpa\": 276.0, \"sf_threshold\": 1.5, \"variants\": [{\"web_type\": \"solid\", \"source\": \"precomputed\", \"mass_kg\": 0.3560"
+    },
+    {
       "id": "tool_create",
       "ok": true,
-      "detail": "{\"ok\": true, \"name\": \"CantileverBeam\", \"length_mm\": 100.0, \"width_mm\": 20.0, \"height_mm\": 5.0, \"volume_mm3\": 10000.0, \"step_path\": null, \"stl_path\": null, \"fcstd_path\": null, \"fixe"
+      "detail": "{\"ok\": true, \"part\": \"cantilever\", \"name\": \"CantileverBeam\", \"length_mm\": 100.0, \"width_mm\": 20.0, \"height_mm\": 5.0, \"volume_mm3\": 10000.0, \"material\": \"Steel-Generic approx E=210 "
     },
     {
       "id": "tool_solve",
@@ -54,9 +69,14 @@
       "detail": "tools=['create_cantilever', 'apply_load_and_solve']"
     },
     {
+      "id": "agent_pedal_lattice",
+      "ok": true,
+      "detail": "tools=['create_brake_pedal', 'apply_load_and_solve']"
+    },
+    {
       "id": "agent_compare_50mpa",
       "ok": true,
-      "detail": "tools=['get_max_von_mises']"
+      "detail": "tools=['query_results', 'create_cantilever', 'apply_load_and_solve']"
     },
     {
       "id": "agent_refuse_unknown_alloy",
@@ -71,7 +91,7 @@
     {
       "id": "tool_create_custom",
       "ok": true,
-      "detail": "{\"ok\": true, \"name\": \"CantileverBeam\", \"length_mm\": 80.0, \"width_mm\": 10.0, \"height_mm\": 4.0, \"volume_mm3\": 3200.0, \"step_path\": null, \"stl_path\": null, \"fcstd_path\": null, \"fixed_"
+      "detail": "{\"ok\": true, \"part\": \"cantilever\", \"name\": \"CantileverBeam\", \"length_mm\": 80.0, \"width_mm\": 10.0, \"height_mm\": 4.0, \"volume_mm3\": 3200.0, \"material\": \"Steel-Generic approx E=210 GP"
     },
     {
       "id": "tool_solve_custom",
@@ -86,12 +106,142 @@
     {
       "id": "rag_backup",
       "ok": true,
-      "detail": "hits=3"
+      "detail": "hits=4"
     },
     {
       "id": "agent_units_force",
       "ok": true,
       "detail": "tools=[]"
+    },
+    {
+      "id": "f02_unknown_tool_correction",
+      "ok": true,
+      "detail": "{\"ok\": false, \"error\": \"Unknown tool: no_such_tool\", \"error_class\": \"unknown_tool\", \"correction\": \"Call one of the tools listed in the system prompt (TOOL_SPECS), e.g. create_brake"
+    },
+    {
+      "id": "f02_bad_web_type_correction",
+      "ok": true,
+      "detail": "{\"ok\": false, \"error\": \"web_type must be one of ['fcc', 'solid', 'xtruss'], got 'zigzag'\", \"error_class\": \"bad_params\", \"correction\": \"Fix the reported parameter value and retry th"
+    },
+    {
+      "id": "f02_success_receipt",
+      "ok": true,
+      "detail": "{\"ok\": true, \"part\": \"brake_pedal\", \"name\": \"BrakePedalLattice\", \"web_type\": \"xtruss\", \"cell_size_mm\": 15.0, \"strut_radius_mm\": 2.5, \"nx\": 3, \"ny\": 6, \"nz\": 1, \"material\": \"Al 6061"
+    },
+    {
+      "id": "f03_nonpositive_strut_rejected",
+      "ok": true,
+      "detail": "{\"ok\": false, \"error\": \"geometry validation failed at stage params_nonpositive: strut_radius_mm must be > 0, got 0.0\", \"error_class\": \"geometry_invalid\", \"validation\": {\"stage\": \"p"
+    },
+    {
+      "id": "f04_get_program_after_create",
+      "ok": true,
+      "detail": "{\"ok\": true, \"part\": \"brake_pedal\", \"rev\": 217, \"params_hash\": \"4e8a711c19b3\", \"params\": {\"web_type\": \"xtruss\", \"cell_size_mm\": 15.0, \"strut_radius_mm\": 2.5, \"material\": \"al6061t6\""
+    },
+    {
+      "id": "f04_update_cell_size",
+      "ok": true,
+      "detail": "{\"ok\": true, \"part\": \"brake_pedal\", \"name\": \"BrakePedalLattice\", \"web_type\": \"xtruss\", \"cell_size_mm\": 12.0, \"strut_radius_mm\": 2.5, \"nx\": 3, \"ny\": 6, \"nz\": 1, \"material\": \"Al 6061"
+    },
+    {
+      "id": "f04_update_dry_run",
+      "ok": true,
+      "detail": "{\"ok\": true, \"changed\": true, \"dry_run\": true, \"part\": \"brake_pedal\", \"current\": {\"rev\": 218, \"params_hash\": \"447503639393\"}, \"proposed\": {\"params\": {\"web_type\": \"xtruss\", \"cell_si"
+    },
+    {
+      "id": "f04_update_noop",
+      "ok": true,
+      "detail": "{\"ok\": true, \"changed\": false, \"part\": \"brake_pedal\", \"rev\": 218, \"params_hash\": \"447503639393\", \"params\": {\"web_type\": \"xtruss\", \"cell_size_mm\": 12.0, \"strut_radius_mm\": 2.5, \"mat"
+    },
+    {
+      "id": "f04_update_out_of_range",
+      "ok": true,
+      "detail": "{\"ok\": false, \"error\": \"design program preflight failed for brake_pedal: cell_size_mm must be within [5.0, 40.0], got 0.5\", \"error_class\": \"bad_params\", \"correction\": \"set cell_siz"
+    },
+    {
+      "id": "f06_solve_pedal_records_run",
+      "ok": true,
+      "detail": "{\"ok\": true, \"method\": \"calculix_ccx\", \"part\": \"brake_pedal\", \"web_type\": \"xtruss\", \"mesh_max_size_mm\": 5.0, \"force_n\": 500.0, \"node_count\": 4053, \"max_von_mises_mpa\": 23.6295, \"pa"
+    },
+    {
+      "id": "f06_query_results_latest",
+      "ok": true,
+      "detail": "{\"ok\": true, \"part\": \"brake_pedal\", \"latest\": {\"run_id\": \"20260818T230015_03edc6\", \"ts\": \"2026-08-18T23:00:15+00:00\", \"part\": \"brake_pedal\", \"web_type\": \"xtruss\", \"cell_size_mm\": 1"
+    },
+    {
+      "id": "f06_query_results_bad_run_id",
+      "ok": true,
+      "detail": "{\"ok\": false, \"error\": \"No stored run with run_id '20990101T000000_nope'.\", \"error_class\": \"no_results\", \"correction\": \"Call query_results without run_id to list recent runs, or ap"
+    },
+    {
+      "id": "f06_query_results_unknown_part",
+      "ok": true,
+      "detail": "{\"ok\": false, \"error\": \"unknown part 'warp_drive'; known parts: ['brake_pedal', 'cantilever', 'uav_arm']\", \"error_class\": \"bad_params\", \"correction\": \"Use one of brake_pedal, canti"
+    },
+    {
+      "id": "agent_where_stress_concentrated",
+      "ok": true,
+      "detail": "tools=['query_results']"
+    },
+    {
+      "id": "f08_setup_fcc_pedal",
+      "ok": true,
+      "detail": "{\"ok\": true, \"part\": \"brake_pedal\", \"name\": \"BrakePedalLattice\", \"web_type\": \"fcc\", \"cell_size_mm\": 15.0, \"strut_radius_mm\": 2.5, \"nx\": 3, \"ny\": 6, \"nz\": 1, \"material\": \"Al 6061-T6"
+    },
+    {
+      "id": "f08_convergence_fcc_refused",
+      "ok": true,
+      "detail": "{\"ok\": false, \"error\": \"FCC pedal solves return precomputed demo KPIs that do not vary with mesh size; a convergence study needs live CalculiX solves.\", \"error_class\": \"unsupported"
+    },
+    {
+      "id": "agent_mesh_convergence",
+      "ok": true,
+      "detail": "tools=['run_convergence_study']"
+    },
+    {
+      "id": "rag_materials_table",
+      "ok": true,
+      "detail": "hits=4"
+    },
+    {
+      "id": "f09_compare_materials",
+      "ok": true,
+      "detail": "{\"ok\": true, \"part\": \"brake_pedal\", \"sf_threshold\": 1.5, \"base\": {\"source\": \"run_history\", \"run_id\": \"20260818T230015_03edc6\", \"method\": \"calculix_ccx\", \"mesh_max_size_mm\": 5.0, \"f"
+    },
+    {
+      "id": "f09_set_material_7075_dry_run",
+      "ok": true,
+      "detail": "{\"ok\": true, \"changed\": true, \"dry_run\": true, \"part\": \"brake_pedal\", \"current\": {\"rev\": 219, \"params_hash\": \"7f150b9b3923\"}, \"proposed\": {\"params\": {\"web_type\": \"fcc\", \"cell_size_"
+    },
+    {
+      "id": "f09_unknown_material_rejected",
+      "ok": true,
+      "detail": "{\"ok\": false, \"error\": \"unknown material 'unobtanium' for brake_pedal; known materials: Al 6061-T6 (\\\"al6061t6\\\"); Al 7075-T6 (\\\"al7075t6\\\"); Ti-6Al-4V (Grade 5, annealed) (\\\"ti6al"
+    },
+    {
+      "id": "f26_create_uav_arm",
+      "ok": true,
+      "detail": "{\"ok\": true, \"part\": \"uav_arm\", \"name\": \"UAVArm\", \"web_type\": \"xtruss\", \"arm_length_mm\": 180.0, \"cell_size_mm\": 12.0, \"strut_radius_mm\": 1.8, \"material\": \"Al 6061-T6 approx E=69 GP"
+    },
+    {
+      "id": "f26_bad_web_type_uav_arm",
+      "ok": true,
+      "detail": "{\"ok\": false, \"error\": \"web_type must be one of ['solid', 'xtruss'], got 'gyroid'\", \"error_class\": \"bad_params\", \"correction\": \"Use web_type='solid' or 'xtruss' ('x-truss'/'bcc' al"
+    },
+    {
+      "id": "f26_update_uav_arm_cell_size",
+      "ok": true,
+      "detail": "{\"ok\": true, \"changed\": false, \"part\": \"uav_arm\", \"rev\": 17, \"params_hash\": \"b7370e994dda\", \"params\": {\"web_type\": \"xtruss\", \"arm_length_mm\": 180.0, \"cell_size_mm\": 12.0, \"strut_ra"
+    },
+    {
+      "id": "f26_solve_uav_arm_honesty",
+      "ok": true,
+      "detail": "{\"ok\": true, \"method\": \"precomputed_demo_estimate\", \"part\": \"uav_arm\", \"web_type\": \"xtruss\", \"arm_length_mm\": 180.0, \"force_n\": 120.0, \"mesh_max_size_mm\": 3.5, \"max_von_mises_mpa\":"
+    },
+    {
+      "id": "f26_agent_uav_arm_demo",
+      "ok": true,
+      "detail": "tools=['create_uav_arm', 'apply_load_and_solve']"
     }
   ]
 }
