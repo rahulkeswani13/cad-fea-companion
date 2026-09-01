@@ -23,10 +23,15 @@ def test_stream_event_order(monkeypatch):
     )
 
     monkeypatch.setattr(
-        "companion.agent.graph.retrieve",
-        lambda query, k=4: [
-            {"source": "demo.md", "text": "cantilever notes", "score": 0.5}
-        ],
+        "companion.agent.graph.retrieve_detail",
+        lambda query, k=4: {
+            "grounding": "strong",
+            "fused": [
+                {"source": "demo.md", "text": "cantilever notes", "score": 0.5}
+            ],
+            "tfidf": [],
+            "bm25": [],
+        },
     )
 
     g = build_graph(

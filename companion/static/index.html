@@ -251,6 +251,49 @@
       background: #2a2418;
     }
     #confirm-bar.visible { display: flex; flex-wrap: wrap; }
+    .g-badge {
+      display: inline-block;
+      margin: 0.35rem 0.35rem 0 0;
+      padding: 0.15rem 0.55rem;
+      border-radius: 999px;
+      font-size: 0.72rem;
+      border: 1px solid var(--border);
+    }
+    .g-badge.g-strong { border-color: #2f6b56; color: #8fd6b8; }
+    .g-badge.g-weak { border-color: #6b5a2f; color: #e0c27a; background: #2a2418; }
+    .g-badge.g-none { border-color: #6b2f2f; color: #e08a8a; }
+    .hit {
+      margin-top: 0.45rem;
+      padding: 0.45rem 0.55rem;
+      background: #152019;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-size: 0.75rem;
+    }
+    .hit-head {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+      align-items: baseline;
+    }
+    .hit-head code {
+      font-family: "IBM Plex Mono", ui-monospace, monospace;
+      color: var(--accent-2);
+    }
+    .hit-ranks {
+      color: var(--muted);
+      font-family: "IBM Plex Mono", ui-monospace, monospace;
+      font-size: 0.7rem;
+    }
+    .hit-text {
+      margin-top: 0.3rem;
+      color: #b9c7bd;
+      line-height: 1.4;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    .raglab-link a { color: var(--accent-2); text-decoration: none; font-weight: 600; }
+    .raglab-link a:hover { text-decoration: underline; }
   </style>
 </head>
 <body>
@@ -258,6 +301,7 @@
     <h1>CAD/FEA Chat Companion</h1>
     <p>LangGraph agent loop: retrieve → agent ⇄ tools, with thread memory.</p>
     <div class="status" id="status">Loading status…</div>
+    <p class="raglab-link"><a href="/static/rag.html">RAG Lab ↗</a> — inspect retrieval, compare rankers, rebuild the index.</p>
   </header>
   <main>
     <div class="examples">
@@ -429,6 +473,26 @@
       return el;
     }
 
+    function groundingBadge(label) {
+      if (label === "strong") return `<span class="g-badge g-strong">● grounded</span>`;
+      if (label === "weak") return `<span class="g-badge g-weak">⚠ weak grounding — no strong corpus match</span>`;
+      if (label === "none") return `<span class="g-badge g-none">● no retrieval match</span>`;
+      return "";
+    }
+
+    function hitRow(c) {
+      const ranks = [];
+      if (c.tfidf_rank != null) ranks.push(`tfidf #${c.tfidf_rank}`);
+      if (c.bm25_rank != null) ranks.push(`bm25 #${c.bm25_rank}`);
+      if (c.score != null && c.score > 0) ranks.push(`cos ${Number(c.score).toFixed(3)}`);
+      const text = String(c.text || "");
+      const snippet = escapeHtml(text.slice(0, 220));
+      return `<div class="hit">` +
+        `<div class="hit-head"><code>${escapeHtml(c.source || "")}</code>` +
+        `<span class="hit-ranks">${escapeHtml(ranks.join(" · "))}</span></div>` +
+        `<div class="hit-text">${snippet}${text.length > 220 ? "…" : ""}</div></div>`;
+    }
+
     function showAssistantResult(data) {
       let meta = "";
       if (data.tool_results?.length) {
@@ -441,7 +505,11 @@
           .filter(Boolean);
         const unique = [...new Set(sources)];
         const items = unique.map((s) => `<li>${escapeHtml(s)}</li>`).join("");
-        meta += `<details><summary>Citations (${unique.length})</summary><ul class="cite-list">${items}</ul></details>`;
+        const rows = data.citations.map(hitRow).join("");
+        const label = data.grounding || "strong";
+        meta += `${groundingBadge(label)}` +
+          `<details><summary>Retrieval inspector (${data.citations.length} hits · ${label})</summary>` +
+          `<ul class="cite-list">${items}</ul>${rows}</details>`;
       }
       addMsg("assistant", data.answer || data.error || "No answer", meta || undefined);
     }

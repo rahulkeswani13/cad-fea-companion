@@ -31,6 +31,11 @@ class Settings(BaseSettings):
     agent_require_tool_confirm: bool = False
     allow_remote: bool = False
 
+    # RAG grounding label (ADR-012): 'strong' requires the fused top hit to
+    # clear the TF-IDF cosine floor OR sit within the BM25 top-N.
+    rag_grounding_min_tfidf: float = 0.05
+    rag_grounding_bm25_top: int = 3
+
     docs_dir: Path = Field(default_factory=lambda: ROOT / "docs")
     data_dir: Path = Field(default_factory=lambda: ROOT / "data")
     workspace_dir: Path = Field(default_factory=lambda: ROOT / "data" / "workspace")

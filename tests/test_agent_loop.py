@@ -97,16 +97,23 @@ def test_cond_rag_lattice_question_skips_tools(monkeypatch):
         ]
     )
 
-    def fake_retrieve(query: str, k: int = 4):
-        return [
-            {
-                "source": "brake_pedal_lattice.md",
-                "text": "Typical AM strut fills often sit around 0.15–0.40 ρ*",
-                "score": 0.9,
-            }
-        ]
+    def fake_retrieve_detail(query: str, k: int = 4):
+        return {
+            "grounding": "strong",
+            "fused": [
+                {
+                    "source": "brake_pedal_lattice.md",
+                    "text": "Typical AM strut fills often sit around 0.15–0.40 ρ*",
+                    "score": 0.9,
+                }
+            ],
+            "tfidf": [],
+            "bm25": [],
+        }
 
-    monkeypatch.setattr("companion.agent.graph.retrieve", fake_retrieve)
+    monkeypatch.setattr(
+        "companion.agent.graph.retrieve_detail", fake_retrieve_detail
+    )
     g = _graph(llm, tools)
     out = run_agent(
         "What relative density ranges are typical for lattice fills?",
@@ -124,16 +131,23 @@ def test_cond_rag_only_skips_tools(monkeypatch):
         turns=[AgentTurn(content="Mild steel yield is about 250 MPa.", tool_calls=[])]
     )
 
-    def fake_retrieve(query: str, k: int = 4):
-        return [
-            {
-                "source": "material_allowables.md",
-                "text": "Mild steel typical yield ~250 MPa",
-                "score": 0.9,
-            }
-        ]
+    def fake_retrieve_detail(query: str, k: int = 4):
+        return {
+            "grounding": "strong",
+            "fused": [
+                {
+                    "source": "material_allowables.md",
+                    "text": "Mild steel typical yield ~250 MPa",
+                    "score": 0.9,
+                }
+            ],
+            "tfidf": [],
+            "bm25": [],
+        }
 
-    monkeypatch.setattr("companion.agent.graph.retrieve", fake_retrieve)
+    monkeypatch.setattr(
+        "companion.agent.graph.retrieve_detail", fake_retrieve_detail
+    )
     g = _graph(llm, tools)
     out = run_agent("What is mild steel yield?", thread_id="rag-only", graph=g)
     assert tools.names == []

@@ -15,7 +15,7 @@ from pydantic import BaseModel, Field
 from companion.agent.graph import run_agent, stream_agent
 from companion.config import get_settings
 from companion.llm.providers import provider_status
-from companion.rag.store import ingest_docs, retrieve
+from companion.rag.store import get_store, ingest_docs, retrieve_detail
 from companion.tools.cad_fea import (
     TOOL_SPECS,
     call_tool,
@@ -96,6 +96,7 @@ def _chat_error(exc: Exception, thread_id: str | None = None) -> dict[str, Any]:
     return {
         "answer": "",
         "citations": [],
+        "grounding": "none",
         "tool_calls": [],
         "tool_results": [],
         "error": str(exc),
@@ -159,8 +160,16 @@ def rag_ingest() -> dict[str, Any]:
 
 
 @app.get("/api/rag/search")
-def rag_search(q: str, k: int = 4) -> dict[str, Any]:
-    return {"query": q, "hits": retrieve(q, k=k)}
+def rag_search(q: str, k: int = 4, detail: int = 0) -> dict[str, Any]:
+    if detail:
+        breakdown = retrieve_detail(q, k=k)
+        return {"query": q, **breakdown}
+    return {"query": q, "hits": retrieve_detail(q, k=k)["fused"]}
+
+
+@app.get("/api/rag/stats")
+def rag_stats() -> dict[str, Any]:
+    return get_store().stats()
 
 
 @app.post("/api/results/load_precomputed")

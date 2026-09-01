@@ -23,7 +23,7 @@ from companion.llm.providers import (
     ToolCallSpec,
     get_llm_provider,
 )
-from companion.rag.store import retrieve
+from companion.rag.store import retrieve_detail
 from companion.tools import materials as mats
 from companion.tools import outcome
 from companion.tools.cad_fea import TOOL_SPECS, cad_thread_scope, call_tool, get_state
@@ -35,6 +35,7 @@ class AgentState(TypedDict, total=False):
     messages: Annotated[list[BaseMessage], add_messages]
     message: str
     citations: list[dict[str, Any]]
+    grounding: str | None
     pending_tool_calls: list[dict[str, Any]]
     tool_results: list[dict[str, Any]]
     cad_geometry: dict[str, Any] | None
@@ -367,6 +368,7 @@ def _heuristic_tools(message: str) -> list[dict[str, Any]]:
             "under 50",
             "get_max_von_mises",
             "safety factor",
+            "concentrated",
         )
     )
     if wants_stress:
@@ -640,11 +642,13 @@ def build_graph(
                 if isinstance(msg, HumanMessage):
                     message = _message_content(msg)
                     break
-        hits = retrieve(message, k=4) if message else []
+        detail = retrieve_detail(message, k=4) if message else {"fused": [], "grounding": "none"}
+        hits = detail.get("fused") or []
         # Seed CAD fields from module session if graph state empty (same process demo)
         cad = get_state()
         updates: dict[str, Any] = {
             "citations": hits,
+            "grounding": detail.get("grounding") or "none",
             "message": message,
             "pending_tool_calls": [],
         }
@@ -1005,6 +1009,7 @@ def run_agent(
     return {
         "answer": answer,
         "citations": (final.get("citations") if isinstance(final, dict) else None) or [],
+        "grounding": (final.get("grounding") if isinstance(final, dict) else None) or "none",
         "tool_calls": (final.get("pending_tool_calls") if isinstance(final, dict) else None)
         or [],
         "tool_results": (final.get("tool_results") if isinstance(final, dict) else None)
@@ -1098,6 +1103,7 @@ def _stream_agent_events(compiled, stream_input: Any, config: dict[str, Any], ti
         "thread_id": tid,
         "answer": values.get("answer") or "",
         "citations": values.get("citations") or [],
+        "grounding": values.get("grounding") or "none",
         "tool_results": values.get("tool_results") or [],
         "cad_geometry": values.get("cad_geometry"),
         "cad_results": values.get("cad_results"),
