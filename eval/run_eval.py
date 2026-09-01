@@ -21,13 +21,23 @@ sys.path.insert(0, str(ROOT))
 from companion.agent.graph import run_agent
 from companion.config import get_settings
 from companion.rag.store import ingest_docs, retrieve
+import companion.tools.cad_fea as cad_fea
 from companion.tools.cad_fea import call_tool
 import companion.tools.freecad_runtime as f_rt
 from eval import judge
 from eval import trajectory
 
-# Enforce headless evaluation: suppress GUI popups during automated test sweeps
-f_rt.open_in_freecad_gui = lambda *args, **kwargs: {"ok": True, "skipped": "eval_headless"}
+
+def _headless_open_gui(*args, **kwargs) -> dict:
+    return {"ok": True, "skipped": "eval_headless"}
+
+
+# Enforce headless evaluation: suppress GUI popups during automated test sweeps.
+# Patch freecad_runtime AND rebind cad_fea's name: cad_fea imports the function
+# by value, so patching the module attribute alone is a no-op (a judge-run
+# launched a real FreeCAD GUI through exactly this hole).
+f_rt.open_in_freecad_gui = _headless_open_gui
+cad_fea.open_in_freecad_gui = _headless_open_gui
 
 JUDGE_MODEL_DEFAULT = "gemini-3.5-flash-lite"
 
