@@ -9,6 +9,22 @@ live product demo) — this file is for *my understanding and interview prep*.
 section here with the same skeleton — Pitch · Script · Tests · Evals · Demo
 prompts · Likely interview questions.
 
+## Demo asset inventory (the numbers, reconciled)
+
+These counts measure different layers — never use them interchangeably:
+
+| Count | What it is | Where verified |
+| :--- | :--- | :--- |
+| 22 | Demo prompt cards in the interactive catalog | `demo/demo_catalog.html` |
+| 45 | Browser UI checks (36 isolated single-shot + 9 multi-turn journeys) against a mocked LLM | `tests/test_browser_ui.py` |
+| 66 | Behavior eval cases (43 tool / 15 agent / 8 RAG — 18 of them adversarial attacks) | `eval/cases.json` via `eval/run_eval.py` |
+| 166 | Unit + integration tests | `pytest tests/` |
+
+The headline number for interviews is the **eval count** — behavior checks
+that gate every push via CI. The 5 agent-level adversarial cases
+(`requires_judge`) are graded by the rubric judge locally (`EVAL_JUDGE=1`)
+and report as skipped on key-less CI runs.
+
 ---
 
 ## F01 — Agent engineering foundation (AGENTS.md + ADR journal)
@@ -935,3 +951,67 @@ print(json.dumps({k: r.get(k) for k in ('method','max_von_mises_mpa','safety_fac
 - *Where do the goldens come from?* — solid is a live CalculiX run in
   `data/results/`; xtruss is a calibrated fallback (Gmsh hung on the lattice
   boolean) labeled `precomputed_demo_estimate` with `fallback: true`.
+
+---
+
+## F15a — Hybrid retrieval + RAG Lab (BM25 + RRF, grounding label)
+
+*Algorithmic precursor to F15 (embedding RAG). See `docs/adr/ADR-012`.*
+
+**Pitch:** Retrieval was the only part of the pipeline with no honesty story —
+solves state their method and what was not verified, but the UI dressed up
+whatever TF-IDF returned as if it were grounded. F15a makes retrieval hybrid
+(TF-IDF + BM25 fused by Reciprocal Rank Fusion), inspectable (a Retrieval
+Inspector shows exactly which chunk grounded each answer and how each ranker
+scored it), and honest (a `grounding: strong | weak | none` label rendered
+next to every answer). Zero API tokens, zero model downloads — the demo
+still runs with no key and no internet.
+
+**Script (~2 min):** "Two upgrades, one decision. First, quality: TF-IDF
+misranks identifier-style queries — ask the corpus 'ti64' or 'ADR-009' and
+the cosine ranking buries the exact chunk you need, because one rare token
+drowns in the vector. BM25's term saturation and length normalization handle
+that, so I run both retrievers over the same chunks — sharing one tokenizer,
+so they cannot drift — and fuse by *rank* with RRF (k=60): no score
+normalization across retrievers, no model, 40 lines. Second, honesty: every
+search now returns a grounding label computed from the fused top hit — strong
+if it clears the TF-IDF floor or sits in BM25's top-3, weak otherwise. The
+chat shows 'weak grounding' instead of pretending, which is the retrieval
+side of solver honesty. And everything is visible: the chat's Retrieval
+Inspector shows the chunk text plus each ranker's rank for every hit, and a
+separate RAG Lab page has a three-column playground — TF-IDF vs BM25 vs
+fused — plus corpus stats and a live rebuild. In interviews: why not
+embeddings? Deliberate — this corpus is 120 chunks, the demo must run
+offline, and the fusion seam (rrf_fuse) is where a local cross-encoder or
+embeddings drop in later without touching a call site."
+
+**Tests:** `tests/test_rag.py` — RRF fusion math on disagreeing rankers,
+grounding-label paths (none / weak / strong / BM25-rescue), legacy hit-shape
+back-compat with additive rank fields, stats counts.
+
+**Evals:** chunking deliberately frozen this round so the 8 RAG eval cases
+pass untouched; fusion changes hit shape additively only. (Retrieval-quality
+metrics — hit-rate@k / MRR — remain F15 scope with the embedding work.)
+
+**Demo prompts:**
+1. Chat: "What is the yield strength of Al 6061-T6?" → open *Retrieval
+   Inspector* → show the chunk + `tfidf #1 · bm25 #1` ranks.
+2. Chat: "What is the tensile strength of unobtainium?" → amber *weak/none*
+   grounding badge + honest "I don't know".
+3. RAG Lab playground: search "ti64" → TF-IDF misranks, BM25 rescues, fused
+   wins — shown, not claimed.
+4. RAG Lab stats: *Rebuild index* → chunk count updates live.
+
+**Likely interview questions:**
+- *Why RRF instead of score normalization?* Scores aren't comparable across
+  retrievers (cosine ≤ 1 vs unbounded BM25); ranks are. RRF is the standard
+  rank-only fusion and needs no tuning beyond k.
+- *Why BM25 at all — isn't TF-IDF the same thing?* BM25 adds term-frequency
+  saturation and document-length normalization; on short identifier queries
+  against long chunks the rankings differ materially (demo beat #3).
+- *What does 'weak grounding' guarantee?* Nothing about answer correctness —
+  it's a calibrated annotation on retrieval confidence, and it's rendered, not
+  filtered (solver-honesty pattern: state, don't hide).
+- *Where do embeddings fit?* Behind the same seam: `retrieve_detail` already
+  returns per-retriever breakdowns, so a third retriever (or a cross-encoder
+  rerank) joins the fusion without changing call sites (F15).

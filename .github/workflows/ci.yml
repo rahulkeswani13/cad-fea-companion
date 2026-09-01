@@ -1,0 +1,32 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Install Playwright chromium
+        run: playwright install chromium --with-deps
+
+      # No GEMINI_API_KEY here by design: LLM-backed paths fall back to the
+      # deterministic heuristic router, so CI is free and reproducible.
+      - name: Unit + integration + browser tests
+        run: python -m pytest tests/ -q
+
+      - name: Behavior evals (key-less)
+        run: GEMINI_API_KEY= python eval/run_eval.py

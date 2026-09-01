@@ -2,13 +2,14 @@
 
 > **An agentic AI engineering platform for parametric CAD generation, headless FEM simulation, and closed-loop structural optimization.**
 
-[![Tests](https://img.shields.io/badge/pytest-passing-brightgreen.svg)](tests/)
-[![Browser Tests](https://img.shields.io/badge/playwright-passing-blue.svg)](tests/test_browser_ui.py)
+[![CI](https://github.com/rahulkeswani13/cad-fea-companion/actions/workflows/ci.yml/badge.svg)](https://github.com/rahulkeswani13/cad-fea-companion/actions/workflows/ci.yml)
 [![Python](https://img.shields.io/badge/python-3.11+-blue.svg)](requirements.txt)
 [![Solver](https://img.shields.io/badge/solvers-FreeCAD%20%7C%20Gmsh%20%7C%20CalculiX-orange.svg)](companion/tools/)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
-The CAD/FEA Companion bridges **Generative AI** and **Computational Mechanics**. It uses a stateful **LangGraph** agent loop, domain-specific **RAG**, and deterministic **geometric guardrails** to orchestrate parametric CAD modeling, Delaunay meshing, and linear static FEA solves from a real-time web console.
+**~66 behavior evals + 166 unit tests + 45 browser checks gate every push — at zero API cost** (LLM-backed paths fall back to deterministic routing in CI; the rubric judge runs locally via `EVAL_JUDGE=1`).
+
+The CAD/FEA Companion bridges **Generative AI** and **Computational Mechanics**. It uses a stateful **LangGraph** agent loop, hybrid **TF-IDF + BM25 retrieval** (RRF-fused, with a grounding-confidence label and an inspectable RAG Lab), and deterministic **geometric guardrails** to orchestrate parametric CAD modeling, Delaunay meshing, and linear static FEA solves from a real-time web console.
 
 ---
 
@@ -92,7 +93,7 @@ cp .env.example .env
 The script creates `.venv` if needed, copies `.env` from `.env.example`, ingests `docs/` into the local TF-IDF store, then starts uvicorn. Open [http://127.0.0.1:8000](http://127.0.0.1:8000) in your browser.
 
 ### 3. Interactive Aerospace Simulation Console
-Open [`demo/demo_catalog.html`](demo/demo_catalog.html) directly in any browser to explore the full interactive architecture diagram, mission briefing, and 36 pre-engineered prompt teardowns.
+Open [`demo/demo_catalog.html`](demo/demo_catalog.html) directly in any browser to explore the full interactive architecture diagram, mission briefing, and 22 prompt teardowns.
 
 ---
 

@@ -1,9 +1,17 @@
 #!/usr/bin/env python3
-"""Run eval cases for RAG, tools, and agent heuristics."""
+"""Run eval cases for RAG, tools, and agent heuristics.
+
+Additive layers (evals plan):
+- deterministic trajectory checks on agent cases (always on, gating);
+- rubric-based LLM judge on agent answers, opt-in via EVAL_JUDGE=1
+  (advisory — verdicts recorded, never gating);
+- ``requires_judge`` cases report as skipped on key-less runs.
+"""
 
 from __future__ import annotations
 
 import json
+import os
 import sys
 from pathlib import Path
 
@@ -11,17 +19,26 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
 from companion.agent.graph import run_agent
+from companion.config import get_settings
 from companion.rag.store import ingest_docs, retrieve
 from companion.tools.cad_fea import call_tool
 import companion.tools.freecad_runtime as f_rt
+from eval import judge
+from eval import trajectory
 
 # Enforce headless evaluation: suppress GUI popups during automated test sweeps
 f_rt.open_in_freecad_gui = lambda *args, **kwargs: {"ok": True, "skipped": "eval_headless"}
+
+JUDGE_MODEL_DEFAULT = "gemini-3.5-flash-lite"
 
 
 def contains_any(text: str, needles: list[str]) -> bool:
     lower = text.lower()
     return any(n.lower() in lower for n in needles)
+
+
+def _print_row(cid: str, ok: bool, detail: str) -> None:
+    print(f"{'PASS' if ok else 'FAIL'}  {cid}  {detail}")
 
 
 def main() -> int:
@@ -31,12 +48,22 @@ def main() -> int:
 
     passed = 0
     failed = 0
+    skipped = 0
+    judge_verdicts: list[dict] = []
     rows = []
+    judge_model = os.environ.get("EVAL_JUDGE_MODEL", JUDGE_MODEL_DEFAULT)
 
     for case in cases:
         cid = case["id"]
         ok = False
         detail = ""
+
+        if case["type"] == "agent" and case.get("requires_judge") and not judge.judge_enabled():
+            skipped += 1
+            rows.append({"id": cid, "ok": True, "skipped": True, "detail": "skipped (needs judge)"})
+            print(f"SKIP  {cid}  needs judge (set EVAL_JUDGE=1 with a key to grade)")
+            continue
+
         try:
             if case["type"] == "rag":
                 hits = retrieve(case["query"], k=4)
@@ -105,6 +132,34 @@ def main() -> int:
                 if case.get("expect_tools_any"):
                     ok = ok and any(t in tools for t in case["expect_tools_any"])
                 detail = f"tools={tools}"
+                # Deterministic trajectory checks: gating (unlike the judge).
+                traj = trajectory.run_trajectory_checks(case, out.get("tool_results") or [])
+                if traj:
+                    ok = False
+                    detail += " | " + "; ".join(traj)
+                # Rubric judge: advisory — recorded, never gates.
+                if judge.judge_enabled():
+                    verdict = judge.judge_agent_case(
+                        case,
+                        answer,
+                        tools,
+                        get_settings().gemini_api_key,
+                        judge_model,
+                    )
+                    judge_verdicts.append({"id": cid, **verdict})
+                    grade = (
+                        "PASS" if verdict.get("pass") is True
+                        else "FAIL" if verdict.get("pass") is False
+                        else str(verdict.get("verdict") or "?").upper()
+                    )
+                    detail += f" | judge={grade}"
+                    rows.append({"id": cid, "ok": ok, "judge": verdict, "detail": detail})
+                    _print_row(cid, ok, detail)
+                    if ok:
+                        passed += 1
+                    else:
+                        failed += 1
+                    continue
             else:
                 detail = f"unknown type {case['type']}"
         except Exception as exc:  # noqa: BLE001
@@ -112,18 +167,48 @@ def main() -> int:
             detail = f"exception: {exc}"
 
         rows.append({"id": cid, "ok": ok, "detail": detail})
+        _print_row(cid, ok, detail)
         if ok:
             passed += 1
-            print(f"PASS  {cid}  {detail}")
         else:
             failed += 1
-            print(f"FAIL  {cid}  {detail}")
 
-    summary = {"passed": passed, "failed": failed, "total": len(cases), "rows": rows}
+    judge_rows = [v for v in judge_verdicts]
+    tokens = {
+        "input_tokens": sum((v.get("usage") or {}).get("input_tokens", 0) for v in judge_rows),
+        "output_tokens": sum((v.get("usage") or {}).get("output_tokens", 0) for v in judge_rows),
+    }
+    summary = {
+        "passed": passed,
+        "failed": failed,
+        "skipped": skipped,
+        "total": len(cases),
+        "rows": rows,
+        "judge": {
+            "enabled": judge.judge_enabled(),
+            "model": judge_model if judge.judge_enabled() else None,
+            "graded": len(judge_rows),
+            "judge_passed": sum(1 for v in judge_rows if v.get("pass") is True),
+            "judge_failed": sum(1 for v in judge_rows if v.get("pass") is False),
+            "judge_unparsed": sum(1 for v in judge_rows if v.get("verdict") != "graded"),
+            "tokens": tokens,
+            "verdicts": judge_rows,
+        },
+    }
     out_path = ROOT / "data" / "results" / "eval_report.json"
     out_path.parent.mkdir(parents=True, exist_ok=True)
     out_path.write_text(json.dumps(summary, indent=2), encoding="utf-8")
-    print(f"\nSummary: {passed}/{len(cases)} passed -> {out_path}")
+    judge_line = ""
+    if judge.judge_enabled():
+        judge_line = (
+            f" | judge: {summary['judge']['judge_passed']}/{len(judge_rows)} passed,"
+            f" {tokens['input_tokens']}in/{tokens['output_tokens']}out tokens"
+        )
+    print(
+        f"\nSummary: {passed}/{len(cases)} passed"
+        + (f", {skipped} skipped" if skipped else "")
+        + f" -> {out_path}{judge_line}"
+    )
     return 0 if failed == 0 else 1
 
 
