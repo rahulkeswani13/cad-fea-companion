@@ -41,7 +41,12 @@ def tc(name: str, args: dict[str, Any] | None = None) -> ToolCallSpec:
 
 
 class StubTools:
-    """In-memory CAD/FEA tool stub with controllable failures."""
+    """In-memory CAD/FEA tool stub with controllable failures.
+
+    H4: like the production tools, successful creates/solves commit into the
+    CAD module session (_STATE) — the graph's sync_cad_state node pulls from
+    there, so the stub seam behaves exactly like the real dispatch path.
+    """
 
     def __init__(self) -> None:
         self.calls: list[tuple[str, dict[str, Any]]] = []
@@ -50,9 +55,24 @@ class StubTools:
         self.fail_create_times: int = 0
         self._create_attempts: int = 0
 
+    def _commit_session(self) -> None:
+        """Write current stub state into the (thread-scoped) CAD session."""
+        from companion.tools.cad_fea import _STATE
+
+        if self.geometry is not None:
+            _STATE["geometry"] = self.geometry
+        if self.results is not None:
+            _STATE["results"] = self.results
+
     def __call__(self, name: str, args: dict[str, Any] | None = None) -> dict[str, Any]:
         args = dict(args or {})
         self.calls.append((name, args))
+        try:
+            return self._dispatch(name, args)
+        finally:
+            self._commit_session()
+
+    def _dispatch(self, name: str, args: dict[str, Any]) -> dict[str, Any]:
         if name == "create_brake_pedal":
             self._create_attempts += 1
             if self._create_attempts <= self.fail_create_times:

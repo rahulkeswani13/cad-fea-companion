@@ -889,8 +889,6 @@ def build_graph(
 
         new_results: list[dict[str, Any]] = []
         tool_messages: list[ToolMessage] = []
-        geometry = state.get("cad_geometry")
-        results = state.get("cad_results")
 
         for p in pending:
             name = str(p.get("name", ""))
@@ -904,42 +902,23 @@ def build_graph(
                     name=name,
                 )
             )
-            # Mirror important CAD facts into graph state
-            if name in (
-                "create_cantilever",
-                "create_brake_pedal",
-            ) and result.get("ok"):
-                geometry = result
-            if name == "apply_load_and_solve" and result.get("ok"):
-                results = result
-            if name == "get_max_von_mises" and result.get("ok"):
-                results = {**(results or {}), **result}
-            if name in (
-                "get_lattice_metrics",
-                "compare_brake_pedal_variants",
-                "compare_materials",
-            ) and result.get("ok"):
-                # Keep geometry; metrics/compare are observational.
-                pass
 
-        # Also pull module _STATE after tools (production path)
-        session = get_state()
-        if session.get("geometry"):
-            geometry = session["geometry"]
-        if session.get("results"):
-            results = session["results"]
+        # H4: node_tools no longer mirrors geometry/results into graph state —
+        # the CAD module session (_SESSIONS via _STATE) stays the single
+        # authoritative writer, and sync_cad_state is the only graph-side
+        # writer pulling from it.
 
         prior = list(state.get("tool_results") or [])
         return {
             "tools_node_visits": visits,
             "pending_tool_calls": [],
             "tool_results": prior + new_results,
-            "cad_geometry": geometry,
-            "cad_results": results,
             "messages": tool_messages,
         }
 
     def node_sync_cad_state(state: AgentState) -> dict[str, Any]:
+        # H4: the only graph-side writer of cad_geometry/cad_results — it
+        # mirrors the authoritative CAD module session into graph state.
         session = get_state()
         updates: dict[str, Any] = {}
         if session.get("geometry") is not None:
