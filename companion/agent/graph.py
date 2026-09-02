@@ -14,6 +14,7 @@ from langgraph.graph import END, StateGraph
 from langgraph.graph.message import add_messages
 from langgraph.types import Command, interrupt
 
+from companion.agent.context import condense_history
 from companion.agent.tools import FREECAD_MUTATING_TOOLS, get_langchain_tools
 from companion.config import Settings, get_settings
 from companion.llm.providers import (
@@ -699,13 +700,15 @@ def build_graph(
                     cad_state=_cad_state_blob(state),
                 )
                 history = list(state.get("messages") or [])
-                # Ensure system + latest human are present for this turn
+                # Ensure system + latest human are present for this turn.
+                # H1: trim the *sent* payload only — the checkpointed history
+                # (graph state) keeps every message verbatim.
                 msgs: list[BaseMessage] = [SystemMessage(content=system)]
-                # Drop prior system messages from history; keep human/ai/tool
-                for m in history:
-                    if isinstance(m, SystemMessage):
-                        continue
-                    msgs.append(m)
+                msgs.extend(
+                    condense_history(
+                        [m for m in history if not isinstance(m, SystemMessage)]
+                    )
+                )
                 if not any(isinstance(m, HumanMessage) for m in msgs):
                     msgs.append(HumanMessage(content=message))
 
