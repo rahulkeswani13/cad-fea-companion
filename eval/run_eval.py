@@ -24,6 +24,7 @@ from companion.rag.store import ingest_docs, retrieve
 import companion.tools.cad_fea as cad_fea
 from companion.tools.cad_fea import call_tool
 import companion.tools.freecad_runtime as f_rt
+from eval import history
 from eval import judge
 from eval import trajectory
 
@@ -208,16 +209,26 @@ def main() -> int:
     out_path = ROOT / "data" / "results" / "eval_report.json"
     out_path.parent.mkdir(parents=True, exist_ok=True)
     out_path.write_text(json.dumps(summary, indent=2), encoding="utf-8")
+
+    # H5: append to the trend history and print the delta vs the previous run.
+    history_path = ROOT / "data" / "results" / "eval_history.jsonl"
+    entry = history.summarize_for_history(summary)
+    previous = history.last_history_entry(history_path)
+    delta = history.compute_delta(previous, entry)
+    entry["delta"] = delta
+    history.append_history_entry(history_path, entry)
+
     judge_line = ""
     if judge.judge_enabled():
         judge_line = (
             f" | judge: {summary['judge']['judge_passed']}/{len(judge_rows)} passed,"
             f" {tokens['input_tokens']}in/{tokens['output_tokens']}out tokens"
         )
+    delta_line = f" | delta vs previous: {history.format_delta(delta)}" if delta else ""
     print(
         f"\nSummary: {passed}/{len(cases)} passed"
         + (f", {skipped} skipped" if skipped else "")
-        + f" -> {out_path}{judge_line}"
+        + f" -> {out_path}{judge_line}{delta_line}"
     )
     return 0 if failed == 0 else 1
 
