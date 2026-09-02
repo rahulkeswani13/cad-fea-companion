@@ -18,8 +18,10 @@ def test_ingest_defaults_to_declared_corpus_dirs():
     result = ingest_docs()
     assert result["ok"] is True
     paths = [doc["path"] for doc in result["documents"]]
-    assert len(paths) == 20
-    assert all(p.startswith(("docs/reference/", "docs/adr/")) for p in paths)
+    # Bidirectional: ingest exactly matches the declared corpus selection —
+    # no magic doc count (ADR-014 joining the corpus must not break this).
+    assert paths == [source for _, source in collect_corpus_files()]
+    assert paths and all(p.startswith(("docs/reference/", "docs/adr/")) for p in paths)
     assert "docs/reference/ARCHITECTURE.md" in paths
     assert "docs/reference/materials.md" in paths
     assert not any("PLAN" in p for p in paths)
