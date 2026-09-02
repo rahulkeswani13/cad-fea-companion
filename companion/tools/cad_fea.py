@@ -346,6 +346,8 @@ def create_brake_pedal(
         return {
             "ok": False,
             "error": f"web_type must be one of {sorted(bp.WEB_TYPES)}, got {web_type!r}",
+            "error_class": "bad_params",
+            "correction": "Use web_type='solid', 'xtruss', or 'fcc' ('bcc' aliases to xtruss).",
         }
     gate = validate_geometry_payload(
         {"cell_size_mm": cell_size_mm, "strut_radius_mm": strut_radius_mm}
@@ -716,6 +718,8 @@ def get_lattice_metrics() -> dict[str, Any]:
             "error": (
                 "No lattice geometry. Call create_brake_pedal first."
             ),
+            "error_class": "no_geometry",
+            "correction": "Call create_brake_pedal first, then retry get_lattice_metrics.",
         }
     mod = bp
     vols = mod.estimate_part_volume_mm3(
@@ -1058,13 +1062,23 @@ def _apply_load_and_solve_brake_pedal(
                 }
             )
         else:
-            return fem_result or {"ok": False, "error": "FEM failed and fallback disabled"}
+            return fem_result or {
+            "ok": False,
+            "error": "FEM failed and fallback disabled",
+            "error_class": "solve_failed",
+            "correction": outcome.correction_for("solve_failed"),
+        }
     elif settings.fem_allow_analytical_fallback:
         result = _load_precomputed_or_estimate(
             {"warning": "FreeCAD not installed; using precomputed/estimate FEA."}
         )
     else:
-        return {"ok": False, "error": "FreeCAD not installed and fallback disabled"}
+        return {
+            "ok": False,
+            "error": "FreeCAD not installed and fallback disabled",
+            "error_class": "freecad_missing",
+            "correction": outcome.correction_for("freecad_missing"),
+        }
 
     vm = result.get("max_von_mises_mpa")
     if vm:
@@ -1172,13 +1186,23 @@ def _apply_load_and_solve_uav_arm(
                 {"freecad_error": (fem_result or {}).get("error")}
             )
         else:
-            return fem_result or {"ok": False, "error": "FEM failed and fallback disabled"}
+            return fem_result or {
+            "ok": False,
+            "error": "FEM failed and fallback disabled",
+            "error_class": "solve_failed",
+            "correction": outcome.correction_for("solve_failed"),
+        }
     elif settings.fem_allow_analytical_fallback:
         result = _load_precomputed_or_estimate(
             {"warning": "FreeCAD not installed; using precomputed/estimate FEA."}
         )
     else:
-        return {"ok": False, "error": "FreeCAD not installed and fallback disabled"}
+        return {
+            "ok": False,
+            "error": "FreeCAD not installed and fallback disabled",
+            "error_class": "freecad_missing",
+            "correction": outcome.correction_for("freecad_missing"),
+        }
 
     vm = result.get("max_von_mises_mpa")
     if vm:
@@ -1237,6 +1261,11 @@ def apply_load_and_solve(
             "error": (
                 "No geometry. Call create_brake_pedal, create_uav_arm, "
                 "or create_cantilever first."
+            ),
+            "error_class": "no_geometry",
+            "correction": (
+                "Call create_brake_pedal, create_uav_arm, or "
+                "create_cantilever first, then retry apply_load_and_solve."
             ),
         }
 
@@ -1402,7 +1431,12 @@ print("COMPANION_JSON:" + json.dumps(payload))
         if fem_result and not fem_result.get("ok"):
             result["freecad_error"] = fem_result.get("error")
     else:
-        return fem_result or {"ok": False, "error": "FEM failed and fallback disabled"}
+        return fem_result or {
+            "ok": False,
+            "error": "FEM failed and fallback disabled",
+            "error_class": "solve_failed",
+            "correction": outcome.correction_for("solve_failed"),
+        }
 
     result["ok"] = True
     result["force_n"] = force_n
@@ -1438,6 +1472,8 @@ def get_max_von_mises() -> dict[str, Any]:
         return {
             "ok": False,
             "error": "No results yet. Call apply_load_and_solve first.",
+            "error_class": "no_results",
+            "correction": "Call apply_load_and_solve first, then retry get_max_von_mises.",
             "part": geometry.get("part"),
         }
     return {
@@ -1602,6 +1638,11 @@ def open_current_in_freecad() -> dict[str, Any]:
         return {
             "ok": False,
             "error": "No FreeCAD document yet. Create/solve a model first.",
+            "error_class": "no_geometry",
+            "correction": (
+                "Call create_brake_pedal, create_uav_arm, or create_cantilever "
+                "(then apply_load_and_solve for FEM) before opening FreeCAD."
+            ),
         }
     return open_in_freecad_gui(path)
 
@@ -1710,7 +1751,16 @@ def load_precomputed_results(case: str = "auto") -> dict[str, Any]:
             path.parent.mkdir(parents=True, exist_ok=True)
             path.write_text(json.dumps(data, indent=2), encoding="utf-8")
         else:
-            return {"ok": False, "error": f"Missing {path}"}
+            return {
+                "ok": False,
+                "error": f"Missing {path}",
+                "error_class": "bad_params",
+                "correction": (
+                    "Use case=auto, or a stored case like brake_xtruss / "
+                    "uav_solid / cantilever; run create + solve first if no "
+                    "results exist on disk."
+                ),
+            }
     else:
         data = json.loads(path.read_text(encoding="utf-8"))
     _STATE["results"] = data
@@ -1839,4 +1889,13 @@ def _call_tool_raw(name: str, args: dict[str, Any]) -> dict[str, Any]:
         )
     if name == "open_in_freecad":
         return open_current_in_freecad()
-    return {"ok": False, "error": f"Unknown tool: {name}"}
+    return {
+        "ok": False,
+        "error": f"Unknown tool: {name}",
+        "error_class": "unknown_tool",
+        "correction": (
+            "Call one of the registered tools (see TOOL_SPECS), e.g. "
+            "create_brake_pedal, create_uav_arm, create_cantilever, "
+            "apply_load_and_solve, or get_max_von_mises."
+        ),
+    }
