@@ -46,6 +46,8 @@ class AgentState(TypedDict, total=False):
     iteration: int
     agent_visits: int
     tools_node_visits: int
+    # H2: per-run token totals across this run's LLM calls (None = no LLM use).
+    usage: dict[str, int] | None
 
 
 SYSTEM_PROMPT = """You are a CAD/FEA engineering companion.
@@ -613,6 +615,50 @@ def _finalize_without_llm(state: AgentState, draft: str = "") -> str:
     return "\n\n".join(parts).strip() or "No response generated."
 
 
+def _add_usage(
+    prev: dict[str, int] | None, turn: dict[str, int] | None
+) -> dict[str, int] | None:
+    """Accumulate per-run token totals (H2). Missing usage degrades to prev/None."""
+    if not turn:
+        return prev
+    out = dict(prev or {})
+    for key in ("input_tokens", "output_tokens", "total_tokens"):
+        out[key] = int(out.get(key) or 0) + int(turn.get(key) or 0)
+    return out
+
+
+# H2 session token metering: per-thread cumulative totals, keyed like the CAD
+# module sessions (thread_id -> totals). In-process only, mirrors _SESSIONS.
+_TOKEN_SESSIONS: dict[str, dict[str, int]] = {}
+
+
+def record_session_usage(thread_id: str, usage: dict[str, int] | None) -> None:
+    """Add one finished run's token usage to the thread's session totals."""
+    if not usage:
+        return
+    totals = _TOKEN_SESSIONS.setdefault(
+        str(thread_id),
+        {"input_tokens": 0, "output_tokens": 0, "total_tokens": 0, "turns": 0},
+    )
+    for key in ("input_tokens", "output_tokens", "total_tokens"):
+        totals[key] += int(usage.get(key) or 0)
+    totals["turns"] += 1
+
+
+def session_usage() -> dict[str, Any]:
+    """Per-thread cumulative token totals plus an all-threads sum (/api/health)."""
+    threads = {tid: dict(totals) for tid, totals in _TOKEN_SESSIONS.items()}
+    total = {
+        key: sum(totals.get(key, 0) for totals in _TOKEN_SESSIONS.values())
+        for key in ("input_tokens", "output_tokens", "total_tokens", "turns")
+    }
+    return {"threads": threads, "total": total}
+
+
+def reset_token_sessions() -> None:
+    _TOKEN_SESSIONS.clear()
+
+
 def build_graph(
     *,
     llm: LLMProvider | None = None,
@@ -714,6 +760,7 @@ def build_graph(
 
                 turn: AgentTurn = provider.complete_messages(msgs, tools=lc_tools)
                 pending = _tool_specs_to_pending(turn.tool_calls)
+                usage_totals = _add_usage(state.get("usage"), turn.usage)
 
                 # Assist only when the user asked to run CAD/FEA and the LLM omitted tools.
                 if not pending and visits == 1 and _has_cad_tool_intent(message):
@@ -740,6 +787,7 @@ def build_graph(
                 updates: dict[str, Any] = {
                     **base,
                     "pending_tool_calls": pending,
+                    "usage": usage_totals,
                     "messages": [AIMessage(**ai_kwargs)],
                 }
                 if not pending:
@@ -993,6 +1041,7 @@ def run_agent(
                     "iteration": 0,
                     "agent_visits": 0,
                     "tools_node_visits": 0,
+                    "usage": None,
                 },
                 config,
             )
@@ -1009,8 +1058,12 @@ def run_agent(
                     answer = _message_content(msg)
                     break
 
+    usage = final.get("usage") if isinstance(final, dict) else None
+    record_session_usage(tid, usage)
+
     return {
         "answer": answer,
+        "usage": usage,
         "citations": (final.get("citations") if isinstance(final, dict) else None) or [],
         "grounding": (final.get("grounding") if isinstance(final, dict) else None) or "none",
         "tool_calls": (final.get("pending_tool_calls") if isinstance(final, dict) else None)
@@ -1056,6 +1109,7 @@ def stream_agent(
                 "iteration": 0,
                 "agent_visits": 0,
                 "tools_node_visits": 0,
+                "usage": None,
             }
 
         yield from _stream_agent_events(compiled, stream_input, config, tid)

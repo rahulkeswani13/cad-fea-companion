@@ -12,7 +12,7 @@ from fastapi.responses import FileResponse, JSONResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
-from companion.agent.graph import run_agent, stream_agent
+from companion.agent.graph import run_agent, session_usage, stream_agent
 from companion.config import get_settings
 from companion.llm.providers import provider_status
 from companion.rag.store import get_store, ingest_docs, retrieve_detail
@@ -89,6 +89,7 @@ def health() -> dict[str, Any]:
             "max_tool_rounds": settings.agent_max_tool_rounds,
             "require_tool_confirm": settings.agent_require_tool_confirm,
         },
+        "session_usage": session_usage(),
     }
 
 
