@@ -724,7 +724,7 @@ import json; print(json.dumps(call_tool('run_convergence_study', {'mesh_sizes_mm
 **Pitch:** "Compare Ti vs Al" is now a cited, physics-honest tool call — and
 "switch the pedal to titanium" is a one-line design-program edit. Five
 materials (Al 6061-T6, Al 7075-T6, Ti-6Al-4V, PA12, Steel-Generic) live in a
-cited table (`data/materials.json`, mirrored as `docs/materials.md` for RAG
+cited table (`data/materials.json`, mirrored as `docs/reference/materials.md` for RAG
 citations, drift-checked by a test). `compare_materials` scales the best
 available run per material — stress carried over, deflection × E ratio, mass
 × density ratio, SF vs *each* material's own yield — ranked lightest at
@@ -742,7 +742,7 @@ First, **citations before embeddings**. The plan orders F09 before the
 embedding-RAG feature, so 'RAG-grounded' can't mean retrieval yet — and
 shouldn't. Every number the agent quotes comes from a five-row table where
 each property traces to a source string (MatWeb, MMPDS, EOS, the FreeCAD
-card). The same table is mirrored into `docs/materials.md`, which the
+card). The same table is mirrored into `docs/reference/materials.md`, which the
 existing TF-IDF store ingests — so chat citations and tool citations are the
 *same numbers*, and a unit test fails if the two ever drift. When embeddings
 arrive, they wrap this table; they don't replace it.

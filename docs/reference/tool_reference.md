@@ -9,7 +9,7 @@ geometry; `get_max_von_mises` returns max stress from the latest solve.
 
 - `create_brake_pedal` — create the brake-pedal lattice bracket
   (web_type solid|xtruss|fcc), export STEP/STL. Optional `material`
-  (default Al 6061-T6; see `docs/materials.md`).
+  (default Al 6061-T6; see `docs/reference/materials.md`).
 - `create_cantilever` — create a rectangular cantilever beam (mm). Optional
   `material` (default Steel-Generic).
 - `create_uav_arm` — F26 flagship: create the quadcopter arm (clamp boss +

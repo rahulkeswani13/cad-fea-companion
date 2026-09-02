@@ -64,7 +64,7 @@ The backend runs in-process with **`ScriptedLLMProvider`** and **`StubTools`** f
 
 #### 1. `test_ui_f01_al6061_properties`
 * **Prompt**: `"What is the yield strength and density of Al 6061-T6?"`
-* **How it Passes**: Assistant response renders 276 MPa yield strength and 2.70 g/cm³ density, citing `[docs/materials.md]`.
+* **How it Passes**: Assistant response renders 276 MPa yield strength and 2.70 g/cm³ density, citing `[docs/reference/materials.md]`.
 * **How it Fails**: Hallucinated numbers, missing citation tag, or unparsed markdown.
 
 #### 2. `test_ui_f01_cantilever_analytical_formula`
@@ -74,7 +74,7 @@ The backend runs in-process with **`ScriptedLLMProvider`** and **`StubTools`** f
 
 #### 3. `test_ui_f01_structural_steel_modulus`
 * **Prompt**: `"What Young's modulus should I assume for structural steel in this demo?"`
-* **How it Passes**: Assistant returns 210 GPa with citation `[docs/materials.md]`.
+* **How it Passes**: Assistant returns 210 GPa with citation `[docs/reference/materials.md]`.
 * **How it Fails**: Returns incorrect units (e.g. MPa instead of GPa) or fails to cite source.
 
 #### 4. `test_ui_f01_ti6al4v_allowables`

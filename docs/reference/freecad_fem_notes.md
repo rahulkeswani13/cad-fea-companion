@@ -16,7 +16,7 @@
 - Continuous **4 mm** rim on all borders via `makeThickness` (same wall idea as hole rings)
 - `web_type=bcc` aliases to `xtruss` on the pedal.
 
-See `docs/brake_pedal_lattice.md` for KPIs and design vs non-design regions.
+See `docs/reference/brake_pedal_lattice.md` for KPIs and design vs non-design regions.
 
 ## Cantilever demo setup (secondary / regression)
 

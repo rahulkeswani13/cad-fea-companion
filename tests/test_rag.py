@@ -17,8 +17,8 @@ def test_ingest_docs_skips_roadmap_files():
     paths = [doc["path"] for doc in result["documents"]]
     assert "docs/PLAN.md" not in paths
     assert "docs/PLAN_F26.md" not in paths
-    assert "docs/ARCHITECTURE.md" in paths
-    assert "docs/materials.md" in paths
+    assert "docs/reference/ARCHITECTURE.md" in paths
+    assert "docs/reference/materials.md" in paths
 
 
 # --- Hybrid retrieval (ADR-012) -------------------------------------------

@@ -4,7 +4,7 @@
     "F09 source of truth for material properties (ADR-010).",
     "Room-temperature handbook/datasheet values for bulk material — NOT as-built",
     "additive-manufacturing allowables (no surface-roughness, porosity, or",
-    "build-orientation knockdowns). docs/materials.md mirrors this file for",
+    "build-orientation knockdowns). docs/reference/materials.md mirrors this file for",
     "RAG citations; tests/test_materials.py asserts the two stay in sync.",
     "Canonical ids are lowercase alphanumeric; aliases are matched after",
     "normalization (lowercase, non-alphanumerics stripped): 'Ti-6Al-4V', 'ti64',",

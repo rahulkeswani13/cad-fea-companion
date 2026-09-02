@@ -422,7 +422,7 @@
     "min_citations": 1,
     "judge_rubric": [
       "gives ~200-210 GPa for steel with units",
-      "grounds it in the docs/materials table"
+      "grounds it in the docs/reference/materials table"
     ],
     "expect_max_rounds": 6
   },
