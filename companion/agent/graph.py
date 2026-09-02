@@ -143,6 +143,29 @@ def _heuristic_next_tool(
     return _ROUTER.plan(message, cad_geometry, cad_results, tool_results)
 
 
+# H12: bounded tool-receipt timeline in the CAD-state blob — the offline-first
+# replacement for LLM summarization of older turns. The digest rides in the
+# system prompt every turn, so long-session history awareness costs a bounded
+# ~8 entries regardless of how many turns accumulated (zero marginal tokens).
+DIGEST_MAX_TOOLS = 8
+
+
+def _tool_digest(tool_results: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Last DIGEST_MAX_TOOLS tool calls as tiny receipts (no KPI values)."""
+    entries: list[dict[str, Any]] = []
+    for item in (tool_results or [])[-DIGEST_MAX_TOOLS:]:
+        result = item.get("result") or {}
+        receipt = result.get("receipt") or {}
+        entries.append(
+            {
+                "tool": item.get("name"),
+                "ok": result.get("ok") is True,
+                "elapsed_s": receipt.get("elapsed_s"),
+            }
+        )
+    return entries
+
+
 def _cad_state_blob(state: AgentState) -> str:
     """KPI-only summary for the system prompt (F02: keep LLM context compact)."""
     geo = state.get("cad_geometry") or {}
@@ -186,7 +209,10 @@ def _cad_state_blob(state: AgentState) -> str:
             ),
         ),
     }
-    if not blob["geometry"] and not blob["results"]:
+    digest = _tool_digest(state.get("tool_results"))
+    if digest:
+        blob["recent_tools"] = digest
+    if not blob["geometry"] and not blob["results"] and not digest:
         return "(none)"
     return json.dumps(blob, default=str)
 
