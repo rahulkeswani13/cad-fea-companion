@@ -1,0 +1,417 @@
+[
+  {
+    "name": "create_brake_pedal",
+    "description": "Create a brake-pedal lattice bracket (pivot + clevis rings + footpad) with web_type solid|xtruss|fcc lattice fill, export STEP/STL, open FreeCAD GUI. Material defaults to Al 6061-T6.",
+    "parameters": {
+      "properties": {
+        "web_type": {
+          "default": "xtruss",
+          "description": "Web fill: solid, 2.5D X-truss, or fcc lattice",
+          "enum": [
+            "solid",
+            "xtruss",
+            "fcc"
+          ],
+          "title": "Web Type",
+          "type": "string"
+        },
+        "cell_size_mm": {
+          "default": 15.0,
+          "description": "Lattice cell size mm (5-40)",
+          "maximum": 40.0,
+          "minimum": 5.0,
+          "title": "Cell Size Mm",
+          "type": "number"
+        },
+        "strut_radius_mm": {
+          "default": 2.5,
+          "description": "X-truss strut thickness mm (or FCC strut radius), 1-5",
+          "maximum": 5.0,
+          "minimum": 1.0,
+          "title": "Strut Radius Mm",
+          "type": "number"
+        },
+        "material": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Material id or alias (al6061t6 default; also al7075t6, ti6al4v, pa12, steel; 'ti', '7075', 'nylon' accepted)",
+          "title": "Material"
+        },
+        "open_gui": {
+          "default": false,
+          "description": "Open FreeCAD GUI after create",
+          "title": "Open Gui",
+          "type": "boolean"
+        }
+      },
+      "type": "object"
+    }
+  },
+  {
+    "name": "create_uav_arm",
+    "description": "Create the flagship UAV arm (root clamp boss + tapered arm + tip motor-mount ring), web_type solid|xtruss (chord rails + exposed X-truss web), export STEP/STL, open FreeCAD GUI. Demo load case: 120 N tip thrust at the motor ring. Material defaults to Al 6061-T6.",
+    "parameters": {
+      "properties": {
+        "web_type": {
+          "default": "solid",
+          "description": "Arm fill: solid, or chord rails + exposed X-truss web",
+          "enum": [
+            "solid",
+            "xtruss"
+          ],
+          "title": "Web Type",
+          "type": "string"
+        },
+        "arm_length_mm": {
+          "default": 180.0,
+          "description": "Arm length mm (120-320)",
+          "maximum": 320.0,
+          "minimum": 120.0,
+          "title": "Arm Length Mm",
+          "type": "number"
+        },
+        "cell_size_mm": {
+          "default": 12.0,
+          "description": "Lattice cell size mm (6-30)",
+          "maximum": 30.0,
+          "minimum": 6.0,
+          "title": "Cell Size Mm",
+          "type": "number"
+        },
+        "strut_radius_mm": {
+          "default": 1.8,
+          "description": "X-truss strut radius mm, 1.5 (meshable minimum) - 4",
+          "maximum": 4.0,
+          "minimum": 1.5,
+          "title": "Strut Radius Mm",
+          "type": "number"
+        },
+        "material": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Material id or alias (al6061t6 default; also al7075t6, ti6al4v, pa12, steel)",
+          "title": "Material"
+        },
+        "open_gui": {
+          "default": false,
+          "description": "Open FreeCAD GUI after create",
+          "title": "Open Gui",
+          "type": "boolean"
+        }
+      },
+      "type": "object"
+    }
+  },
+  {
+    "name": "get_lattice_metrics",
+    "description": "Return relative density, volumes, and mass estimate for the current brake-pedal geometry.",
+    "parameters": {
+      "properties": {},
+      "type": "object"
+    }
+  },
+  {
+    "name": "compare_brake_pedal_variants",
+    "description": "Compare solid vs X-truss vs FCC brake-pedal mass, relative density, max von Mises, pad deflection; recommend lightest with SF>=1.5 against the program material's yield.",
+    "parameters": {
+      "properties": {},
+      "type": "object"
+    }
+  },
+  {
+    "name": "compare_materials",
+    "description": "F09 material comparison for a part: rows for every table material (Al 6061-T6, Al 7075-T6, Ti-6Al-4V, PA12, Steel-Generic) with mass, max von Mises, safety factor vs that material's yield, and scaled deflection, ranked by lightest at SF>=1.5. Scales the best available base run (session -> run history -> precomputed; labeled per row) linear-elastically; PA12 deflection is flagged not verified. Every row carries citation sources.",
+    "parameters": {
+      "properties": {
+        "part": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "brake_pedal|cantilever, default = active part (else brake_pedal)",
+          "title": "Part"
+        }
+      },
+      "type": "object"
+    }
+  },
+  {
+    "name": "get_design_program",
+    "description": "Return the persisted design program (source of truth) for a part: editable params, read-only fixed constants, revision number, and params hash. Defaults to the active part; with no active part, lists the programs on disk.",
+    "parameters": {
+      "properties": {
+        "part": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "brake_pedal|cantilever|uav_arm, default = active part",
+          "title": "Part"
+        }
+      },
+      "type": "object"
+    }
+  },
+  {
+    "name": "update_design_program",
+    "description": "Edit the design program and rebuild the part in one step (e.g. 'set cell size to 12' without recreating): merges changes over current params, range-preflights (hard reject, never clamps), rebuilds geometry, commits the new revision on success. A failed rebuild preserves the accepted revision; a no-op change does not rebuild or bump the revision.",
+    "parameters": {
+      "properties": {
+        "part": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "brake_pedal|cantilever|uav_arm, default = active part",
+          "title": "Part"
+        },
+        "changes": {
+          "anyOf": [
+            {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "object of param -> value, e.g. {\"cell_size_mm\": 12}; editable: web_type, cell_size_mm [5,40], strut_radius_mm [1,5], material (al6061t6|al7075t6|ti6al4v|pa12|steel; aliases like 'ti', '7075', 'nylon' accepted) for lattice parts; arm_length_mm [120,320], cell_size_mm [6,30], strut_radius_mm [1.5,4] for the uav_arm; or length_mm [10,500], width_mm [2,100], height_mm [1,50], material for the cantilever",
+          "title": "Changes"
+        },
+        "dry_run": {
+          "default": false,
+          "description": "bool, default false — preflight + hash preview only, no rebuild",
+          "title": "Dry Run",
+          "type": "boolean"
+        },
+        "open_gui": {
+          "default": false,
+          "description": "bool, default false",
+          "title": "Open Gui",
+          "type": "boolean"
+        }
+      },
+      "type": "object"
+    }
+  },
+  {
+    "name": "create_cantilever",
+    "description": "Create a rectangular cantilever beam (mm), export STEP/STL, and open the model in the FreeCAD GUI. Material defaults to Steel-Generic.",
+    "parameters": {
+      "properties": {
+        "length_mm": {
+          "default": 100.0,
+          "description": "Beam length mm (10-500)",
+          "maximum": 500.0,
+          "minimum": 10.0,
+          "title": "Length Mm",
+          "type": "number"
+        },
+        "width_mm": {
+          "default": 20.0,
+          "description": "Beam width mm (2-100)",
+          "maximum": 100.0,
+          "minimum": 2.0,
+          "title": "Width Mm",
+          "type": "number"
+        },
+        "height_mm": {
+          "default": 5.0,
+          "description": "Beam height mm (1-50)",
+          "maximum": 50.0,
+          "minimum": 1.0,
+          "title": "Height Mm",
+          "type": "number"
+        },
+        "material": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Material id or alias (steel default; also al6061t6, al7075t6, ti6al4v, pa12)",
+          "title": "Material"
+        },
+        "open_gui": {
+          "default": false,
+          "description": "Open FreeCAD GUI after create",
+          "title": "Open Gui",
+          "type": "boolean"
+        }
+      },
+      "type": "object"
+    }
+  },
+  {
+    "name": "apply_load_and_solve",
+    "description": "Apply load (N), mesh with Gmsh, solve with CalculiX inside FreeCAD (brake-pedal footpad, UAV-arm motor ring, or cantilever tip), save results, open GUI. Requires create_brake_pedal, create_uav_arm, or create_cantilever first.",
+    "parameters": {
+      "properties": {
+        "force_n": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Load in newtons (default 500 pedal / 20000 mount / 100 cantilever)",
+          "title": "Force N"
+        },
+        "mesh_max_size_mm": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Coarse mesh size mm (default 5 pedal / 4 mount / 2.5 cantilever)",
+          "title": "Mesh Max Size Mm"
+        },
+        "open_gui": {
+          "default": false,
+          "description": "Open FreeCAD GUI after solve",
+          "title": "Open Gui",
+          "type": "boolean"
+        }
+      },
+      "type": "object"
+    }
+  },
+  {
+    "name": "get_max_von_mises",
+    "description": "Return max von Mises stress (MPa) from the latest solve.",
+    "parameters": {
+      "properties": {},
+      "type": "object"
+    }
+  },
+  {
+    "name": "query_results",
+    "description": "Query the stored per-run solve history: latest run in full (mass, max von Mises + its location, deflection, mesh size, method flag, expected-vs-actual divergence) plus a compact list of recent runs. 'Where is stress concentrated' = max_vm_location_mm of the latest run.",
+    "parameters": {
+      "properties": {
+        "part": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "brake_pedal|cantilever, default = active part",
+          "title": "Part"
+        },
+        "run_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Optional run id from a previous solve (returns that run only)",
+          "title": "Run Id"
+        },
+        "last_n": {
+          "default": 10,
+          "description": "How many recent runs to list",
+          "maximum": 50,
+          "minimum": 1,
+          "title": "Last N",
+          "type": "integer"
+        }
+      },
+      "type": "object"
+    }
+  },
+  {
+    "name": "run_convergence_study",
+    "description": "Mesh convergence study for the active part: 2-3 live CalculiX solves at refining mesh sizes (default ladder = 1.0x/0.7x/0.5x of the part default, e.g. pedal 5/3.5/2.5 mm), then a recommended mesh size = the coarsest mesh within 5% of the finest max von Mises. Synchronous and headless; expect roughly the cost of 2-3 apply_load_and_solve calls. Refuses setups without live solves (fcc pedal precomputed KPIs, FreeCAD absent).",
+    "parameters": {
+      "properties": {
+        "mesh_sizes_mm": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "number"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Optional explicit mesh sizes mm (2-4 distinct entries, coarse->fine); default ladder = 1.0x/0.7x/0.5x of the part default",
+          "title": "Mesh Sizes Mm"
+        },
+        "force_n": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Load in N (default 500 pedal / 100 cantilever)",
+          "title": "Force N"
+        }
+      },
+      "type": "object"
+    }
+  },
+  {
+    "name": "open_in_freecad",
+    "description": "Launch FreeCAD GUI with the latest CAD/FEM document.",
+    "parameters": {
+      "properties": {},
+      "type": "object"
+    }
+  }
+]
