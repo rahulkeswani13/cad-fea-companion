@@ -24,12 +24,7 @@ from typing import Any
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 
-from companion.config import get_settings
-
-# Roadmap / historical notes — not product corpus (would leak into chat RAG).
-_SKIP_INGEST_NAMES = frozenset({"PLAN.md", "PLAN_F26.md"})
-# docs/plans/ holds working plans (roadmap-adjacent) — same exclusion policy.
-_SKIP_INGEST_DIRS = frozenset({"plans"})
+from companion.config import ROOT, get_settings
 
 # RRF fusion constants (standard k=60 damping) and per-retriever candidate depth.
 _RRF_K = 60
@@ -308,28 +303,65 @@ def chunk_text(text: str, source: str, max_chars: int = 800) -> list[Chunk]:
     return chunks
 
 
-def ingest_docs(docs_dir: Path | None = None) -> dict[str, Any]:
+def _resolve_corpus_dirs(
+    corpus_dirs: list[str] | list[Path] | None,
+) -> list[Path]:
     settings = get_settings()
-    docs_dir = docs_dir or settings.docs_dir
+    raw = corpus_dirs if corpus_dirs is not None else settings.rag_corpus_dirs
+    resolved = []
+    for entry in raw:
+        path = Path(entry)
+        if not path.is_absolute():
+            path = ROOT / path
+        resolved.append(path)
+    return resolved
+
+
+def collect_corpus_files(
+    corpus_dirs: list[str] | list[Path] | None = None,
+) -> list[tuple[Path, str]]:
+    """Deterministic (path, source) pairs under the declared corpus dirs.
+
+    Pure selection logic — no store, no disk side effects — so the fail-closed
+    allowlist property (ADR-014) is testable without touching global state.
+    """
+    resolved = _resolve_corpus_dirs(corpus_dirs)
+    out: list[tuple[Path, str]] = []
+    for root_dir in resolved:
+        for path in sorted(root_dir.glob("**/*")):
+            if path.suffix.lower() not in {".md", ".txt"}:
+                continue
+            try:
+                source = str(path.resolve().relative_to(ROOT))
+            except ValueError:
+                source = str(path)
+            out.append((path, source))
+    return out
+
+
+def ingest_docs(corpus_dirs: list[str] | list[Path] | None = None) -> dict[str, Any]:
+    """Ingest only the declared corpus dirs (ADR-014 allowlist, fails closed).
+
+    Files outside the declared corpus dirs — plans, notes, roadmap docs — are
+    never ingested: new content defaults to excluded, and getting in is a
+    deliberate act. Sources are repo-root-relative for paths under ROOT;
+    out-of-tree dirs (tests) keep their absolute path as the source.
+    """
+    files = collect_corpus_files(corpus_dirs)
     store = get_store()
     store.clear()
-    files = sorted(docs_dir.glob("**/*"))
     ingested = []
-    for path in files:
-        if path.suffix.lower() not in {".md", ".txt"}:
-            continue
-        if path.name in _SKIP_INGEST_NAMES:
-            continue
-        rel_parts = path.relative_to(settings.docs_dir).parts
-        if any(part in _SKIP_INGEST_DIRS for part in rel_parts[:-1]):
-            continue
-        text = path.read_text(encoding="utf-8")
-        source = str(path.relative_to(settings.docs_dir.parent))
-        chunks = chunk_text(text, source=source)
+    for path, source in files:
+        chunks = chunk_text(path.read_text(encoding="utf-8"), source=source)
         store.add_chunks(chunks)
         ingested.append({"path": source, "chunks": len(chunks)})
     store.build()
-    return {"ok": True, "documents": ingested, "total_chunks": len(store.chunks)}
+    return {
+        "ok": True,
+        "documents": ingested,
+        "total_chunks": len(store.chunks),
+        "corpus_dirs": [str(d) for d in _resolve_corpus_dirs(corpus_dirs)],
+    }
 
 
 def retrieve(query: str, k: int = 4) -> list[dict[str, Any]]:

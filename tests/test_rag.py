@@ -1,24 +1,50 @@
-"""RAG ingest: product corpus excludes internal roadmap files."""
+"""RAG ingest: curated allowlist corpus (ADR-014, fails closed)."""
 
 from __future__ import annotations
 
+from companion.config import Settings
 from companion.rag.store import (
     Chunk,
     LocalTfidfStore,
+    collect_corpus_files,
     grounding_label,
     ingest_docs,
     rrf_fuse,
 )
 
 
-def test_ingest_docs_skips_roadmap_files():
+def test_ingest_defaults_to_declared_corpus_dirs():
     result = ingest_docs()
     assert result["ok"] is True
     paths = [doc["path"] for doc in result["documents"]]
-    assert "docs/PLAN.md" not in paths
-    assert "docs/PLAN_F26.md" not in paths
+    assert len(paths) == 20
+    assert all(p.startswith(("docs/reference/", "docs/adr/")) for p in paths)
     assert "docs/reference/ARCHITECTURE.md" in paths
     assert "docs/reference/materials.md" in paths
+    assert not any("PLAN" in p for p in paths)
+
+
+def test_ingest_is_fail_closed_outside_declared_dirs(tmp_path):
+    corpus = tmp_path / "reference"
+    corpus.mkdir()
+    (corpus / "kept.md").write_text("# kept\n\nmesh convergence notes", encoding="utf-8")
+    (tmp_path / "stray.md").write_text("# stray\n\nmust never be ingested", encoding="utf-8")
+    plans = tmp_path / "plans"
+    plans.mkdir()
+    (plans / "roadmap.md").write_text("# roadmap\n\nintentions, not corpus", encoding="utf-8")
+
+    # Pure selection: no global store or persisted index touched.
+    selected = collect_corpus_files([corpus])
+    assert selected == [(corpus / "kept.md", str(corpus / "kept.md"))]
+
+
+def test_ingest_missing_corpus_dir_is_empty_not_error(tmp_path):
+    assert collect_corpus_files([tmp_path / "nope"]) == []
+
+
+def test_rag_corpus_dirs_accepts_comma_separated_env():
+    settings = Settings(_env_file=None, rag_corpus_dirs="docs/reference, docs/adr")
+    assert settings.rag_corpus_dirs == ["docs/reference", "docs/adr"]
 
 
 # --- Hybrid retrieval (ADR-012) -------------------------------------------
