@@ -67,7 +67,7 @@ flowchart TD
 
 - **Layer 1: Client & Transport**: FastAPI backend with Server-Sent Events (SSE) streaming and ContextVar thread isolation (`cad_thread_scope`).
 - **Layer 2: LangGraph Orchestration**: Stateful graph transitions (`retrieve` → `agent` ⇄ `tools` → `sync_cad_state`) with LangGraph `MemorySaver` multi-turn checkpointing.
-- **Layer 3: Safety & Preflight Guardrails**: F03 B-Rep `isValid()` manifold checks, strut radius floor enforcement ($\ge 1.5\text{ mm}$), and F07 Euler-Bernoulli beam theory preflight divergence checks.
+- **Layer 3: Safety & Preflight Guardrails**: canonical pydantic tool-arg models that boundary-reject out-of-range `create_*` args at dispatch (`bad_params`, ADR-013 — the same models generate `TOOL_SPECS` and the program floors), F03 B-Rep `isValid()` manifold checks, strut radius floor enforcement ($\ge 1.5\text{ mm}$), and F07 Euler-Bernoulli beam theory preflight divergence checks.
 - **Layer 4: Headless Geometry & FEM Solvers**: Headless `FreeCADCmd` Python subprocesses, Gmsh Delaunay mesher with 25k node guard, CalculiX `ccx` linear static FEA, and `os.killpg` process group isolation.
 - **Layer 5: Outcome Protocol & Tensor History**: F02 flat-additive envelopes (`ok` + KPIs + `receipt`; on failure `error`, `error_class`, one `correction`), F06 spatial JSONL run history, and 3D tensor coordinate hotspot logging.
 

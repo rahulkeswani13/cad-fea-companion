@@ -25,25 +25,36 @@ def setup_function() -> None:
     reset_cad_sessions()
 
 
-def test_nonpositive_strut_rejected_before_freecad():
+def test_nonpositive_strut_rejected_at_boundary():
+    """H3: out-of-range args hard-reject at the pydantic boundary (bad_params)
+    before the tool function — the F03 B-Rep gate below still covers
+    in-range-but-degenerate geometry."""
     result = call_tool(
         "create_brake_pedal", {"web_type": "xtruss", "strut_radius_mm": 0}
     )
     assert result["ok"] is False
-    assert result["error_class"] == "geometry_invalid"
-    assert result["validation"]["stage"] == "params_nonpositive"
-    assert result["validation"]["checks"]["strut_radius_mm"] == 0
+    assert result["error_class"] == "bad_params"
     assert result["correction"]
     assert result["receipt"]["tool"] == "create_brake_pedal"
 
 
+def test_nonpositive_strut_still_gated_at_function_level():
+    result = create_brake_pedal(web_type="xtruss", strut_radius_mm=0)
+    assert result["ok"] is False
+    assert result["error_class"] == "geometry_invalid"
+    assert result["validation"]["stage"] == "params_nonpositive"
+    assert result["validation"]["checks"]["strut_radius_mm"] == 0
+
+
 def test_nan_cell_size_rejected():
+    """NaN fails the range check (all NaN comparisons are False) at the
+    boundary, mirroring ADR-004's preflight NaN rule."""
     result = call_tool(
         "create_brake_pedal", {"web_type": "xtruss", "cell_size_mm": math.nan}
     )
     assert result["ok"] is False
-    assert result["error_class"] == "geometry_invalid"
-    assert result["validation"]["stage"] == "params_nonpositive"
+    assert result["error_class"] == "bad_params"
+    assert result["correction"]
 
 
 def test_generic_param_gate_reports_only_bad_values():
