@@ -568,12 +568,15 @@
         const llmOk = data.llm?.configured;
         const fc = data.freecad_cmd ? "FreeCAD found" : "FreeCAD missing";
         const hitl = data.agent?.require_tool_confirm ? "HITL on" : "HITL off";
+        const usage = data.session_usage?.threads?.[getThreadId()];
+        const tokens = usage ? usage.total_tokens : 0;
         status.innerHTML = `
           <span class="pill ${llmOk ? "ok" : "warn"}">LLM: ${data.llm?.provider || "?"} ${llmOk ? "ready" : "needs .env key"}</span>
           <span class="pill ${data.freecad_cmd ? "ok" : "warn"}">${fc}</span>
           <span class="pill">model: ${data.llm?.model || "-"}</span>
           <span class="pill">${hitl}</span>
           <span class="pill">thread: ${getThreadId().slice(0, 8)}…</span>
+          <span class="pill" id="token-pill">tokens: ${tokens.toLocaleString()}${usage ? ` · ${usage.turns} turn${usage.turns === 1 ? "" : "s"}` : ""}</span>
         `;
       } catch (e) {
         status.innerHTML = `<span class="pill warn">API offline</span>`;
@@ -631,6 +634,7 @@
       try {
         const data = await sendStreaming(message);
         if (data.thread_id) localStorage.setItem(THREAD_KEY, data.thread_id);
+        if (data.usage) refreshStatus(); // H10: token pill reflects this run
         if (data.interrupted) {
           showConfirm(data.interrupt);
           addMsg("assistant", "Paused for FreeCAD tool confirmation (HITL).");

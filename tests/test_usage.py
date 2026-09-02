@@ -117,3 +117,39 @@ def test_run_agent_records_session_totals():
     assert snap["threads"]["usage-session"]["turns"] == 1
     assert snap["threads"]["usage-session"]["total_tokens"] == 12
     reset_token_sessions()
+
+
+def test_stream_final_event_carries_usage_and_records_session():
+    from companion.agent.graph import stream_agent
+
+    reset_token_sessions()
+    llm = ScriptedLLMProvider(
+        turns=[
+            AgentTurn(
+                content="create",
+                tool_calls=[tc("create_cantilever")],
+                usage={"input_tokens": 40, "output_tokens": 4, "total_tokens": 44},
+            ),
+            AgentTurn(
+                content="done",
+                usage={"input_tokens": 60, "output_tokens": 6, "total_tokens": 66},
+            ),
+        ]
+    )
+    events = list(
+        stream_agent(
+            "create a cantilever and solve 100 N",
+            thread_id="usage-stream",
+            graph=_graph(llm),
+        )
+    )
+    final = events[-1]
+    assert final["type"] == "final"
+    assert final["usage"] == {
+        "input_tokens": 100,
+        "output_tokens": 10,
+        "total_tokens": 110,
+    }
+    snap = session_usage()
+    assert snap["threads"]["usage-stream"]["total_tokens"] == 110
+    reset_token_sessions()

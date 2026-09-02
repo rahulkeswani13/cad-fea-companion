@@ -717,12 +717,17 @@ def stream_agent(
 
 
 def _stream_agent_events(compiled, stream_input: Any, config: dict[str, Any], tid: str):
+    # H10: the agent node's delta carries cumulative per-run token usage; the
+    # last one seen is this run's total (mirrors run_agent's accounting).
+    run_usage: dict[str, int] | None = None
     for update in compiled.stream(stream_input, config, stream_mode="updates"):
         # update is {node_name: state_delta}
         if isinstance(update, dict):
             for node_name, delta in update.items():
                 event: dict[str, Any] = {"type": "node", "node": node_name, "thread_id": tid}
                 if isinstance(delta, dict):
+                    if delta.get("usage") is not None:
+                        run_usage = delta["usage"]
                     if delta.get("pending_tool_calls"):
                         event["pending_tool_calls"] = delta["pending_tool_calls"]
                     if delta.get("tool_results"):
@@ -743,6 +748,8 @@ def _stream_agent_events(compiled, stream_input: Any, config: dict[str, Any], ti
                     else:
                         event["status"] = f"{node_name}…"
                 yield event
+
+    record_session_usage(tid, run_usage)
 
     # Final snapshot via get_state
     snap = compiled.get_state(config)
@@ -769,5 +776,6 @@ def _stream_agent_events(compiled, stream_input: Any, config: dict[str, Any], ti
         "interrupt": _serialize_interrupt(interrupt_raw),
         "agent_visits": values.get("agent_visits") or 0,
         "tools_node_visits": values.get("tools_node_visits") or 0,
+        "usage": run_usage,
         "llm_configured": get_settings().llm_configured(),
     }
