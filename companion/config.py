@@ -4,8 +4,9 @@ from __future__ import annotations
 
 from functools import lru_cache
 from pathlib import Path
+from typing import Any
 
-from pydantic import Field
+from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -42,11 +43,25 @@ class Settings(BaseSettings):
     rag_grounding_bm25_top: int = 3
 
     docs_dir: Path = Field(default_factory=lambda: ROOT / "docs")
+
+    # ADR-014: curated RAG corpus — allowlist ingestion. Only files under the
+    # declared dirs (relative to ROOT) are ingested; everything else fails
+    # closed. Comma-separated in env: RAG_CORPUS_DIRS=docs/reference,docs/adr
+    rag_corpus_dirs: list[str] = Field(
+        default_factory=lambda: ["docs/reference", "docs/adr"]
+    )
     data_dir: Path = Field(default_factory=lambda: ROOT / "data")
     workspace_dir: Path = Field(default_factory=lambda: ROOT / "data" / "workspace")
     vectorstore_dir: Path = Field(default_factory=lambda: ROOT / "data" / "vectorstore")
     results_dir: Path = Field(default_factory=lambda: ROOT / "data" / "results")
     exports_dir: Path = Field(default_factory=lambda: ROOT / "data" / "exports")
+
+    @field_validator("rag_corpus_dirs", mode="before")
+    @classmethod
+    def _split_corpus_dirs(cls, value: Any) -> Any:
+        if isinstance(value, str):
+            return [part.strip() for part in value.split(",") if part.strip()]
+        return value
 
     def ensure_dirs(self) -> None:
         for path in (

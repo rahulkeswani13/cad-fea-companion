@@ -1,6 +1,6 @@
 """F09 material table: cited properties, alias resolution, physics scaling.
 
-Source of truth is ``data/materials.json`` (ADR-010); ``docs/materials.md``
+Source of truth is ``data/materials.json`` (ADR-010); ``docs/reference/materials.md``
 mirrors it so the RAG store can cite the same numbers, and
 ``tests/test_materials.py`` asserts the two stay in sync.
 
@@ -223,11 +223,11 @@ def citations_for(records: list[dict[str, Any]]) -> list[str]:
 
 
 def doc_sync_errors() -> list[str]:
-    """Drift check: docs/materials.md must contain every material's id, E,
+    """Drift check: docs/reference/materials.md must contain every material's id, E,
     density, and yield. Returns a list of mismatch descriptions (empty = ok)."""
-    docs = get_settings().docs_dir / "materials.md"
+    docs = get_settings().docs_dir / "reference" / "materials.md"
     if not docs.exists():
-        return ["docs/materials.md is missing"]
+        return ["docs/reference/materials.md is missing"]
     text = docs.read_text(encoding="utf-8").lower()
     errors: list[str] = []
     for record in load_materials().values():
@@ -240,5 +240,5 @@ def doc_sync_errors() -> list[str]:
         }
         for what, needle in needles.items():
             if needle not in text:
-                errors.append(f"{rid}: {what} ({needle!r}) not found in docs/materials.md")
+                errors.append(f"{rid}: {what} ({needle!r}) not found in docs/reference/materials.md")
     return errors

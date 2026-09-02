@@ -7,6 +7,7 @@ import json
 from eval.history import (
     append_history_entry,
     compute_delta,
+    corpus_drifted,
     format_delta,
     last_history_entry,
     summarize_for_history,
@@ -73,3 +74,23 @@ def test_jsonl_roundtrip_and_corrupt_tail(tmp_path):
     with path.open("a") as fh:
         fh.write("{not json\n")
     assert last_history_entry(path)["passed"] == 10
+
+
+def test_summarize_carries_corpus_fingerprint():
+    summary = _summary()
+    summary["corpus"] = {"fingerprint": "abc123", "documents": 20, "chunks": 117}
+    entry = summarize_for_history(summary)
+    assert entry["corpus_fingerprint"] == "abc123"
+    assert summarize_for_history(_summary())["corpus_fingerprint"] is None
+
+
+def test_corpus_drifted_flags_fingerprint_change_only():
+    prev = {"corpus_fingerprint": "aaa"}
+    same = {"corpus_fingerprint": "aaa"}
+    changed = {"corpus_fingerprint": "bbb"}
+    assert corpus_drifted(None, changed) is False  # first run is not drift
+    assert corpus_drifted(prev, same) is False
+    assert corpus_drifted(prev, changed) is True
+    # Missing fingerprints on either side (older entries) still compare.
+    assert corpus_drifted({}, changed) is True
+    assert corpus_drifted(prev, {}) is True

@@ -86,7 +86,7 @@ flowchart TD
 ## 4. AI Engineering Deep Dive: The 9 Core Features
 
 ### F01: Grounded RAG Knowledge Retrieval
-- Ingests local technical documentation (`docs/materials.md`, `docs/freecad_fem_notes.md`) at startup.
+- Ingests local technical documentation (`docs/reference/materials.md`, `docs/reference/freecad_fem_notes.md`) at startup.
 - Grounds answers to material allowable questions (e.g. Al 6061-T6 yield strength: 276 MPa, E = 69.0 GPa) with citations.
 
 ### F02: Compact Outcome Envelope Protocol

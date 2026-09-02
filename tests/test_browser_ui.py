@@ -44,7 +44,7 @@ def test_ui_f01_al6061_properties(page: Page, test_server_url: str):
     send_chat_prompt(page, "What is the yield strength and density of Al 6061-T6?")
     last_msg = page.locator(".msg.assistant").last
     expect(last_msg).to_contain_text("276 MPa")
-    expect(last_msg).to_contain_text("docs/materials.md")
+    expect(last_msg).to_contain_text("docs/reference/materials.md")
     assert len(errors) == 0
 
 

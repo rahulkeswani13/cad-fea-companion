@@ -45,13 +45,13 @@ class SmartDemoMockLLM(LLMProvider):
         # Exact prompt matching priority
         # F01 RAG
         if "al 6061-t6" in user_text or "al 6061" in user_text:
-            return AgentTurn(content="**Aluminum 6061-T6**: Yield strength is **276 MPa**, density is **2.70 g/cm³**, and Young's modulus is **69.0 GPa** [docs/materials.md].")
+            return AgentTurn(content="**Aluminum 6061-T6**: Yield strength is **276 MPa**, density is **2.70 g/cm³**, and Young's modulus is **69.0 GPa** [docs/reference/materials.md].")
         if "bending stress formula" in user_text or "formula" in user_text:
-            return AgentTurn(content="The analytical bending stress formula for a rectangular cantilever beam under tip load is:\n$$\\sigma = \\frac{6FL}{bh^2}$$\nwhere $F$ is tip load, $L$ is length, $b$ is width, and $h$ is height [docs/materials.md].")
+            return AgentTurn(content="The analytical bending stress formula for a rectangular cantilever beam under tip load is:\n$$\\sigma = \\frac{6FL}{bh^2}$$\nwhere $F$ is tip load, $L$ is length, $b$ is width, and $h$ is height [docs/reference/materials.md].")
         if "structural steel" in user_text or "steel" in user_text:
-            return AgentTurn(content="For structural steel in this demo, assume **Young's modulus E = 210 GPa**, Poisson's ratio &nu; = 0.30, and density = 7850 kg/m³ [docs/materials.md].")
+            return AgentTurn(content="For structural steel in this demo, assume **Young's modulus E = 210 GPa**, Poisson's ratio &nu; = 0.30, and density = 7850 kg/m³ [docs/reference/materials.md].")
         if "ti-6al-4v" in user_text and "allowable" in user_text:
-            return AgentTurn(content="**Titanium Ti-6Al-4V**: Yield strength is **880 MPa**, ultimate tensile strength is **950 MPa**, and density is **4.43 g/cm³** [docs/materials.md].")
+            return AgentTurn(content="**Titanium Ti-6Al-4V**: Yield strength is **880 MPa**, ultimate tensile strength is **950 MPa**, and density is **4.43 g/cm³** [docs/reference/materials.md].")
 
         # F02 Outcome Envelope
         if "without creating any geometry" in user_text:
@@ -129,7 +129,7 @@ class SmartDemoMockLLM(LLMProvider):
         if "x-truss lattice" in user_text or "xtruss" in user_text or ("12 mm" in user_text and "uav" in user_text):
             return AgentTurn(content="Updated UAV arm to **X-truss lattice** with 12 mm cells (rev 2). Mass reduced by **~17%** (157 g &rarr; 130 g, SF: 2.9).")
         if "uav arm" in user_text or "uav" in user_text:
-            return AgentTurn(content="Created **solid aluminum UAV arm** (157 g). Solved under 120 N thrust: **Peak von Mises: 44.6 MPa**, Safety Factor **6.2** vs Al 6061-T6 yield [docs/materials.md].")
+            return AgentTurn(content="Created **solid aluminum UAV arm** (157 g). Solved under 120 N thrust: **Peak von Mises: 44.6 MPa**, Safety Factor **6.2** vs Al 6061-T6 yield [docs/reference/materials.md].")
 
         # Brake Pedal default
         if "brake pedal" in user_text or "pedal" in user_text:

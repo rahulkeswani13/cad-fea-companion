@@ -724,7 +724,7 @@ import json; print(json.dumps(call_tool('run_convergence_study', {'mesh_sizes_mm
 **Pitch:** "Compare Ti vs Al" is now a cited, physics-honest tool call — and
 "switch the pedal to titanium" is a one-line design-program edit. Five
 materials (Al 6061-T6, Al 7075-T6, Ti-6Al-4V, PA12, Steel-Generic) live in a
-cited table (`data/materials.json`, mirrored as `docs/materials.md` for RAG
+cited table (`data/materials.json`, mirrored as `docs/reference/materials.md` for RAG
 citations, drift-checked by a test). `compare_materials` scales the best
 available run per material — stress carried over, deflection × E ratio, mass
 × density ratio, SF vs *each* material's own yield — ranked lightest at
@@ -742,7 +742,7 @@ First, **citations before embeddings**. The plan orders F09 before the
 embedding-RAG feature, so 'RAG-grounded' can't mean retrieval yet — and
 shouldn't. Every number the agent quotes comes from a five-row table where
 each property traces to a source string (MatWeb, MMPDS, EOS, the FreeCAD
-card). The same table is mirrored into `docs/materials.md`, which the
+card). The same table is mirrored into `docs/reference/materials.md`, which the
 existing TF-IDF store ingests — so chat citations and tool citations are the
 *same numbers*, and a unit test fails if the two ever drift. When embeddings
 arrive, they wrap this table; they don't replace it.
@@ -1105,3 +1105,59 @@ with a delta line; judge verdicts are best-of-3 with summed sampling tokens.
 - *Why hard-reject instead of clamp?* ADR-004: a clamped design silently
   isn't the design the user asked for; rejection with one concrete correction
   keeps the agent (and the demo) honest.
+
+## RAG corpus curation — allowlist ingestion (ADR-014)
+
+**Pitch:** The grounding corpus is the agent's surface area for
+hallucination, and it used to be open by default: ingest globbed all of
+`docs/`, minus a denylist. Now the corpus is *declared* — two dirs,
+everything else fails closed — and the eval report carries a corpus
+fingerprint so the fixture itself can't drift silently.
+
+**Script:**
+"Two decisions here. First, *audience over folders*: the corpus is
+reference docs (the *what*) plus ADRs (the *why*). ADRs stay in the corpus
+deliberately — they're what lets the agent explain its own behavior
+without inventing a rationale. But plans, roadmap, and pitch material are
+intentions, not product truth; the agent must describe the product as it
+is, so they're never ingested. Second, *fails closed*: the old denylist
+meant any stray markdown under `docs/` silently joined the corpus — the
+default was 'ingest unless skipped'. The allowlist inverts that: new
+content is excluded until someone deliberately declares it. And since the
+corpus is part of the eval fixture, every eval run now records a corpus
+fingerprint; change the corpus and the history flags it — the retrieval
+metrics can't quietly change meaning."
+
+**Tests:** `tests/test_rag.py` — declared-dir defaults (20 docs, no PLAN
+leakage), stray-file exclusion via the pure `collect_corpus_files`
+selection (no global store touched), missing-dir tolerance, env parsing
+(`RAG_CORPUS_DIRS`), corpus-fingerprint sensitivity; `test_eval_history.py`
+— fingerprint rides in history entries, `corpus_drifted` flags change only
+against a previous run.
+
+**Evals:** the eval report gains a `corpus` block (fingerprint, document
+and chunk counts, declared dirs); the history delta annotates corpus
+change (`corpus changed since previous run — metrics re-baseline`); this
+branch's own re-baseline is the worked example — MRR moved 0.967 → 0.942
+from corpus-ordering tie-breaks, honestly recorded.
+
+**Demo prompts:**
+1. RAG Lab stats panel → exactly 20 docs, all under `docs/reference/` or
+   `docs/adr/`.
+2. Drop a scratch `.md` into `docs/` (not a corpus dir) → re-ingest → still
+   20 docs; the stray file is invisible to the agent (fail-closed).
+3. Eval report → `corpus.fingerprint` matches the RAG Lab corpus; edit the
+   corpus and the next eval run prints the re-baseline annotation.
+
+**Likely interview questions:**
+- *Why ingest ADRs — aren't those internal?* They're internal *history*
+  but user-facing *knowledge*: the agent's "why" layer. Excluding them
+  means invented rationales; including them means cited decisions.
+- *Why an allowlist instead of just a better denylist?* Direction of
+  failure. A denylist fails open — one forgotten pattern leaks. An
+  allowlist fails closed — one forgotten dir means a doc is *missing*
+  (visible), not *leaking* (silent).
+- *How do you know your retrieval metrics still mean the same thing after
+  a corpus change?* You can't assume it — so the corpus is fingerprinted
+  into the eval report and history, and drift is annotated on the delta
+  line. The corpus is a fixture; fixtures get versioned.

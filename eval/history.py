@@ -39,6 +39,8 @@ def summarize_for_history(summary: dict[str, Any]) -> dict[str, Any]:
         "judge_graded": int(judge.get("graded") or 0),
         "judge_passed": int(judge.get("judge_passed") or 0),
         "judge_failed": int(judge.get("judge_failed") or 0),
+        # ADR-014: corpus identity rides with each run so drift is visible.
+        "corpus_fingerprint": (summary.get("corpus") or {}).get("fingerprint"),
     }
 
 
@@ -55,6 +57,16 @@ def compute_delta(
         key: int(current.get(key) or 0) - int(previous.get(key) or 0)
         for key in DELTA_KEYS
     }
+
+
+def corpus_drifted(previous: dict[str, Any] | None, entry: dict[str, Any]) -> bool:
+    """True when the corpus fingerprint changed vs the previous run (ADR-014).
+
+    First runs never count as drift — there is nothing to compare against.
+    """
+    if previous is None:
+        return False
+    return previous.get("corpus_fingerprint") != entry.get("corpus_fingerprint")
 
 
 def format_delta(delta: dict[str, int] | None) -> str:

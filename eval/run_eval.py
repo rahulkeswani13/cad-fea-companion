@@ -20,7 +20,7 @@ sys.path.insert(0, str(ROOT))
 
 from companion.agent.graph import run_agent
 from companion.config import get_settings
-from companion.rag.store import ingest_docs, retrieve
+from companion.rag.store import corpus_fingerprint, ingest_docs, retrieve
 import companion.tools.cad_fea as cad_fea
 from companion.tools.cad_fea import call_tool
 import companion.tools.freecad_runtime as f_rt
@@ -56,7 +56,7 @@ def _print_row(cid: str, ok: bool, detail: str) -> None:
 def main() -> int:
     cases_path = ROOT / "eval" / "cases.json"
     cases = json.loads(cases_path.read_text(encoding="utf-8"))
-    ingest_docs()
+    ingest = ingest_docs()
 
     passed = 0
     failed = 0
@@ -203,6 +203,12 @@ def main() -> int:
         "total": len(cases),
         "rows": rows,
         "retrieval": retrieval,
+        "corpus": {
+            "fingerprint": corpus_fingerprint(ingest["documents"]),
+            "documents": len(ingest["documents"]),
+            "chunks": ingest["total_chunks"],
+            "dirs": ingest["corpus_dirs"],
+        },
         "judge": {
             "enabled": judge.judge_enabled(),
             "model": judge_model if judge.judge_enabled() else None,
@@ -224,6 +230,12 @@ def main() -> int:
     previous = history.last_history_entry(history_path)
     delta = history.compute_delta(previous, entry)
     entry["delta"] = delta
+    # ADR-014: the corpus is part of the eval fixture — flag any drift so a
+    # corpus edit can never silently reset what the metric trend means.
+    corpus_note = ""
+    if history.corpus_drifted(previous, entry):
+        entry["corpus_changed"] = True
+        corpus_note = " | corpus changed since previous run (metrics re-baseline)"
     history.append_history_entry(history_path, entry)
 
     judge_line = ""
@@ -236,7 +248,7 @@ def main() -> int:
     print(
         f"\nSummary: {passed}/{len(cases)} passed"
         + (f", {skipped} skipped" if skipped else "")
-        + f" -> {out_path}{judge_line}{delta_line}"
+        + f" -> {out_path}{judge_line}{delta_line}{corpus_note}"
     )
     return 0 if failed == 0 else 1
 

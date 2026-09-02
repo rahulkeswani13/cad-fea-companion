@@ -14,6 +14,7 @@ the UI says so instead of dressing up noise.
 
 from __future__ import annotations
 
+import hashlib
 import json
 import re
 from collections import Counter
@@ -24,12 +25,7 @@ from typing import Any
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 
-from companion.config import get_settings
-
-# Roadmap / historical notes — not product corpus (would leak into chat RAG).
-_SKIP_INGEST_NAMES = frozenset({"PLAN.md", "PLAN_F26.md"})
-# docs/plans/ holds working plans (roadmap-adjacent) — same exclusion policy.
-_SKIP_INGEST_DIRS = frozenset({"plans"})
+from companion.config import ROOT, get_settings
 
 # RRF fusion constants (standard k=60 damping) and per-retriever candidate depth.
 _RRF_K = 60
@@ -308,28 +304,85 @@ def chunk_text(text: str, source: str, max_chars: int = 800) -> list[Chunk]:
     return chunks
 
 
-def ingest_docs(docs_dir: Path | None = None) -> dict[str, Any]:
+def _resolve_corpus_dirs(
+    corpus_dirs: list[str] | list[Path] | None,
+) -> list[Path]:
     settings = get_settings()
-    docs_dir = docs_dir or settings.docs_dir
+    raw = corpus_dirs if corpus_dirs is not None else settings.rag_corpus_dirs
+    resolved = []
+    for entry in raw:
+        path = Path(entry)
+        if not path.is_absolute():
+            path = ROOT / path
+        resolved.append(path)
+    return resolved
+
+
+def collect_corpus_files(
+    corpus_dirs: list[str] | list[Path] | None = None,
+) -> list[tuple[Path, str]]:
+    """Deterministic (path, source) pairs under the declared corpus dirs.
+
+    Pure selection logic — no store, no disk side effects — so the fail-closed
+    allowlist property (ADR-014) is testable without touching global state.
+    """
+    resolved = _resolve_corpus_dirs(corpus_dirs)
+    out: list[tuple[Path, str]] = []
+    for root_dir in resolved:
+        for path in sorted(root_dir.glob("**/*")):
+            if path.suffix.lower() not in {".md", ".txt"}:
+                continue
+            try:
+                source = str(path.resolve().relative_to(ROOT))
+            except ValueError:
+                source = str(path)
+            out.append((path, source))
+    return out
+
+
+def ingest_docs(corpus_dirs: list[str] | list[Path] | None = None) -> dict[str, Any]:
+    """Ingest only the declared corpus dirs (ADR-014 allowlist, fails closed).
+
+    Files outside the declared corpus dirs — plans, notes, roadmap docs — are
+    never ingested: new content defaults to excluded, and getting in is a
+    deliberate act. Sources are repo-root-relative for paths under ROOT;
+    out-of-tree dirs (tests) keep their absolute path as the source.
+    """
+    files = collect_corpus_files(corpus_dirs)
     store = get_store()
     store.clear()
-    files = sorted(docs_dir.glob("**/*"))
     ingested = []
-    for path in files:
-        if path.suffix.lower() not in {".md", ".txt"}:
-            continue
-        if path.name in _SKIP_INGEST_NAMES:
-            continue
-        rel_parts = path.relative_to(settings.docs_dir).parts
-        if any(part in _SKIP_INGEST_DIRS for part in rel_parts[:-1]):
-            continue
-        text = path.read_text(encoding="utf-8")
-        source = str(path.relative_to(settings.docs_dir.parent))
-        chunks = chunk_text(text, source=source)
+    for path, source in files:
+        chunks = chunk_text(path.read_text(encoding="utf-8"), source=source)
         store.add_chunks(chunks)
         ingested.append({"path": source, "chunks": len(chunks)})
     store.build()
-    return {"ok": True, "documents": ingested, "total_chunks": len(store.chunks)}
+    # Report the declared form (portable, e.g. "docs/reference"), not the
+    # resolved absolute paths — eval reports are committed artifacts.
+    declared = [
+        str(d)
+        for d in (corpus_dirs if corpus_dirs is not None else get_settings().rag_corpus_dirs)
+    ]
+    return {
+        "ok": True,
+        "documents": ingested,
+        "total_chunks": len(store.chunks),
+        "corpus_dirs": declared,
+    }
+
+
+def corpus_fingerprint(documents: list[dict[str, Any]]) -> str:
+    """Stable digest of the ingested corpus (sorted path + chunk counts).
+
+    The corpus is part of the eval fixture: retrieval metrics and RAG cases
+    mean something different when it changes, so the fingerprint rides in the
+    eval report and the history delta flags any drift (ADR-014).
+    """
+    payload = json.dumps(
+        sorted((str(d.get("path")), int(d.get("chunks") or 0)) for d in documents),
+        separators=(",", ":"),
+    )
+    return hashlib.sha256(payload.encode("utf-8")).hexdigest()[:16]
 
 
 def retrieve(query: str, k: int = 4) -> list[dict[str, Any]]:

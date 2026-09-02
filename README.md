@@ -15,7 +15,7 @@ The CAD/FEA Companion bridges **Generative AI** and **Computational Mechanics**.
 
 ## 🏗️ AI Engineering Architecture
 
-See [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) for the 5-layer writeup.
+See [`docs/reference/ARCHITECTURE.md`](docs/reference/ARCHITECTURE.md) for the 5-layer writeup.
 
 ```mermaid
 flowchart TD
@@ -134,7 +134,7 @@ Covers tools, graph transitions, outcome envelopes, solver bridges, and the brow
 | `compare_materials` | **F09** | Evaluates Al 6061-T6 vs Al 7075-T6 vs Ti-6Al-4V vs PA12 Nylon. |
 | `open_in_freecad` | **F02** | Opens the active `.FCStd` document in the FreeCAD desktop GUI. |
 
-See [`docs/tool_reference.md`](docs/tool_reference.md) for the full index.
+See [`docs/reference/tool_reference.md`](docs/reference/tool_reference.md) for the full index.
 
 ---
 

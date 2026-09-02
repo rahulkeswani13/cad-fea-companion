@@ -1,6 +1,6 @@
 # Demo Script — cad-fea-companion (30-minute performance)
 
-A performance script, not a manual (that's `docs/ARCHITECTURE.md`). Every segment card states the exact
+A performance script, not a manual (that's `docs/reference/ARCHITECTURE.md`). Every segment card states the exact
 prompt, what should happen, why it matters to a simulation engineer, and the AI-engineering
 pattern it demonstrates. Feature IDs (`Fxx`) refer to `docs/PLAN.md`; R1–R7 tags refer to
 capability keys in `docs/PLAN.md`.
