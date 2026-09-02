@@ -7,6 +7,7 @@ from companion.rag.store import (
     Chunk,
     LocalTfidfStore,
     collect_corpus_files,
+    corpus_fingerprint,
     grounding_label,
     ingest_docs,
     rrf_fuse,
@@ -45,6 +46,16 @@ def test_ingest_missing_corpus_dir_is_empty_not_error(tmp_path):
 def test_rag_corpus_dirs_accepts_comma_separated_env():
     settings = Settings(_env_file=None, rag_corpus_dirs="docs/reference, docs/adr")
     assert settings.rag_corpus_dirs == ["docs/reference", "docs/adr"]
+
+
+def test_corpus_fingerprint_is_order_and_doc_set_sensitive():
+    a = [{"path": "docs/reference/a.md", "chunks": 3}, {"path": "docs/adr/x.md", "chunks": 1}]
+    b = [{"path": "docs/adr/x.md", "chunks": 1}, {"path": "docs/reference/a.md", "chunks": 3}]
+    assert corpus_fingerprint(a) == corpus_fingerprint(b)  # order-independent
+    moved = [{"path": "docs/reference/a.md", "chunks": 3}, {"path": "docs/adr/x.md", "chunks": 2}]
+    assert corpus_fingerprint(a) != corpus_fingerprint(moved)  # chunk drift shows
+    grown = a + [{"path": "docs/reference/new.md", "chunks": 4}]
+    assert corpus_fingerprint(a) != corpus_fingerprint(grown)  # doc drift shows
 
 
 # --- Hybrid retrieval (ADR-012) -------------------------------------------

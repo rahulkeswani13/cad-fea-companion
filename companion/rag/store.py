@@ -14,6 +14,7 @@ the UI says so instead of dressing up noise.
 
 from __future__ import annotations
 
+import hashlib
 import json
 import re
 from collections import Counter
@@ -356,12 +357,32 @@ def ingest_docs(corpus_dirs: list[str] | list[Path] | None = None) -> dict[str, 
         store.add_chunks(chunks)
         ingested.append({"path": source, "chunks": len(chunks)})
     store.build()
+    # Report the declared form (portable, e.g. "docs/reference"), not the
+    # resolved absolute paths — eval reports are committed artifacts.
+    declared = [
+        str(d)
+        for d in (corpus_dirs if corpus_dirs is not None else get_settings().rag_corpus_dirs)
+    ]
     return {
         "ok": True,
         "documents": ingested,
         "total_chunks": len(store.chunks),
-        "corpus_dirs": [str(d) for d in _resolve_corpus_dirs(corpus_dirs)],
+        "corpus_dirs": declared,
     }
+
+
+def corpus_fingerprint(documents: list[dict[str, Any]]) -> str:
+    """Stable digest of the ingested corpus (sorted path + chunk counts).
+
+    The corpus is part of the eval fixture: retrieval metrics and RAG cases
+    mean something different when it changes, so the fingerprint rides in the
+    eval report and the history delta flags any drift (ADR-014).
+    """
+    payload = json.dumps(
+        sorted((str(d.get("path")), int(d.get("chunks") or 0)) for d in documents),
+        separators=(",", ":"),
+    )
+    return hashlib.sha256(payload.encode("utf-8")).hexdigest()[:16]
 
 
 def retrieve(query: str, k: int = 4) -> list[dict[str, Any]]:
