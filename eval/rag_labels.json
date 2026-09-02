@@ -1,0 +1,96 @@
+[
+  {
+    "query": "What is a typical yield strength for mild steel in MPa?",
+    "expected_sources": ["docs/material_allowables.md", "docs/materials.md"]
+  },
+  {
+    "query": "Approximate Young's modulus for aluminum 6061-T6?",
+    "expected_sources": ["docs/materials.md", "docs/material_allowables.md"]
+  },
+  {
+    "query": "What is the analytical max bending stress formula for the cantilever demo?",
+    "expected_sources": [
+      "docs/material_allowables.md",
+      "docs/freecad_fem_notes.md",
+      "docs/adr/ADR-007-preflight-analytical-estimates.md"
+    ]
+  },
+  {
+    "query": "What units does the companion use for stress?",
+    "expected_sources": ["docs/tool_reference.md", "docs/material_allowables.md"]
+  },
+  {
+    "query": "What is the design space on the brake-pedal lattice demo?",
+    "expected_sources": ["docs/brake_pedal_lattice.md"]
+  },
+  {
+    "query": "Which companion tools create geometry and return max stress?",
+    "expected_sources": ["docs/tool_reference.md"]
+  },
+  {
+    "query": "Where is the precomputed FEA JSON stored for the brake pedal?",
+    "expected_sources": [
+      "docs/brake_pedal_lattice.md",
+      "docs/adr/ADR-006-run-history-and-result-querying.md"
+    ]
+  },
+  {
+    "query": "What are the density and yield strength of Ti-6Al-4V and PA12 nylon?",
+    "expected_sources": ["docs/materials.md", "docs/material_allowables.md"]
+  },
+  {
+    "query": "How does the UAV arm geometry generate the X-truss lattice web?",
+    "expected_sources": ["docs/uav_arm_lattice.md", "docs/adr/ADR-011-uav-arm-flagship-part.md"]
+  },
+  {
+    "query": "What is the meshable minimum strut radius for the UAV arm and why?",
+    "expected_sources": [
+      "docs/uav_arm_lattice.md",
+      "docs/adr/ADR-011-uav-arm-flagship-part.md",
+      "docs/ARCHITECTURE.md"
+    ]
+  },
+  {
+    "query": "What load case is used for the UAV arm demo?",
+    "expected_sources": ["docs/uav_arm_lattice.md"]
+  },
+  {
+    "query": "Which lattice web type is recommended for the brake pedal and why?",
+    "expected_sources": ["docs/brake_pedal_lattice.md", "docs/freecad_fem_notes.md"]
+  },
+  {
+    "query": "How is relative density defined for the lattice fill?",
+    "expected_sources": ["docs/brake_pedal_lattice.md", "docs/uav_arm_lattice.md"]
+  },
+  {
+    "query": "What solver runs the linear static FEA and which mesher precedes it?",
+    "expected_sources": ["docs/freecad_fem_notes.md", "docs/ARCHITECTURE.md"]
+  },
+  {
+    "query": "What is the design program revision hash and what is it used for?",
+    "expected_sources": ["docs/adr/ADR-004-design-program-layer.md"]
+  },
+  {
+    "query": "What does the outcome envelope add to a failed tool result?",
+    "expected_sources": ["docs/adr/ADR-002-tool-outcome-envelope.md"]
+  },
+  {
+    "query": "How does the HITL confirmation interrupt work for FreeCAD tools?",
+    "expected_sources": ["docs/ARCHITECTURE.md", "docs/adr/ADR-001-scope-and-architecture.md"]
+  },
+  {
+    "query": "What mesh size is recommended after a convergence study?",
+    "expected_sources": ["docs/adr/ADR-009-mesh-convergence-study.md"]
+  },
+  {
+    "query": "What is the safety factor threshold used for material recommendations?",
+    "expected_sources": ["docs/materials.md", "docs/material_allowables.md"]
+  },
+  {
+    "query": "How are chat threads isolated for CAD session state?",
+    "expected_sources": [
+      "docs/adr/ADR-004-design-program-layer.md",
+      "docs/ARCHITECTURE.md"
+    ]
+  }
+]

@@ -26,6 +26,7 @@ from companion.tools.cad_fea import call_tool
 import companion.tools.freecad_runtime as f_rt
 from eval import history
 from eval import judge
+from eval import retrieval_metrics
 from eval import trajectory
 
 
@@ -185,6 +186,12 @@ def main() -> int:
             failed += 1
 
     judge_rows = [v for v in judge_verdicts]
+    # H9: deterministic retrieval metrics over the labeled queries.
+    retrieval = retrieval_metrics.run_retrieval_metrics()
+    print(
+        f"\nRetrieval: hit@{retrieval['k']}={retrieval['hit_rate_at_4']:.0%}, "
+        f"MRR={retrieval['mrr']:.3f} over {retrieval['queries']} labeled queries"
+    )
     tokens = {
         "input_tokens": sum((v.get("usage") or {}).get("input_tokens", 0) for v in judge_rows),
         "output_tokens": sum((v.get("usage") or {}).get("output_tokens", 0) for v in judge_rows),
@@ -195,6 +202,7 @@ def main() -> int:
         "skipped": skipped,
         "total": len(cases),
         "rows": rows,
+        "retrieval": retrieval,
         "judge": {
             "enabled": judge.judge_enabled(),
             "model": judge_model if judge.judge_enabled() else None,
