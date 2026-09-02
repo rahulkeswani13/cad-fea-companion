@@ -1015,3 +1015,93 @@ metrics — hit-rate@k / MRR — remain F15 scope with the embedding work.)
 - *Where do embeddings fit?* Behind the same seam: `retrieve_detail` already
   returns per-retriever breakdowns, so a third retriever (or a cross-encoder
   rerank) joins the fusion without changing call sites (F15).
+
+## AI-engineering hardening (waves P0–P2, H0–H14)
+
+**Pitch:** Three sources of truth for one tool parameter collapsed into one;
+payload cost measured per answer; evals that trend, not just gate; and every
+agent surface — schemas, verdicts, session state, the offline router — pinned
+by contract tests. This is the hardening branch: 15 items, one commit each,
+CI-gated on every push.
+
+**Script:**
+- **P0 — correctness & cost (H0–H5).** H1 trims the *send-time* LLM payload:
+  the last 20 messages stay verbatim, older tool results collapse to
+  deterministic receipt lines (`tool / ok / elapsed / KPI key names`) — the
+  checkpointed history stays full, so multi-turn memory is intact; receipts
+  carry key *names*, not stale values (solver honesty). H2 meters tokens:
+  `AgentTurn.usage` → per-run totals on every `run_agent` result and
+  per-thread session totals in `/api/health` — every answer now has a price
+  tag. H3 is the architecture beat: the pydantic arg models are the single
+  source of truth (ADR-013) — `TOOL_SPECS` JSON schemas are *generated* from
+  them, `call_tool` boundary-validates args before dispatch (out-of-range
+  `create_*` hard-rejects with `bad_params`, ADR-004 never-clamp), and
+  `PARAM_SPECS` is a *derived view* of the same models — schema drift between
+  prompt, validation, and program floors is now structurally impossible; the
+  eval suite's adversarial cases that encoded the old guardrail gap were
+  flipped to assert the new rejections. H4 makes the CAD module session the
+  single authoritative writer (`sync_cad_state` is the only graph-side
+  writer; `node_tools` stopped mirroring). H5 appends every eval run to
+  `data/results/eval_history.jsonl` and prints the delta vs the previous run
+  — evals trend.
+- **P1 — structure & honesty (H6–H10).** H6 extracts the 340-line keyword
+  router into `companion/agent/heuristics.py` as a `HeuristicRouter` class
+  with a documented `heuristic_fallback` setting (offline mode is designed,
+  not emergent). H7 removes every hardcoded figure and per-part default from
+  `SYSTEM_PROMPT` — loads, mesh sizes, stress references now come only from
+  tool schemas, tool defaults, and result payloads; a prompt-hygiene test
+  keeps them out. H8 envelope-integrates the remaining raw failures
+  (unknown-tool, no-geometry/no-results state failures, missing precomputed
+  case) — every failure is `error_class` + one concrete correction. H9 adds
+  `eval/rag_labels.json` (20 labeled queries) and reports deterministic
+  key-less `hit_rate_at_4` + `mrr` — retrieval quality is measured. H10 puts
+  a session token pill in the status bar (SSE `final` carries usage).
+- **P2 — polish (H11–H14).** H11 freezes the generated `TOOL_SPECS` behind a
+  committed snapshot contract; H12 adds a bounded tool-receipt timeline to
+  the CAD-state blob — long-session awareness at ~8 fixed entries, the
+  zero-token replacement for LLM summarization; H13 gives the eval judge
+  best-of-3 (FAIL re-samples twice, 2-of-3 majority decides, extra tokens
+  recorded, still advisory); H14 pins the router↔LLM handoff contract —
+  heuristics assist only when the LLM omits tools on the first visit.
+
+**Tests:** `tests/test_context.py`, `test_usage.py`, `test_tool_schemas.py`,
+`test_sessions.py` (session↔graph consistency), `test_eval_history.py`,
+`test_heuristics.py`, `test_prompt_hygiene.py`, `test_envelope_audit.py`,
+`test_retrieval_metrics.py`, `test_session_digest.py`,
+`test_judge_bestof3.py`, `test_tool_specs_contract.py`,
+`test_router_handoff.py`.
+
+**Evals:** adversarial cases flipped to the H3 boundary contract
+(`adv_cantilever_negative_length`, `adv_cantilever_zero_height`,
+`f03_nonpositive_strut_rejected`) plus new `adv_uav_arm_strut_below_floor`
+(0.8 mm meshable-floor reject); `retrieval` block in the report (hit@4 /
+MRR over 20 labeled queries); every run appends to `eval_history.jsonl`
+with a delta line; judge verdicts are best-of-3 with summed sampling tokens.
+
+**Demo prompts:**
+1. "Create a UAV arm with 0.8 mm struts" → boundary reject: `bad_params`,
+   error names the 1.5 mm floor, correction tells it what to retry — no
+   FreeCAD call, no session state touched.
+2. Long multi-turn session → status-bar token pill grows; `/api/health`
+   shows per-thread totals; the system prompt's CAD blob stays bounded
+   (H1 + H12).
+3. "What lattice is lightest?" key-less → the offline router still runs the
+   full compare flow (H6 designed offline mode).
+4. Two eval runs back to back → second run prints
+   `delta vs previous: passed +N …` (H5).
+
+**Likely interview questions:**
+- *Where were your three sources of truth?* Hand-written `TOOL_SPECS` prose,
+  pydantic models with ranges-in-prose, and `PARAM_SPECS` floors enforced
+  only on the program-update path — so out-of-range `create_*` args sailed
+  through. My eval suite had cases that *depended* on the gap; the collapse
+  to one model (ADR-013) closed it and the evals caught it first.
+- *Does trimming break multi-turn memory?* No — trimming is send-time only;
+  the LangGraph checkpointer keeps every message. Older tool payloads become
+  receipt lines with key names, not values, so stale numbers can't
+  masquerade as current.
+- *How do you know retrieval works?* 20 labeled queries scored deterministically
+  key-less: hit@4 ≥ 90% and MRR in the report — measured, on every run.
+- *Why hard-reject instead of clamp?* ADR-004: a clamped design silently
+  isn't the design the user asked for; rejection with one concrete correction
+  keeps the agent (and the demo) honest.
