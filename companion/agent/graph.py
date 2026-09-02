@@ -14,6 +14,8 @@ from langgraph.graph import END, StateGraph
 from langgraph.graph.message import add_messages
 from langgraph.types import Command, interrupt
 
+from companion.agent.context import condense_history
+from companion.agent.heuristics import HeuristicRouter
 from companion.agent.tools import FREECAD_MUTATING_TOOLS, get_langchain_tools
 from companion.config import Settings, get_settings
 from companion.llm.providers import (
@@ -45,11 +47,14 @@ class AgentState(TypedDict, total=False):
     iteration: int
     agent_visits: int
     tools_node_visits: int
+    # H2: per-run token totals across this run's LLM calls (None = no LLM use).
+    usage: dict[str, int] | None
 
 
 SYSTEM_PROMPT = """You are a CAD/FEA engineering companion.
-Primary example: aluminum brake-pedal lattice bracket (pivot + clevis rings + footpad) with a
-lattice web (solid | xtruss | fcc). Also supported: cantilever beam.
+Supported parts: brake-pedal lattice bracket (pivot + clevis rings + footpad,
+solid | xtruss | fcc lattice web), UAV arm (root clamp boss + tapered arm + tip
+motor ring), and cantilever beam.
 
 Rules:
 - Prefer grounded answers from retrieved context and tool results.
@@ -60,24 +65,24 @@ Rules:
 - If a tool returns ok:false, decide the next action from that observation (retry, create first, etc.).
 - create_brake_pedal / create_uav_arm / create_cantilever and apply_load_and_solve open
   FreeCAD GUI when available.
-- For brake pedals: discuss design vs non-design regions (solid rings + footpad vs lattice pocket),
-  relative density, mass, pad deflection, max von Mises vs Al 6061-T6 yield (~276 MPa), and SF.
-  Default load is +500 N on the footpad opposite (-X) face (Fx=+500). Fixed on pivot ID and clevis ID.
-  Prefer web_type=xtruss (2.5D diagonal X-truss); "bcc" aliases to xtruss on the pedal.
-- Coarse CalculiX tet meshes under-predict peak stress (especially in struts). For the
-  cantilever, mention analytical_reference_mpa (~120 MPa for 100 N / 100x20x5 mm).
+- Every number you give must come from the session CAD state, a tool result, or retrieved
+  context — never from memory. State the method behind it (calculix / analytical /
+  estimate) and the mesh size when applicable. If a tool result flags a value
+  NOT VERIFIED, repeat the flag — say so.
+- Coarse CalculiX tet meshes under-predict peak stress (especially in struts); for the
+  cantilever, compare against the analytical_reference_mpa value in the solve result.
+- For brake pedals: discuss design vs non-design regions (solid rings + footpad vs lattice
+  pocket), relative density, mass, pad deflection, max von Mises vs the program
+  material's yield, and SF. On the pedal, 'bcc' aliases to web_type xtruss.
 - Use compare_brake_pedal_variants when the user asks
   which lattice is best / lightest under constraints.
 - Use compare_materials for material trade-off questions ("Ti vs Al", "what
-  about printed nylon"). It scales the best available run linear-elastically;
-  state the method and quote the row sources. PA12 deflection is flagged
-  NOT VERIFIED — say so. To actually change material, use update_design_program
-  with a changes object setting "material" (rebuilds + bumps the program
-  revision).
+  about printed nylon"); quote the row sources. To actually change material,
+  use update_design_program with a changes object setting "material" (rebuilds
+  + bumps the program revision).
 - Use run_convergence_study when the user asks whether results are mesh-converged
-  or wants a mesh sensitivity check; it is synchronous (costs 2-3 solves) and its
-  report states the recommended mesh size. Answers derived from it must state the
-  mesh size used (solver honesty).
+  or wants a mesh sensitivity check; its report states the recommended mesh size.
+  Answers derived from it must state the mesh size used (solver honesty).
 - Keep answers concise and cite sources as [source].
 
 Session CAD state:
@@ -104,300 +109,29 @@ def _parse_tool_plan(text: str) -> list[dict[str, Any]]:
     return []
 
 
+# H6: the offline-first planner is a designed module now; these wrappers keep
+# the historical graph-module import surface working.
+_ROUTER = HeuristicRouter()
+
+
 def _pedal_oriented(message: str) -> bool:
-    lower = message.lower()
-    return any(
-        k in lower
-        for k in (
-            "brake pedal",
-            "brake-pedal",
-            "pedal",
-            "footpad",
-            "pushrod",
-            "clevis",
-            "pivot hole",
-        )
-    )
+    return _ROUTER.pedal_oriented(message)
 
 
 def _lattice_oriented(message: str) -> bool:
-    lower = message.lower()
-    return any(
-        k in lower
-        for k in (
-            "lattice",
-            "bcc",
-            "fcc",
-            "xtruss",
-            "x-truss",
-            "x truss",
-            "truss",
-            "relative density",
-            "bracket",
-        )
-    )
+    return _ROUTER.lattice_oriented(message)
 
 
 def _uav_oriented(message: str) -> bool:
-    lower = message.lower()
-    return any(
-        k in lower
-        for k in (
-            "uav",
-            "drone",
-            "quadcopter",
-            "quad-copter",
-            "motor mount",
-            "motor-mount",
-            "motor ring",
-        )
-    )
+    return _ROUTER.uav_oriented(message)
 
 
 def _has_cad_tool_intent(message: str) -> bool:
-    """True when the user asked to mutate CAD/FEA, not just ask a docs question."""
-    lower = message.lower()
-    return any(
-        k in lower
-        for k in (
-            "create",
-            "make",
-            "build",
-            "rebuild",
-            "generate",
-            "solve",
-            "apply",
-            "compare",
-            "which lattice",
-            "which variant",
-            "lightest",
-            "run fea",
-            "run fem",
-            "static analysis",
-            "open freecad",
-            "launch freecad",
-            "show in freecad",
-            "open the latest model",
-            "lattice metrics",
-            "get_lattice",
-            "get_max_von_mises",
-        )
-    )
+    return _ROUTER.has_cad_tool_intent(message)
 
 
 def _heuristic_tools(message: str) -> list[dict[str, Any]]:
-    lower = message.lower()
-    calls: list[dict[str, Any]] = []
-
-    wants_create_kw = any(
-        k in lower for k in ("create", "make", "build", "generate", "rebuild")
-    )
-    uav = _uav_oriented(lower)
-    wants_pedal = _pedal_oriented(lower) and wants_create_kw and not uav
-    # Default lattice → brake pedal (UAV arms own their lattice routing).
-    wants_lattice_default = _lattice_oriented(lower) and wants_create_kw and not uav
-    if wants_pedal or wants_lattice_default:
-        args: dict[str, Any] = {}
-        if "fcc" in lower:
-            args["web_type"] = "fcc"
-        elif (
-            "solid" in lower
-            and "xtruss" not in lower
-            and "truss" not in lower
-            and "bcc" not in lower
-        ):
-            args["web_type"] = "solid"
-        else:
-            # Default lattice fill for pedal is 2.5D X-truss (bcc aliases here).
-            args["web_type"] = "xtruss"
-        calls.append({"name": "create_brake_pedal", "args": args})
-
-    # F26: UAV arm flagship part. Default web is solid (the demo baseline);
-    # lattice/truss wording upgrades it to the X-truss web.
-    if uav and wants_create_kw:
-        args_u: dict[str, Any] = {}
-        if any(k in lower for k in ("xtruss", "x-truss", "x truss", "truss", "lattice", "bcc")):
-            args_u["web_type"] = "xtruss"
-        elif "solid" in lower:
-            args_u["web_type"] = "solid"
-        calls.append({"name": "create_uav_arm", "args": args_u})
-
-    wants_compare = any(
-        k in lower
-        for k in (
-            "compare",
-            "which lattice",
-            "which variant",
-            "best lattice",
-            "lightest",
-            "recommend",
-        )
-    ) and (
-        _pedal_oriented(lower)
-        or _lattice_oriented(lower)
-        or "solid" in lower
-        or "variant" in lower
-    )
-    if wants_compare:
-        calls.append({"name": "compare_brake_pedal_variants", "args": {}})
-
-    # F09: material questions. "Ti vs Al" style questions compare the table;
-    # "switch to Ti" style edits go through the design program.
-    _MATERIAL_HINTS = (
-        "material",
-        "titanium",
-        "ti-6al",
-        "ti6al",
-        " ti ",
-        " ti64",
-        "7075",
-        "6061",
-        "pa12",
-        "nylon",
-        "aluminum",
-        "aluminium",
-        "steel",
-        "alloy",
-    )
-    mentions_material = any(k in lower for k in _MATERIAL_HINTS)
-    if mentions_material:
-        mentioned = None
-        for token in re.findall(r"[A-Za-z0-9-]+", lower):
-            record = mats.get_material(token)
-            if record:
-                mentioned = record["id"]
-                break
-        wants_set_material = any(
-            k in lower
-            for k in ("switch", "make it", "change to", "convert", "set the material")
-        )
-        wants_material_compare = any(
-            k in lower
-            for k in ("compare", " vs ", "versus", "which material", "better", "what about")
-        )
-        if mentioned and wants_set_material:
-            calls.append(
-                {"name": "update_design_program", "args": {"changes": {"material": mentioned}}}
-            )
-        elif wants_material_compare or mentioned is None:
-            calls.append({"name": "compare_materials", "args": {}})
-
-    wants_metrics = any(
-        k in lower
-        for k in ("lattice metrics", "mass estimate", "get_lattice", "get lattice metrics")
-    )
-    if wants_metrics:
-        calls.append({"name": "get_lattice_metrics", "args": {}})
-
-    wants_create = any(
-        k in lower for k in ("create", "make a cantilever", "build a beam", "cantilever")
-    ) and any(k in lower for k in ("create", "make", "build", "mm", "x"))
-    if (
-        not _pedal_oriented(lower)
-        and not _lattice_oriented(lower)
-        and not _uav_oriented(lower)
-        and (wants_create or ("cantilever" in lower and "x" in lower))
-    ):
-        args_c: dict[str, Any] = {}
-        m = re.search(
-            r"(\d+(?:\.\d+)?)\s*[x×]\s*(\d+(?:\.\d+)?)\s*[x×]\s*(\d+(?:\.\d+)?)",
-            lower,
-        )
-        if m:
-            args_c = {
-                "length_mm": float(m.group(1)),
-                "width_mm": float(m.group(2)),
-                "height_mm": float(m.group(3)),
-            }
-        if "create" in lower or "make" in lower or "build" in lower or args_c:
-            calls.append({"name": "create_cantilever", "args": args_c})
-
-    wants_convergence = any(
-        k in lower
-        for k in (
-            "convergence",
-            "converged",
-            "mesh study",
-            "mesh sensitivity",
-            "mesh refinement",
-            "refine the mesh",
-            "run_convergence_study",
-        )
-    )
-    if wants_convergence:
-        args_cv: dict[str, Any] = {}
-        fm_cv = re.search(r"(\d+(?:\.\d+)?)\s*n\b", lower)
-        if fm_cv:
-            args_cv["force_n"] = float(fm_cv.group(1))
-        calls.append({"name": "run_convergence_study", "args": args_cv})
-
-    wants_solve = any(
-        k in lower
-        for k in (
-            "apply",
-            "solve",
-            "run fea",
-            "run fem",
-            "tip load",
-            "static analysis",
-            "100 n",
-            "100n",
-            "500 n",
-            "500n",
-            "20000 n",
-            "20000n",
-            "2000 n",
-            "2000n",
-            "pad load",
-            "footpad",
-        )
-    )
-    if wants_solve:
-        args_s: dict[str, Any] = {}
-        fm = re.search(r"(\d+(?:\.\d+)?)\s*n\b", lower)
-        if fm:
-            args_s["force_n"] = float(fm.group(1))
-        calls.append({"name": "apply_load_and_solve", "args": args_s})
-
-    wants_stress = any(
-        k in lower
-        for k in (
-            "von mises",
-            "max stress",
-            "maximum stress",
-            "under 50",
-            "get_max_von_mises",
-            "safety factor",
-            "concentrated",
-        )
-    )
-    if wants_stress:
-        calls.append({"name": "get_max_von_mises", "args": {}})
-
-    if any(
-        k in lower
-        for k in (
-            "open freecad",
-            "launch freecad",
-            "show in freecad",
-            "open the latest model",
-            "open free cad",
-        )
-    ):
-        calls.append({"name": "open_in_freecad", "args": {}})
-    return calls
-
-
-def _done_tool_names(tool_results: list[dict[str, Any]]) -> set[str]:
-    names: set[str] = set()
-    for item in tool_results:
-        result = item.get("result") or {}
-        if result.get("ok") is False:
-            continue
-        if result.get("cancelled"):
-            continue
-        names.add(str(item.get("name", "")))
-    return names
+    return _ROUTER.plan_tools(message)
 
 
 def _heuristic_next_tool(
@@ -406,126 +140,30 @@ def _heuristic_next_tool(
     cad_results: dict[str, Any] | None,
     tool_results: list[dict[str, Any]],
 ) -> list[dict[str, Any]]:
-    """Return at most one next tool so the agent loop can observe results."""
-    planned = _heuristic_tools(message)
-    lower = message.lower()
-    if not planned and any(
-        k in lower
-        for k in (
-            "create",
-            "solve",
-            "cantilever",
-            "von mises",
-            "lattice",
-            "pedal",
-            "brake",
-            "bcc",
-            "fcc",
-            "compare",
-            "uav",
-            "drone",
+    return _ROUTER.plan(message, cad_geometry, cad_results, tool_results)
+
+
+# H12: bounded tool-receipt timeline in the CAD-state blob — the offline-first
+# replacement for LLM summarization of older turns. The digest rides in the
+# system prompt every turn, so long-session history awareness costs a bounded
+# ~8 entries regardless of how many turns accumulated (zero marginal tokens).
+DIGEST_MAX_TOOLS = 8
+
+
+def _tool_digest(tool_results: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Last DIGEST_MAX_TOOLS tool calls as tiny receipts (no KPI values)."""
+    entries: list[dict[str, Any]] = []
+    for item in (tool_results or [])[-DIGEST_MAX_TOOLS:]:
+        result = item.get("result") or {}
+        receipt = result.get("receipt") or {}
+        entries.append(
+            {
+                "tool": item.get("name"),
+                "ok": result.get("ok") is True,
+                "elapsed_s": receipt.get("elapsed_s"),
+            }
         )
-    ):
-        planned = _heuristic_tools(message)
-
-    done = _done_tool_names(tool_results)
-    failed = {
-        str(item.get("name"))
-        for item in tool_results
-        if (item.get("result") or {}).get("ok") is False
-        and not (item.get("result") or {}).get("cancelled")
-    }
-    explicit_create = any(k in lower for k in ("create", "make", "build", "rebuild"))
-    pedalist = _pedal_oriented(lower) or _lattice_oriented(lower)
-    uavist = _uav_oriented(lower)
-
-    for call in planned:
-        name = call["name"]
-        if name == "create_brake_pedal":
-            if cad_geometry and not explicit_create and name not in failed:
-                continue
-            if name in done and name not in failed:
-                continue
-            return [call]
-        if name == "create_uav_arm":
-            if cad_geometry and not explicit_create and name not in failed:
-                continue
-            if name in done and name not in failed:
-                continue
-            return [call]
-        if name == "create_cantilever":
-            if cad_geometry and not explicit_create and name not in failed:
-                continue
-            if name in done and name not in failed:
-                continue
-            return [call]
-        if name == "apply_load_and_solve":
-            created = (
-                "create_brake_pedal" in done
-                or "create_uav_arm" in done
-                or "create_cantilever" in done
-            )
-            if not cad_geometry and not created:
-                if uavist:
-                    return [{"name": "create_uav_arm", "args": {"web_type": "solid"}}]
-                if pedalist:
-                    return [{"name": "create_brake_pedal", "args": {"web_type": "xtruss"}}]
-                return [{"name": "create_cantilever", "args": {}}]
-            if name in done and name not in failed and cad_results:
-                continue
-            return [call]
-        if name in (
-            "get_lattice_metrics",
-            "compare_brake_pedal_variants",
-            "compare_materials",
-        ):
-            if name == "get_lattice_metrics" and not cad_geometry:
-                if "create_brake_pedal" not in done:
-                    return [{"name": "create_brake_pedal", "args": {"web_type": "xtruss"}}]
-            # compare_materials works from stored/precomputed runs — no live
-            # geometry required, so it falls through without a create.
-            if name in done:
-                continue
-            return [call]
-        if name == "update_design_program":
-            created = (
-                "create_brake_pedal" in done
-                or "create_uav_arm" in done
-                or "create_cantilever" in done
-            )
-            if not cad_geometry and not created:
-                if uavist:
-                    return [{"name": "create_uav_arm", "args": {"web_type": "solid"}}]
-                if pedalist:
-                    return [{"name": "create_brake_pedal", "args": {"web_type": "xtruss"}}]
-                return [{"name": "create_cantilever", "args": {}}]
-            if name in done and name not in failed:
-                continue
-            return [call]
-        if name == "run_convergence_study":
-            created = (
-                "create_brake_pedal" in done
-                or "create_uav_arm" in done
-                or "create_cantilever" in done
-            )
-            if not cad_geometry and not created:
-                if uavist:
-                    return [{"name": "create_uav_arm", "args": {"web_type": "solid"}}]
-                if pedalist:
-                    return [{"name": "create_brake_pedal", "args": {"web_type": "xtruss"}}]
-                return [{"name": "create_cantilever", "args": {}}]
-            if name in done and name not in failed:
-                continue
-            return [call]
-        if name == "get_max_von_mises":
-            if name in done:
-                continue
-            return [call]
-        if name == "open_in_freecad":
-            if name in done:
-                continue
-            return [call]
-    return []
+    return entries
 
 
 def _cad_state_blob(state: AgentState) -> str:
@@ -571,7 +209,10 @@ def _cad_state_blob(state: AgentState) -> str:
             ),
         ),
     }
-    if not blob["geometry"] and not blob["results"]:
+    digest = _tool_digest(state.get("tool_results"))
+    if digest:
+        blob["recent_tools"] = digest
+    if not blob["geometry"] and not blob["results"] and not digest:
         return "(none)"
     return json.dumps(blob, default=str)
 
@@ -610,6 +251,50 @@ def _finalize_without_llm(state: AgentState, draft: str = "") -> str:
         for item in tool_results:
             parts.append(f"- {item['name']}: {json.dumps(item.get('result'))[:500]}")
     return "\n\n".join(parts).strip() or "No response generated."
+
+
+def _add_usage(
+    prev: dict[str, int] | None, turn: dict[str, int] | None
+) -> dict[str, int] | None:
+    """Accumulate per-run token totals (H2). Missing usage degrades to prev/None."""
+    if not turn:
+        return prev
+    out = dict(prev or {})
+    for key in ("input_tokens", "output_tokens", "total_tokens"):
+        out[key] = int(out.get(key) or 0) + int(turn.get(key) or 0)
+    return out
+
+
+# H2 session token metering: per-thread cumulative totals, keyed like the CAD
+# module sessions (thread_id -> totals). In-process only, mirrors _SESSIONS.
+_TOKEN_SESSIONS: dict[str, dict[str, int]] = {}
+
+
+def record_session_usage(thread_id: str, usage: dict[str, int] | None) -> None:
+    """Add one finished run's token usage to the thread's session totals."""
+    if not usage:
+        return
+    totals = _TOKEN_SESSIONS.setdefault(
+        str(thread_id),
+        {"input_tokens": 0, "output_tokens": 0, "total_tokens": 0, "turns": 0},
+    )
+    for key in ("input_tokens", "output_tokens", "total_tokens"):
+        totals[key] += int(usage.get(key) or 0)
+    totals["turns"] += 1
+
+
+def session_usage() -> dict[str, Any]:
+    """Per-thread cumulative token totals plus an all-threads sum (/api/health)."""
+    threads = {tid: dict(totals) for tid, totals in _TOKEN_SESSIONS.items()}
+    total = {
+        key: sum(totals.get(key, 0) for totals in _TOKEN_SESSIONS.values())
+        for key in ("input_tokens", "output_tokens", "total_tokens", "turns")
+    }
+    return {"threads": threads, "total": total}
+
+
+def reset_token_sessions() -> None:
+    _TOKEN_SESSIONS.clear()
 
 
 def build_graph(
@@ -699,18 +384,21 @@ def build_graph(
                     cad_state=_cad_state_blob(state),
                 )
                 history = list(state.get("messages") or [])
-                # Ensure system + latest human are present for this turn
+                # Ensure system + latest human are present for this turn.
+                # H1: trim the *sent* payload only — the checkpointed history
+                # (graph state) keeps every message verbatim.
                 msgs: list[BaseMessage] = [SystemMessage(content=system)]
-                # Drop prior system messages from history; keep human/ai/tool
-                for m in history:
-                    if isinstance(m, SystemMessage):
-                        continue
-                    msgs.append(m)
+                msgs.extend(
+                    condense_history(
+                        [m for m in history if not isinstance(m, SystemMessage)]
+                    )
+                )
                 if not any(isinstance(m, HumanMessage) for m in msgs):
                     msgs.append(HumanMessage(content=message))
 
                 turn: AgentTurn = provider.complete_messages(msgs, tools=lc_tools)
                 pending = _tool_specs_to_pending(turn.tool_calls)
+                usage_totals = _add_usage(state.get("usage"), turn.usage)
 
                 # Assist only when the user asked to run CAD/FEA and the LLM omitted tools.
                 if not pending and visits == 1 and _has_cad_tool_intent(message):
@@ -737,6 +425,7 @@ def build_graph(
                 updates: dict[str, Any] = {
                     **base,
                     "pending_tool_calls": pending,
+                    "usage": usage_totals,
                     "messages": [AIMessage(**ai_kwargs)],
                 }
                 if not pending:
@@ -750,19 +439,28 @@ def build_graph(
                     "messages": [AIMessage(content=str(exc))],
                 }
 
-        # No LLM: heuristic one-tool-at-a-time loop
-        pending = _tool_specs_to_pending(
-            _heuristic_next_tool(
-                message,
-                state.get("cad_geometry"),
-                state.get("cad_results"),
-                state.get("tool_results") or [],
-            )
-        )
+        # No LLM: heuristic one-tool-at-a-time loop (H6 offline mode, gated by
+        # settings.heuristic_fallback — default on).
+        pending = []
         draft = (
             "LLM API key not configured yet. Running heuristic tool routing so CAD/FEA "
             "tools and RAG still work. Add GEMINI_API_KEY to .env for full chat."
         )
+        if settings.heuristic_fallback:
+            pending = _tool_specs_to_pending(
+                _heuristic_next_tool(
+                    message,
+                    state.get("cad_geometry"),
+                    state.get("cad_results"),
+                    state.get("tool_results") or [],
+                )
+            )
+        else:
+            draft = (
+                "LLM API key not configured and heuristic fallback is disabled "
+                "(HEURISTIC_FALLBACK=false), so no CAD/FEA tools can run. "
+                "Add GEMINI_API_KEY to .env for full chat."
+            )
         ai_kwargs = {"content": draft}
         if pending:
             ai_kwargs["tool_calls"] = [
@@ -838,8 +536,6 @@ def build_graph(
 
         new_results: list[dict[str, Any]] = []
         tool_messages: list[ToolMessage] = []
-        geometry = state.get("cad_geometry")
-        results = state.get("cad_results")
 
         for p in pending:
             name = str(p.get("name", ""))
@@ -853,42 +549,23 @@ def build_graph(
                     name=name,
                 )
             )
-            # Mirror important CAD facts into graph state
-            if name in (
-                "create_cantilever",
-                "create_brake_pedal",
-            ) and result.get("ok"):
-                geometry = result
-            if name == "apply_load_and_solve" and result.get("ok"):
-                results = result
-            if name == "get_max_von_mises" and result.get("ok"):
-                results = {**(results or {}), **result}
-            if name in (
-                "get_lattice_metrics",
-                "compare_brake_pedal_variants",
-                "compare_materials",
-            ) and result.get("ok"):
-                # Keep geometry; metrics/compare are observational.
-                pass
 
-        # Also pull module _STATE after tools (production path)
-        session = get_state()
-        if session.get("geometry"):
-            geometry = session["geometry"]
-        if session.get("results"):
-            results = session["results"]
+        # H4: node_tools no longer mirrors geometry/results into graph state —
+        # the CAD module session (_SESSIONS via _STATE) stays the single
+        # authoritative writer, and sync_cad_state is the only graph-side
+        # writer pulling from it.
 
         prior = list(state.get("tool_results") or [])
         return {
             "tools_node_visits": visits,
             "pending_tool_calls": [],
             "tool_results": prior + new_results,
-            "cad_geometry": geometry,
-            "cad_results": results,
             "messages": tool_messages,
         }
 
     def node_sync_cad_state(state: AgentState) -> dict[str, Any]:
+        # H4: the only graph-side writer of cad_geometry/cad_results — it
+        # mirrors the authoritative CAD module session into graph state.
         session = get_state()
         updates: dict[str, Any] = {}
         if session.get("geometry") is not None:
@@ -990,6 +667,7 @@ def run_agent(
                     "iteration": 0,
                     "agent_visits": 0,
                     "tools_node_visits": 0,
+                    "usage": None,
                 },
                 config,
             )
@@ -1006,8 +684,12 @@ def run_agent(
                     answer = _message_content(msg)
                     break
 
+    usage = final.get("usage") if isinstance(final, dict) else None
+    record_session_usage(tid, usage)
+
     return {
         "answer": answer,
+        "usage": usage,
         "citations": (final.get("citations") if isinstance(final, dict) else None) or [],
         "grounding": (final.get("grounding") if isinstance(final, dict) else None) or "none",
         "tool_calls": (final.get("pending_tool_calls") if isinstance(final, dict) else None)
@@ -1053,6 +735,7 @@ def stream_agent(
                 "iteration": 0,
                 "agent_visits": 0,
                 "tools_node_visits": 0,
+                "usage": None,
             }
 
         yield from _stream_agent_events(compiled, stream_input, config, tid)
@@ -1060,12 +743,17 @@ def stream_agent(
 
 
 def _stream_agent_events(compiled, stream_input: Any, config: dict[str, Any], tid: str):
+    # H10: the agent node's delta carries cumulative per-run token usage; the
+    # last one seen is this run's total (mirrors run_agent's accounting).
+    run_usage: dict[str, int] | None = None
     for update in compiled.stream(stream_input, config, stream_mode="updates"):
         # update is {node_name: state_delta}
         if isinstance(update, dict):
             for node_name, delta in update.items():
                 event: dict[str, Any] = {"type": "node", "node": node_name, "thread_id": tid}
                 if isinstance(delta, dict):
+                    if delta.get("usage") is not None:
+                        run_usage = delta["usage"]
                     if delta.get("pending_tool_calls"):
                         event["pending_tool_calls"] = delta["pending_tool_calls"]
                     if delta.get("tool_results"):
@@ -1086,6 +774,8 @@ def _stream_agent_events(compiled, stream_input: Any, config: dict[str, Any], ti
                     else:
                         event["status"] = f"{node_name}…"
                 yield event
+
+    record_session_usage(tid, run_usage)
 
     # Final snapshot via get_state
     snap = compiled.get_state(config)
@@ -1112,5 +802,6 @@ def _stream_agent_events(compiled, stream_input: Any, config: dict[str, Any], ti
         "interrupt": _serialize_interrupt(interrupt_raw),
         "agent_visits": values.get("agent_visits") or 0,
         "tools_node_visits": values.get("tools_node_visits") or 0,
+        "usage": run_usage,
         "llm_configured": get_settings().llm_configured(),
     }

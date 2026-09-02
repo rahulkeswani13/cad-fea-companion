@@ -1,9 +1,12 @@
 """Rubric-based LLM judge for agent eval cases (opt-in via EVAL_JUDGE=1).
 
-One cheap call per agent case: a strict judge model reads the user prompt,
-the agent's answer, and the tools that ran, and grades against the case's
-``judge_rubric`` checklist (or the generic solver-honesty rubric). Verdicts
-are advisory — stored in the report, never gating (evals plan, phase 3).
+One cheap call per agent case by default; a FAIL verdict triggers a best-of-3
+re-sample with a 2-of-3 majority (H13) so one noisy sample cannot tank the
+verdict. A strict judge model reads the user prompt, the agent's answer, and
+the tools that ran, and grades against the case's ``judge_rubric`` checklist
+(or the generic solver-honesty rubric). Verdicts are advisory — stored in the
+report, never gating (evals plan, phase 3). Extra sampling tokens are summed
+into the verdict's usage.
 
 Defensive by design: malformed judge output becomes an ``unparsed`` verdict,
 never an exception; missing usage metadata degrades to None.
@@ -93,14 +96,14 @@ def _parse_verdict(text: str) -> dict[str, Any]:
     }
 
 
-def judge_agent_case(
+def _judge_once(
     case: dict[str, Any],
     answer: str,
     tool_names: list[str],
     api_key: str,
     model: str,
 ) -> dict[str, Any]:
-    """Grade one agent answer against its rubric. Never raises."""
+    """One judge sample. Never raises; malformed output becomes 'unparsed'."""
     from langchain_core.messages import HumanMessage, SystemMessage
 
     rubric = list(case.get("judge_rubric") or GENERIC_RUBRIC)
@@ -130,4 +133,63 @@ def judge_agent_case(
         "verdict": verdict.get("verdict", "graded"),
         "scores": verdict.get("scores", {}),
         "notes": verdict.get("notes", ""),
+    }
+
+
+def _sum_usage(samples: list[dict[str, Any]]) -> dict[str, int] | None:
+    """Total tokens across all samples (H13: best-of-3 records extra tokens)."""
+    out: dict[str, int] | None = None
+    for sample in samples:
+        usage = sample.get("usage")
+        if not usage:
+            continue
+        out = out or {}
+        for key in ("input_tokens", "output_tokens", "total_tokens"):
+            out[key] = out.get(key, 0) + int(usage.get(key) or 0)
+    return out
+
+
+def judge_agent_case(
+    case: dict[str, Any],
+    answer: str,
+    tool_names: list[str],
+    api_key: str,
+    model: str,
+) -> dict[str, Any]:
+    """Grade one agent answer against its rubric. Never raises.
+
+    H13 best-of-3: a FAIL verdict triggers two re-samples and a 2-of-3
+    majority decides — one noisy sample no longer tanks the verdict. All
+    samples ride in the result; token usage is summed across them. Advisory
+    policy unchanged (verdicts are recorded, never gating).
+    """
+    first = _judge_once(case, answer, tool_names, api_key, model)
+    if first.get("pass") is not False:
+        return {**first, "best_of_3": False}
+
+    samples = [first]
+    for _ in range(2):
+        samples.append(_judge_once(case, answer, tool_names, api_key, model))
+
+    true_votes = sum(1 for s in samples if s.get("pass") is True)
+    false_votes = sum(1 for s in samples if s.get("pass") is False)
+    if false_votes >= 2 or true_votes >= 2:
+        final_pass = true_votes >= 2
+        final_verdict = "graded"
+    else:
+        # No 2-of-3 majority (unparsed/error samples) — keep the first verdict.
+        final_pass = first.get("pass")
+        final_verdict = str(first.get("verdict") or "unparsed")
+    graded = next((s for s in samples if s.get("verdict") == "graded"), first)
+    return {
+        "model": model,
+        "usage": _sum_usage(samples),
+        "pass": final_pass,
+        "verdict": final_verdict,
+        "scores": graded.get("scores", {}),
+        "notes": graded.get("notes", ""),
+        "best_of_3": True,
+        "samples": [
+            {"pass": s.get("pass"), "verdict": s.get("verdict")} for s in samples
+        ],
     }

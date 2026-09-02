@@ -53,7 +53,8 @@ def test_bad_params_failure_shape():
     assert result["ok"] is False
     assert result["error_class"] == "bad_params"
     assert result["correction"]
-    assert "must be one of" in result["error"]
+    # H3: boundary validation reports the field and its allowed values.
+    assert "web_type" in result["error"] and "'xtruss'" in result["error"]
 
 
 def test_no_geometry_failure_shape():

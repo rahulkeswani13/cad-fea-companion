@@ -36,28 +36,14 @@ from companion.config import get_settings
 from companion.tools import brake_pedal as bp
 from companion.tools import materials as mats
 from companion.tools import uav_arm as ua
+from companion.tools.tool_schemas import numeric_param_ranges
 
 KNOWN_PARTS = ("brake_pedal", "cantilever", "uav_arm")
 
-# Editable numeric surface per part: name -> (min, max), units in the key.
-PARAM_SPECS: dict[str, dict[str, tuple[float, float]]] = {
-    "brake_pedal": {
-        "cell_size_mm": (5.0, 40.0),
-        "strut_radius_mm": (1.0, 5.0),
-    },
-    "cantilever": {
-        "length_mm": (10.0, 500.0),
-        "width_mm": (2.0, 100.0),
-        "height_mm": (1.0, 50.0),
-    },
-    # F26 (ADR-011): strut floor 1.5 mm is the meshable minimum — below it
-    # Gmsh cannot resolve the bar cross-section (demo beat: 0.8 mm rejects).
-    "uav_arm": {
-        "arm_length_mm": (120.0, 320.0),
-        "cell_size_mm": (6.0, 30.0),
-        "strut_radius_mm": (1.5, 4.0),
-    },
-}
+# H3: derived view of the canonical pydantic arg models — the same ge/le
+# constraints that boundary-reject tool calls define the program floors, so
+# the two can never drift. Public API (shape + values) unchanged.
+PARAM_SPECS: dict[str, dict[str, tuple[float, float]]] = numeric_param_ranges()
 
 WEB_TYPES: dict[str, frozenset[str]] = {
     "brake_pedal": bp.WEB_TYPES,  # solid | xtruss | fcc

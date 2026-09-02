@@ -16,3 +16,4 @@ data/exports/
 dist/
 build/
 .zcode/
+data/results/eval_history.jsonl

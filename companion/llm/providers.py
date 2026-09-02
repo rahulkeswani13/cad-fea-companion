@@ -35,6 +35,20 @@ class AgentTurn:
 
     content: str = ""
     tool_calls: list[ToolCallSpec] = field(default_factory=list)
+    # H2 token metering: provider usage metadata (input/output/total tokens).
+    # None when the provider reports nothing — callers must degrade gracefully.
+    usage: dict[str, int] | None = None
+
+
+def extract_usage(message: Any) -> dict[str, int] | None:
+    """Pull ``usage_metadata`` token counts off an LLM response (None if absent)."""
+    usage = getattr(message, "usage_metadata", None) or {}
+    out: dict[str, int] = {}
+    for key in ("input_tokens", "output_tokens", "total_tokens"):
+        value = usage.get(key)
+        if isinstance(value, int):
+            out[key] = value
+    return out or None
 
 
 def parse_tools_block(text: str) -> list[ToolCallSpec]:
@@ -175,7 +189,7 @@ class GeminiProvider(LLMProvider):
                 )
         if not calls:
             calls = parse_tools_block(content)
-        return AgentTurn(content=content, tool_calls=calls)
+        return AgentTurn(content=content, tool_calls=calls, usage=extract_usage(result))
 
 
 def get_llm_provider(settings: Settings | None = None) -> LLMProvider:

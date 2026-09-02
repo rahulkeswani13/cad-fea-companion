@@ -24,7 +24,9 @@ from companion.rag.store import ingest_docs, retrieve
 import companion.tools.cad_fea as cad_fea
 from companion.tools.cad_fea import call_tool
 import companion.tools.freecad_runtime as f_rt
+from eval import history
 from eval import judge
+from eval import retrieval_metrics
 from eval import trajectory
 
 
@@ -184,6 +186,12 @@ def main() -> int:
             failed += 1
 
     judge_rows = [v for v in judge_verdicts]
+    # H9: deterministic retrieval metrics over the labeled queries.
+    retrieval = retrieval_metrics.run_retrieval_metrics()
+    print(
+        f"\nRetrieval: hit@{retrieval['k']}={retrieval['hit_rate_at_4']:.0%}, "
+        f"MRR={retrieval['mrr']:.3f} over {retrieval['queries']} labeled queries"
+    )
     tokens = {
         "input_tokens": sum((v.get("usage") or {}).get("input_tokens", 0) for v in judge_rows),
         "output_tokens": sum((v.get("usage") or {}).get("output_tokens", 0) for v in judge_rows),
@@ -194,6 +202,7 @@ def main() -> int:
         "skipped": skipped,
         "total": len(cases),
         "rows": rows,
+        "retrieval": retrieval,
         "judge": {
             "enabled": judge.judge_enabled(),
             "model": judge_model if judge.judge_enabled() else None,
@@ -208,16 +217,26 @@ def main() -> int:
     out_path = ROOT / "data" / "results" / "eval_report.json"
     out_path.parent.mkdir(parents=True, exist_ok=True)
     out_path.write_text(json.dumps(summary, indent=2), encoding="utf-8")
+
+    # H5: append to the trend history and print the delta vs the previous run.
+    history_path = ROOT / "data" / "results" / "eval_history.jsonl"
+    entry = history.summarize_for_history(summary)
+    previous = history.last_history_entry(history_path)
+    delta = history.compute_delta(previous, entry)
+    entry["delta"] = delta
+    history.append_history_entry(history_path, entry)
+
     judge_line = ""
     if judge.judge_enabled():
         judge_line = (
             f" | judge: {summary['judge']['judge_passed']}/{len(judge_rows)} passed,"
             f" {tokens['input_tokens']}in/{tokens['output_tokens']}out tokens"
         )
+    delta_line = f" | delta vs previous: {history.format_delta(delta)}" if delta else ""
     print(
         f"\nSummary: {passed}/{len(cases)} passed"
         + (f", {skipped} skipped" if skipped else "")
-        + f" -> {out_path}{judge_line}"
+        + f" -> {out_path}{judge_line}{delta_line}"
     )
     return 0 if failed == 0 else 1
 

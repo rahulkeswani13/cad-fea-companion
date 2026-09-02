@@ -1,117 +1,29 @@
-"""LangChain tool schemas for bind_tools; execution still goes through call_tool."""
+"""LangChain tool schemas for bind_tools; execution still goes through call_tool.
+
+H3: the canonical arg models (with enforced ranges) live in
+``companion.tools.tool_schemas`` — this module re-exports them so existing
+imports keep working, and TOOL_SPECS/program floors derive from the same
+models.
+"""
 
 from __future__ import annotations
 
-from typing import Any, Literal
+from typing import Any
 
 from langchain_core.tools import StructuredTool
-from pydantic import BaseModel, Field
 
-
-class CreateBrakePedalArgs(BaseModel):
-    web_type: Literal["solid", "xtruss", "fcc"] = Field(
-        default="xtruss",
-        description="Web fill: solid, 2.5D X-truss, or fcc lattice",
-    )
-    cell_size_mm: float = Field(default=15.0, description="Lattice cell size mm")
-    strut_radius_mm: float = Field(
-        default=2.5,
-        description="X-truss strut thickness mm (or FCC strut radius)",
-    )
-    material: str | None = Field(
-        default=None,
-        description=(
-            "Material id or alias (al6061t6 default; also al7075t6, ti6al4v, "
-            "pa12, steel; 'ti', '7075', 'nylon' accepted)"
-        ),
-    )
-    open_gui: bool = Field(default=False, description="Open FreeCAD GUI after create")
-
-
-class CreateUavArmArgs(BaseModel):
-    web_type: Literal["solid", "xtruss"] = Field(
-        default="solid",
-        description="Arm fill: solid, or chord rails + exposed X-truss web",
-    )
-    arm_length_mm: float = Field(default=180.0, description="Arm length mm (120-320)")
-    cell_size_mm: float = Field(default=12.0, description="Lattice cell size mm (6-30)")
-    strut_radius_mm: float = Field(
-        default=1.8,
-        description="X-truss strut radius mm (1.5 meshable minimum - 4)",
-    )
-    material: str | None = Field(
-        default=None,
-        description=(
-            "Material id or alias (al6061t6 default; also al7075t6, ti6al4v, "
-            "pa12, steel)"
-        ),
-    )
-    open_gui: bool = Field(default=False, description="Open FreeCAD GUI after create")
-
-
-class CreateCantileverArgs(BaseModel):
-    length_mm: float = Field(default=100.0, description="Beam length in mm")
-    width_mm: float = Field(default=20.0, description="Beam width in mm")
-    height_mm: float = Field(default=5.0, description="Beam height in mm")
-    material: str | None = Field(
-        default=None,
-        description=(
-            "Material id or alias (steel default; also al6061t6, al7075t6, "
-            "ti6al4v, pa12)"
-        ),
-    )
-    open_gui: bool = Field(default=False, description="Open FreeCAD GUI after create")
-
-
-class ApplyLoadArgs(BaseModel):
-    force_n: float | None = Field(
-        default=None,
-        description="Load in newtons (default 500 pedal / 20000 mount / 100 cantilever)",
-    )
-    mesh_max_size_mm: float | None = Field(
-        default=None,
-        description="Coarse mesh size mm (default 5 pedal / 4 mount / 2.5 cantilever)",
-    )
-    open_gui: bool = Field(default=False, description="Open FreeCAD GUI after solve")
-
-
-class EmptyArgs(BaseModel):
-    pass
-
-
-class QueryResultsArgs(BaseModel):
-    part: str | None = Field(
-        default=None,
-        description="brake_pedal|cantilever, default = active part",
-    )
-    run_id: str | None = Field(
-        default=None,
-        description="Optional run id from a previous solve (returns that run only)",
-    )
-    last_n: int = Field(
-        default=10, ge=1, le=50, description="How many recent runs to list"
-    )
-
-
-class CompareMaterialsArgs(BaseModel):
-    part: str | None = Field(
-        default=None,
-        description="brake_pedal|cantilever, default = active part (else brake_pedal)",
-    )
-
-
-class RunConvergenceStudyArgs(BaseModel):
-    mesh_sizes_mm: list[float] | None = Field(
-        default=None,
-        description=(
-            "Optional explicit mesh sizes mm (2-4 distinct entries, coarse->fine); "
-            "default ladder = 1.0x/0.7x/0.5x of the part default"
-        ),
-    )
-    force_n: float | None = Field(
-        default=None,
-        description="Load in N (default 500 pedal / 100 cantilever)",
-    )
+from companion.tools.tool_schemas import (  # noqa: F401 — public re-exports
+    ApplyLoadArgs,
+    CompareMaterialsArgs,
+    CreateBrakePedalArgs,
+    CreateCantileverArgs,
+    CreateUavArmArgs,
+    EmptyArgs,
+    GetDesignProgramArgs,
+    QueryResultsArgs,
+    RunConvergenceStudyArgs,
+    UpdateDesignProgramArgs,
+)
 
 
 def _noop(**_kwargs: Any) -> str:

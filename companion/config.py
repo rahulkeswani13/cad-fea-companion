@@ -31,6 +31,11 @@ class Settings(BaseSettings):
     agent_require_tool_confirm: bool = False
     allow_remote: bool = False
 
+    # H6: offline mode — when no LLM is configured (or it omits tools on a
+    # first visit), the deterministic HeuristicRouter plans CAD/FEA tools.
+    # Disabling it makes a key-less server answer RAG-only with no tool calls.
+    heuristic_fallback: bool = True
+
     # RAG grounding label (ADR-012): 'strong' requires the fused top hit to
     # clear the TF-IDF cosine floor OR sit within the BM25 top-N.
     rag_grounding_min_tfidf: float = 0.05

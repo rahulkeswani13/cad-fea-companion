@@ -16,6 +16,7 @@ from companion.tools import materials as mats
 from companion.tools import outcome
 from companion.tools import run_history as rh
 from companion.tools import uav_arm as ua
+from companion.tools.tool_schemas import build_tool_specs, validate_tool_args
 from companion.tools.validate import validate_geometry_payload
 from companion.tools.freecad_runtime import (
     find_freecad_cmd,
@@ -345,6 +346,8 @@ def create_brake_pedal(
         return {
             "ok": False,
             "error": f"web_type must be one of {sorted(bp.WEB_TYPES)}, got {web_type!r}",
+            "error_class": "bad_params",
+            "correction": "Use web_type='solid', 'xtruss', or 'fcc' ('bcc' aliases to xtruss).",
         }
     gate = validate_geometry_payload(
         {"cell_size_mm": cell_size_mm, "strut_radius_mm": strut_radius_mm}
@@ -715,6 +718,8 @@ def get_lattice_metrics() -> dict[str, Any]:
             "error": (
                 "No lattice geometry. Call create_brake_pedal first."
             ),
+            "error_class": "no_geometry",
+            "correction": "Call create_brake_pedal first, then retry get_lattice_metrics.",
         }
     mod = bp
     vols = mod.estimate_part_volume_mm3(
@@ -1057,13 +1062,23 @@ def _apply_load_and_solve_brake_pedal(
                 }
             )
         else:
-            return fem_result or {"ok": False, "error": "FEM failed and fallback disabled"}
+            return fem_result or {
+            "ok": False,
+            "error": "FEM failed and fallback disabled",
+            "error_class": "solve_failed",
+            "correction": outcome.correction_for("solve_failed"),
+        }
     elif settings.fem_allow_analytical_fallback:
         result = _load_precomputed_or_estimate(
             {"warning": "FreeCAD not installed; using precomputed/estimate FEA."}
         )
     else:
-        return {"ok": False, "error": "FreeCAD not installed and fallback disabled"}
+        return {
+            "ok": False,
+            "error": "FreeCAD not installed and fallback disabled",
+            "error_class": "freecad_missing",
+            "correction": outcome.correction_for("freecad_missing"),
+        }
 
     vm = result.get("max_von_mises_mpa")
     if vm:
@@ -1171,13 +1186,23 @@ def _apply_load_and_solve_uav_arm(
                 {"freecad_error": (fem_result or {}).get("error")}
             )
         else:
-            return fem_result or {"ok": False, "error": "FEM failed and fallback disabled"}
+            return fem_result or {
+            "ok": False,
+            "error": "FEM failed and fallback disabled",
+            "error_class": "solve_failed",
+            "correction": outcome.correction_for("solve_failed"),
+        }
     elif settings.fem_allow_analytical_fallback:
         result = _load_precomputed_or_estimate(
             {"warning": "FreeCAD not installed; using precomputed/estimate FEA."}
         )
     else:
-        return {"ok": False, "error": "FreeCAD not installed and fallback disabled"}
+        return {
+            "ok": False,
+            "error": "FreeCAD not installed and fallback disabled",
+            "error_class": "freecad_missing",
+            "correction": outcome.correction_for("freecad_missing"),
+        }
 
     vm = result.get("max_von_mises_mpa")
     if vm:
@@ -1236,6 +1261,11 @@ def apply_load_and_solve(
             "error": (
                 "No geometry. Call create_brake_pedal, create_uav_arm, "
                 "or create_cantilever first."
+            ),
+            "error_class": "no_geometry",
+            "correction": (
+                "Call create_brake_pedal, create_uav_arm, or "
+                "create_cantilever first, then retry apply_load_and_solve."
             ),
         }
 
@@ -1401,7 +1431,12 @@ print("COMPANION_JSON:" + json.dumps(payload))
         if fem_result and not fem_result.get("ok"):
             result["freecad_error"] = fem_result.get("error")
     else:
-        return fem_result or {"ok": False, "error": "FEM failed and fallback disabled"}
+        return fem_result or {
+            "ok": False,
+            "error": "FEM failed and fallback disabled",
+            "error_class": "solve_failed",
+            "correction": outcome.correction_for("solve_failed"),
+        }
 
     result["ok"] = True
     result["force_n"] = force_n
@@ -1437,6 +1472,8 @@ def get_max_von_mises() -> dict[str, Any]:
         return {
             "ok": False,
             "error": "No results yet. Call apply_load_and_solve first.",
+            "error_class": "no_results",
+            "correction": "Call apply_load_and_solve first, then retry get_max_von_mises.",
             "part": geometry.get("part"),
         }
     return {
@@ -1601,6 +1638,11 @@ def open_current_in_freecad() -> dict[str, Any]:
         return {
             "ok": False,
             "error": "No FreeCAD document yet. Create/solve a model first.",
+            "error_class": "no_geometry",
+            "correction": (
+                "Call create_brake_pedal, create_uav_arm, or create_cantilever "
+                "(then apply_load_and_solve for FEM) before opening FreeCAD."
+            ),
         }
     return open_in_freecad_gui(path)
 
@@ -1709,7 +1751,16 @@ def load_precomputed_results(case: str = "auto") -> dict[str, Any]:
             path.parent.mkdir(parents=True, exist_ok=True)
             path.write_text(json.dumps(data, indent=2), encoding="utf-8")
         else:
-            return {"ok": False, "error": f"Missing {path}"}
+            return {
+                "ok": False,
+                "error": f"Missing {path}",
+                "error_class": "bad_params",
+                "correction": (
+                    "Use case=auto, or a stored case like brake_xtruss / "
+                    "uav_solid / cantilever; run create + solve first if no "
+                    "results exist on disk."
+                ),
+            }
     else:
         data = json.loads(path.read_text(encoding="utf-8"))
     _STATE["results"] = data
@@ -1746,202 +1797,22 @@ def load_precomputed_results(case: str = "auto") -> dict[str, Any]:
     return {"ok": True, "results": data, "path": str(path), "case": key}
 
 
-TOOL_SPECS = [
-    {
-        "name": "create_brake_pedal",
-        "description": (
-            "Create a brake-pedal lattice bracket (pivot + clevis rings + footpad) "
-            "with web_type solid|xtruss|fcc lattice fill, export STEP/STL, open FreeCAD GUI. "
-            "Material defaults to Al 6061-T6."
-        ),
-        "parameters": {
-            "web_type": "solid|xtruss|fcc, default xtruss (bcc aliases to xtruss)",
-            "cell_size_mm": "float, default 15",
-            "strut_radius_mm": "float, default 2.5 (xtruss strut thickness / fcc radius)",
-            "material": (
-                "material id or alias, default al6061t6; one of al6061t6, "
-                "al7075t6, ti6al4v, pa12, steel ('ti', '7075', 'nylon' work too)"
-            ),
-            "open_gui": "bool, default false",
-        },
-    },
-    {
-        "name": "create_uav_arm",
-        "description": (
-            "Create the flagship UAV arm (root clamp boss + tapered arm + tip "
-            "motor-mount ring), web_type solid|xtruss (chord rails + exposed "
-            "X-truss web), export STEP/STL, open FreeCAD GUI. Demo load case: "
-            "120 N tip thrust at the motor ring. Material defaults to Al 6061-T6."
-        ),
-        "parameters": {
-            "web_type": "solid|xtruss, default solid (bcc/x-truss alias to xtruss)",
-            "arm_length_mm": "float, default 180 (editable range 120-320)",
-            "cell_size_mm": "float, default 12 (editable range 6-30)",
-            "strut_radius_mm": "float, default 1.8 (editable range 1.5-4; 1.5 = meshable minimum)",
-            "material": (
-                "material id or alias, default al6061t6; one of al6061t6, "
-                "al7075t6, ti6al4v, pa12, steel"
-            ),
-            "open_gui": "bool, default false",
-        },
-    },
-    {
-        "name": "get_lattice_metrics",
-        "description": (
-            "Return relative density, volumes, and mass estimate for the current "
-            "brake-pedal geometry."
-        ),
-        "parameters": {},
-    },
-    {
-        "name": "compare_brake_pedal_variants",
-        "description": (
-            "Compare solid vs X-truss vs FCC brake-pedal mass, relative density, "
-            "max von Mises, pad deflection; recommend lightest with SF>=1.5 "
-            "against the program material's yield."
-        ),
-        "parameters": {},
-    },
-    {
-        "name": "compare_materials",
-        "description": (
-            "F09 material comparison for a part: rows for every table material "
-            "(Al 6061-T6, Al 7075-T6, Ti-6Al-4V, PA12, Steel-Generic) with mass, "
-            "max von Mises, safety factor vs that material's yield, and scaled "
-            "deflection, ranked by lightest at SF>=1.5. Scales the best available "
-            "base run (session -> run history -> precomputed; labeled per row) "
-            "linear-elastically; PA12 deflection is flagged not verified. Every "
-            "row carries citation sources."
-        ),
-        "parameters": {
-            "part": "brake_pedal|cantilever|uav_arm, default = active part (else brake_pedal)",
-        },
-    },
-    {
-        "name": "get_design_program",
-        "description": (
-            "Return the persisted design program (source of truth) for a part: "
-            "editable params, read-only fixed constants, revision number, and "
-            "params hash. Defaults to the active part; with no active part, "
-            "lists the programs on disk."
-        ),
-        "parameters": {
-            "part": "brake_pedal|cantilever|uav_arm, default = active part",
-        },
-    },
-    {
-        "name": "update_design_program",
-        "description": (
-            "Edit the design program and rebuild the part in one step "
-            "(e.g. 'set cell size to 12' without recreating): merges changes "
-            "over current params, range-preflights (hard reject, never clamps), "
-            "rebuilds geometry, commits the new revision on success. A failed "
-            "rebuild preserves the accepted revision; a no-op change does not "
-            "rebuild or bump the revision."
-        ),
-        "parameters": {
-            "part": "brake_pedal|cantilever|uav_arm, default = active part",
-            "changes": (
-                "object of param -> value, e.g. {\"cell_size_mm\": 12}; editable: "
-                "web_type, cell_size_mm [5,40], strut_radius_mm [1,5], material "
-                "(al6061t6|al7075t6|ti6al4v|pa12|steel; aliases like 'ti', "
-                "'7075', 'nylon' accepted) for lattice parts; arm_length_mm "
-                "[120,320], cell_size_mm [6,30], strut_radius_mm [1.5,4] for "
-                "the uav_arm; or length_mm [10,500], width_mm [2,100], "
-                "height_mm [1,50], material for the cantilever"
-            ),
-            "dry_run": "bool, default false — preflight + hash preview only, no rebuild",
-            "open_gui": "bool, default false",
-        },
-    },
-    {
-        "name": "create_cantilever",
-        "description": (
-            "Create a rectangular cantilever beam (mm), export STEP/STL, "
-            "and open the model in the FreeCAD GUI. Material defaults to "
-            "Steel-Generic."
-        ),
-        "parameters": {
-            "length_mm": "float, default 100",
-            "width_mm": "float, default 20",
-            "height_mm": "float, default 5",
-            "material": (
-                "material id or alias, default steel; one of al6061t6, "
-                "al7075t6, ti6al4v, pa12, steel"
-            ),
-            "open_gui": "bool, default false",
-        },
-    },
-    {
-        "name": "apply_load_and_solve",
-        "description": (
-            "Apply load (N), mesh with Gmsh, solve with CalculiX inside FreeCAD "
-            "(brake-pedal footpad, UAV-arm motor ring, or cantilever tip), save "
-            "results, open GUI. Requires create_brake_pedal, create_uav_arm, or "
-            "create_cantilever first."
-        ),
-        "parameters": {
-            "force_n": (
-                "float, default 500 brake pedal / 120 uav arm / 100 cantilever"
-            ),
-            "mesh_max_size_mm": (
-                "float, default 5 (pedal) / 3.5 (uav arm) / 2.5 (cantilever)"
-            ),
-            "open_gui": "bool, default false",
-        },
-    },
-    {
-        "name": "get_max_von_mises",
-        "description": "Return max von Mises stress (MPa) from the latest solve.",
-        "parameters": {},
-    },
-    {
-        "name": "query_results",
-        "description": (
-            "Query the stored per-run solve history: latest run in full (mass, "
-            "max von Mises + its location, deflection, mesh size, method flag, "
-            "expected-vs-actual divergence) plus a compact list of recent runs. "
-            "'Where is stress concentrated' = max_vm_location_mm of the latest run."
-        ),
-        "parameters": {
-            "part": "brake_pedal|cantilever|uav_arm, default = active part",
-            "run_id": "optional run id from a previous solve (returns that run only)",
-            "last_n": "int, default 10 (capped at 50) runs listed",
-        },
-    },
-    {
-        "name": "run_convergence_study",
-        "description": (
-            "Mesh convergence study for the active part: 2-3 live CalculiX "
-            "solves at refining mesh sizes (default ladder = 1.0x/0.7x/0.5x "
-            "of the part default, e.g. pedal 5/3.5/2.5 mm), then a "
-            "recommended mesh size = the coarsest mesh within 5% of the "
-            "finest max von Mises. Synchronous and headless; expect roughly "
-            "the cost of 2-3 apply_load_and_solve calls. Refuses setups "
-            "without live solves (fcc pedal precomputed KPIs, FreeCAD absent)."
-        ),
-        "parameters": {
-            "mesh_sizes_mm": (
-                "optional explicit list of 2-4 distinct mesh sizes in mm "
-                "(coarse -> fine); default = multiplier ladder of the part default"
-            ),
-            "force_n": (
-                "optional load in N; default = same as apply_load_and_solve "
-                "for the part (500 pedal / 100 cantilever)"
-            ),
-        },
-    },
-    {
-        "name": "open_in_freecad",
-        "description": "Launch FreeCAD GUI with the latest CAD/FEM document.",
-        "parameters": {},
-    },
-]
+# H3: generated from the canonical arg models (companion.tools.tool_schemas).
+TOOL_SPECS = build_tool_specs()
 
 
 def call_tool(name: str, args: dict[str, Any] | None = None) -> dict[str, Any]:
-    """Dispatch a tool and wrap the result in the F02 outcome envelope."""
-    return outcome.wrap_tool_call(name, args or {}, _call_tool_raw, state_fn=get_state)
+    """Dispatch a tool and wrap the result in the F02 outcome envelope.
+
+    H3: args are boundary-validated against the canonical pydantic models
+    before dispatch — out-of-range create_* args hard-reject with bad_params
+    (ADR-004: never clamp) and never reach the tool functions.
+    """
+    cleaned = dict(args or {})
+    failure = validate_tool_args(name, cleaned)
+    if failure is not None:
+        return outcome.envelope(failure, tool=name, elapsed_s=0.0)
+    return outcome.wrap_tool_call(name, cleaned, _call_tool_raw, state_fn=get_state)
 
 
 def _call_tool_raw(name: str, args: dict[str, Any]) -> dict[str, Any]:
@@ -2018,4 +1889,13 @@ def _call_tool_raw(name: str, args: dict[str, Any]) -> dict[str, Any]:
         )
     if name == "open_in_freecad":
         return open_current_in_freecad()
-    return {"ok": False, "error": f"Unknown tool: {name}"}
+    return {
+        "ok": False,
+        "error": f"Unknown tool: {name}",
+        "error_class": "unknown_tool",
+        "correction": (
+            "Call one of the registered tools (see TOOL_SPECS), e.g. "
+            "create_brake_pedal, create_uav_arm, create_cantilever, "
+            "apply_load_and_solve, or get_max_von_mises."
+        ),
+    }
