@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>CAD/FEA Companion — Console</title>
+    <style>
+      html { background: #12140f; }
+      html[data-theme="light"] { background: #f4f3ec; }
+    </style>
+    <script>
+      // Theme boot before first paint (avoids a dark flash on light mode).
+      try {
+        if (localStorage.getItem("cad_fea_theme") === "light") {
+          document.documentElement.setAttribute("data-theme", "light");
+        }
+      } catch (e) {}
+    </script>
+    <script type="module" crossorigin src="/static/app/assets/index-3OhsJT0Q.js"></script>
+    <link rel="stylesheet" crossorigin href="/static/app/assets/index-BHrNiosO.css">
+  </head>
+  <body>
+    <div id="root"></div>
+  </body>
+</html>

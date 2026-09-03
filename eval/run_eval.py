@@ -43,6 +43,9 @@ cad_fea.open_in_freecad_gui = _headless_open_gui
 
 JUDGE_MODEL_DEFAULT = "gemini-3.5-flash-lite"
 
+# Lazily-built TestClient for "http" cases (console API contracts, ADR-015).
+_HTTP_CLIENT = None
+
 
 def contains_any(text: str, needles: list[str]) -> bool:
     lower = text.lower()
@@ -172,6 +175,29 @@ def main() -> int:
                     else:
                         failed += 1
                     continue
+            elif case["type"] == "http":
+                # Console API contract checks (ADR-015) against the real app.
+                global _HTTP_CLIENT
+                if _HTTP_CLIENT is None:
+                    from fastapi.testclient import TestClient
+
+                    from companion.main import app as _http_app
+                    _HTTP_CLIENT = TestClient(_http_app)
+                res = _HTTP_CLIENT.get(case["path"])
+                ok = res.status_code == case.get("expect_status", 200)
+                detail = f"status={res.status_code}"
+                if ok and case.get("expect_text"):
+                    ok = case["expect_text"] in res.text
+                if ok and case.get("expect_keys"):
+                    body = res.json()
+                    ok = all(key in body for key in case["expect_keys"])
+                    detail += f" keys={sorted(body)[:6]}"
+                if ok and case.get("expect_min_items"):
+                    body = res.json()
+                    ok = ok and all(
+                        isinstance(body.get(key), list) and len(body[key]) >= n
+                        for key, n in case["expect_min_items"].items()
+                    )
             else:
                 detail = f"unknown type {case['type']}"
         except Exception as exc:  # noqa: BLE001

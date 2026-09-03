@@ -1,0 +1,503 @@
+{
+  "version": "1.0",
+  "categories": [
+    {
+      "id": "qa",
+      "title": "Grounded Q&A",
+      "items": [
+        {
+          "id": "qa-al-yield",
+          "title": "Al 6061-T6 yield strength",
+          "prompt": "What yield strength should I assume for aluminum 6061-T6?",
+          "freecad": false,
+          "cost": "instant"
+        },
+        {
+          "id": "qa-cantilever-formula",
+          "title": "Analytical bending stress formula",
+          "prompt": "What is the analytical bending stress formula for a rectangular cantilever beam?",
+          "freecad": false,
+          "cost": "instant"
+        },
+        {
+          "id": "qa-ti64-density",
+          "title": "Ti-6Al-4V density",
+          "prompt": "What density should I assume for Ti-6Al-4V, and how does it compare to aluminum?",
+          "freecad": false,
+          "cost": "instant"
+        },
+        {
+          "id": "qa-unobtainium",
+          "title": "Honest no-match grounding",
+          "prompt": "What is the tensile strength of unobtainium?",
+          "freecad": false,
+          "cost": "instant"
+        }
+      ]
+    },
+    {
+      "id": "cad",
+      "title": "CAD Builds",
+      "items": [
+        {
+          "id": "cad-pedal-solid",
+          "title": "Solid brake pedal + FEA",
+          "prompt": "Create a solid aluminum brake pedal and solve the +500 N footpad load along +X. Open FreeCAD so I can see it.",
+          "freecad": true,
+          "cost": "solve"
+        },
+        {
+          "id": "cad-pedal-xtruss",
+          "title": "X-truss pedal + FEA",
+          "prompt": "Rebuild the brake pedal with a 2.5D X-truss lattice web (15 mm cells, 2.5 mm struts), same envelope, then solve and show stress in FreeCAD.",
+          "freecad": true,
+          "cost": "solve"
+        },
+        {
+          "id": "cad-cantilever",
+          "title": "Benchmark cantilever beam",
+          "prompt": "Create the benchmark cantilever beam (100 x 20 x 5 mm) in aluminum 6061-T6.",
+          "freecad": true,
+          "cost": "seconds"
+        },
+        {
+          "id": "cad-uav-solid",
+          "title": "Solid UAV arm",
+          "prompt": "Create the solid UAV arm in aluminum 6061-T6.",
+          "freecad": true,
+          "cost": "seconds"
+        },
+        {
+          "id": "cad-uav-xtruss",
+          "title": "X-truss UAV arm",
+          "prompt": "Create the UAV arm with the X-truss lattice web and 2.5 mm chord rails.",
+          "freecad": true,
+          "cost": "seconds"
+        }
+      ]
+    },
+    {
+      "id": "solve",
+      "title": "FEA Solves",
+      "items": [
+        {
+          "id": "solve-pedal-500n",
+          "title": "Solve pedal +500 N",
+          "prompt": "Solve the +500 N footpad load on the current brake pedal and report max stress and safety factor.",
+          "freecad": true,
+          "cost": "solve"
+        },
+        {
+          "id": "solve-uav-120n",
+          "title": "Solve UAV arm 120 N thrust",
+          "prompt": "Solve the 120 N tip thrust on the current UAV arm.",
+          "freecad": true,
+          "cost": "solve"
+        },
+        {
+          "id": "solve-convergence",
+          "title": "Mesh convergence study",
+          "prompt": "Is the current mesh converged? Run a mesh convergence study on the cantilever.",
+          "freecad": true,
+          "cost": "solve"
+        }
+      ]
+    },
+    {
+      "id": "variants",
+      "title": "Variants & Trade-offs",
+      "items": [
+        {
+          "id": "var-compare-pedal",
+          "title": "Compare pedal lattice variants",
+          "prompt": "Compare solid, X-truss, and FCC brake-pedal variants — which is lightest with safety factor at least 1.5?",
+          "freecad": false,
+          "cost": "instant"
+        },
+        {
+          "id": "var-compare-materials",
+          "title": "Ti vs Al comparison",
+          "prompt": "Compare Ti-6Al-4V vs Al 6061-T6 for the current part, with citations.",
+          "freecad": false,
+          "cost": "instant"
+        },
+        {
+          "id": "var-switch-ti",
+          "title": "Switch to titanium + re-solve",
+          "prompt": "Switch the pedal to titanium and re-solve the +500 N load.",
+          "freecad": true,
+          "cost": "solve"
+        }
+      ]
+    },
+    {
+      "id": "diag",
+      "title": "Diagnostics & History",
+      "items": [
+        {
+          "id": "diag-hotspot",
+          "title": "Where is the stress?",
+          "prompt": "Where is the stress concentrated in the brake pedal right now?",
+          "freecad": false,
+          "cost": "instant"
+        },
+        {
+          "id": "diag-history",
+          "title": "Recent run history",
+          "prompt": "Show the recent run history for the brake pedal.",
+          "freecad": false,
+          "cost": "instant"
+        },
+        {
+          "id": "diag-program",
+          "title": "Read the design program",
+          "prompt": "Read the design program for the current part — parameters and revision.",
+          "freecad": false,
+          "cost": "instant"
+        },
+        {
+          "id": "diag-guardrail",
+          "title": "Strut-floor guardrail",
+          "prompt": "Try to rebuild the X-truss pedal with 0.8 mm struts — show me the guardrail fire.",
+          "freecad": false,
+          "cost": "instant"
+        }
+      ]
+    },
+    {
+      "id": "gui",
+      "title": "FreeCAD GUI",
+      "items": [
+        {
+          "id": "gui-open",
+          "title": "Open latest model",
+          "prompt": "Open the latest model in FreeCAD.",
+          "freecad": true,
+          "cost": "seconds"
+        }
+      ]
+    }
+  ],
+  "features": [
+    {
+      "id": "F02",
+      "title": "Tool outcome envelope",
+      "blurb": "Every tool result flows through one envelope: compact payload on success, one error + one concrete correction on failure, receipts always.",
+      "steps": [
+        {
+          "title": "Create a solid brake pedal (headless) and show me the receipt.",
+          "prompt": "Create a solid aluminum brake pedal headless and show me the tool receipt.",
+          "talking_points": [
+            "Point at the receipt block: tool, elapsed_s, changed fields.",
+            "No error fields on success — compact payloads keep LLM context clean."
+          ],
+          "freecad": true,
+          "cost": "seconds"
+        },
+        {
+          "title": "Force a failure: one error + one concrete correction.",
+          "prompt": "Request an invalid CAD create (unknown web type) and show me the failure envelope.",
+          "talking_points": [
+            "error_class is machine-readable (bad_params), not prose.",
+            "Exactly one correction, concrete enough for the agent to retry on its own."
+          ],
+          "freecad": false,
+          "cost": "instant"
+        },
+        {
+          "title": "Wrong-order usage self-heals.",
+          "prompt": "Query results before any solve, then follow the tool's correction to do it in the right order.",
+          "talking_points": [
+            "The correction is actionable — the agent reads it and re-plans.",
+            "Debug details go to a log file, never into the LLM context."
+          ],
+          "freecad": false,
+          "cost": "instant"
+        }
+      ]
+    },
+    {
+      "id": "F03",
+      "title": "Pre-mesh B-Rep validation gate",
+      "blurb": "Deterministic geometry checks run before FreeCAD ever launches — degenerate params fail instantly with a correction.",
+      "steps": [
+        {
+          "title": "Degenerate param rejected at the host gate.",
+          "prompt": "Try to create an X-truss brake pedal with strut_radius_mm set to 0.",
+          "talking_points": [
+            "Fails before FreeCAD launches — instant, no process spawned.",
+            "validation.stage is params_nonpositive with one concrete correction."
+          ],
+          "freecad": false,
+          "cost": "instant"
+        },
+        {
+          "title": "Valid build shows the passed validation block.",
+          "prompt": "Create a valid X-truss brake pedal (headless) and show me the validation block.",
+          "talking_points": [
+            "stage passed, is_valid true, volume_vs_estimate sanity check.",
+            "The gate sits before meshing in the generated solve script."
+          ],
+          "freecad": true,
+          "cost": "seconds"
+        }
+      ]
+    },
+    {
+      "id": "F04",
+      "title": "Design program layer",
+      "blurb": "Persisted params + revision hash per part: the design program is the source of truth, geometry is derived.",
+      "steps": [
+        {
+          "title": "Read the persisted program.",
+          "prompt": "Read the design program for the brake pedal.",
+          "talking_points": [
+            "Params + revision hash persisted on disk — the contract, not the mesh.",
+            "Idempotency: unchanged parameters are detected via SHA-256 hash (changed: false)."
+          ],
+          "freecad": false,
+          "cost": "instant"
+        },
+        {
+          "title": "Flagship edit: set cell size to 12, rebuild, commit.",
+          "prompt": "Set the X-truss pedal cell size to 12 mm and rebuild — commit the revision.",
+          "talking_points": [
+            "Transactional edit: validate, rebuild, bump rev — atomically.",
+            "Edit + rebuild without recreating the part."
+          ],
+          "freecad": true,
+          "cost": "seconds"
+        },
+        {
+          "title": "Failed rebuild keeps the accepted revision.",
+          "prompt": "Try an out-of-range edit (cell size 40 mm), then read the program again.",
+          "talking_points": [
+            "Out-of-range rejected cleanly; the accepted revision survives on disk.",
+            "Failed rebuilds must never clobber the accepted revision."
+          ],
+          "freecad": false,
+          "cost": "instant"
+        }
+      ]
+    },
+    {
+      "id": "F06",
+      "title": "Run history + query_results",
+      "blurb": "Every solve appends a per-run record; the agent can query where the stress is and what the recent runs said.",
+      "steps": [
+        {
+          "title": "Solve once, then ask where the stress is.",
+          "prompt": "Solve the current brake pedal headless, then tell me where the stress is concentrated.",
+          "talking_points": [
+            "Hotspot query answered from the run record, not re-solved.",
+            "max_vm_location_mm rides with the KPIs."
+          ],
+          "freecad": true,
+          "cost": "solve"
+        },
+        {
+          "title": "Query the history rows.",
+          "prompt": "Show the recent run rows for this part.",
+          "talking_points": [
+            "Compact rows: method, sigma, SF, mesh size, timestamp.",
+            "Append-only record on disk — audit-friendly."
+          ],
+          "freecad": false,
+          "cost": "instant"
+        }
+      ]
+    },
+    {
+      "id": "F07",
+      "title": "Pre-flight analytical estimates",
+      "blurb": "Every 3D solve is cross-checked against closed-form Euler-Bernoulli beam theory — divergence is flagged, assumptions are stated.",
+      "steps": [
+        {
+          "title": "Solve and read the expectation block.",
+          "prompt": "Solve the brake pedal headless and show me the expected-vs-actual block.",
+          "talking_points": [
+            "Expected ~45.06 MPa from 1D beam theory, actual ~23.7, ratio ~0.53.",
+            "divergence_flag false — the idealization gap is stated, not hidden."
+          ],
+          "freecad": true,
+          "cost": "solve"
+        },
+        {
+          "title": "State the assumptions the number is judged against.",
+          "prompt": "What assumptions and caveats apply to my last solve?",
+          "talking_points": [
+            "Assumptions + caveat strings ship with the result.",
+            "Linear elastic solve on PA12 carries viscoelastic NOT VERIFIED disclaimers."
+          ],
+          "freecad": false,
+          "cost": "instant"
+        }
+      ]
+    },
+    {
+      "id": "F08",
+      "title": "Mesh convergence study",
+      "blurb": "run_convergence_study watches stress move across mesh sizes, recommends refinement, and refuses honestly when a setup can't converge.",
+      "steps": [
+        {
+          "title": "Live study on the cantilever.",
+          "prompt": "Run a mesh convergence study on the cantilever beam.",
+          "talking_points": [
+            "Coarse tets under-predict; the tool says refine further with a recommended size.",
+            "Verdict + recommended_mesh_max_size_mm come back with the runs."
+          ],
+          "freecad": true,
+          "cost": "solve"
+        },
+        {
+          "title": "The honest refusal.",
+          "prompt": "Try a convergence study on an FCC brake pedal.",
+          "talking_points": [
+            "error_class unsupported_setup — KPIs cannot converge for fcc.",
+            "The correction points at xtruss/solid instead of pretending."
+          ],
+          "freecad": false,
+          "cost": "instant"
+        }
+      ]
+    },
+    {
+      "id": "F09",
+      "title": "Material as parameter",
+      "blurb": "Materials are program parameters with selection guidance: compare with citations, switch with a revision bump, unknowns name every valid option.",
+      "steps": [
+        {
+          "title": "Compare Ti vs Al with citations.",
+          "prompt": "Compare Ti-6Al-4V vs Al 6061-T6 for the current part, with citations.",
+          "talking_points": [
+            "Scales stored runs per material — instant, no re-solve.",
+            "Recommendation carries mass and safety factor, grounded in docs."
+          ],
+          "freecad": false,
+          "cost": "instant"
+        },
+        {
+          "title": "Switch the pedal to titanium.",
+          "prompt": "Switch the pedal to Ti-6Al-4V and re-solve the +500 N load.",
+          "talking_points": [
+            "Program edit -> rev bump -> rebuild -> re-solve, transactionally.",
+            "Density and modulus flow through every KPI."
+          ],
+          "freecad": true,
+          "cost": "solve"
+        },
+        {
+          "title": "The honest correction.",
+          "prompt": "Switch the bracket to vibranium.",
+          "talking_points": [
+            "Unknown material names every valid option instead of guessing.",
+            "Valid set: al6061t6, al7075t6, ti6al4v, pa12, steel."
+          ],
+          "freecad": false,
+          "cost": "instant"
+        }
+      ]
+    },
+    {
+      "id": "F26",
+      "title": "UAV arm flagship",
+      "blurb": "Parametric quadcopter arm: solid core vs 2.5D X-truss lattice with chord rails — about 17% mass reduction at 120 N tip thrust.",
+      "steps": [
+        {
+          "title": "Create the solid arm.",
+          "prompt": "Create the solid UAV arm in aluminum 6061-T6 (headless) and show me the mass.",
+          "talking_points": [
+            "Flagship aerospace part family, same generator pattern as the pedal.",
+            "Solid is the baseline: ~157 g."
+          ],
+          "freecad": true,
+          "cost": "seconds"
+        },
+        {
+          "title": "Lattice variant with chord rails.",
+          "prompt": "Create the UAV arm with the X-truss lattice web and 1.5 mm chord rails, then compare mass to the solid.",
+          "talking_points": [
+            "X-truss lands ~130 g — about 17% lighter.",
+            "Strut-radius program floor is 1.5 mm; chord rails 1.5 mm."
+          ],
+          "freecad": true,
+          "cost": "seconds"
+        },
+        {
+          "title": "Solve the 120 N tip thrust.",
+          "prompt": "Solve the 120 N tip thrust on the X-truss UAV arm.",
+          "talking_points": [
+            "Goldens captured at 120 N.",
+            "Mesh guidance is per-variant (solid vs xtruss floors differ)."
+          ],
+          "freecad": true,
+          "cost": "solve"
+        }
+      ]
+    },
+    {
+      "id": "F15a",
+      "title": "Hybrid retrieval + RAG Lab",
+      "blurb": "TF-IDF + BM25 fused with RRF, a grounding-confidence label, and an inspectable RAG Lab — retrieval you can audit, not trust-me RAG.",
+      "steps": [
+        {
+          "title": "Grounded answer with the retrieval inspector.",
+          "prompt": "What is the yield strength of Al 6061-T6?",
+          "talking_points": [
+            "Open the retrieval inspector: chunk text + tfidf/bm25 ranks.",
+            "Grounding badge shows strong — the answer cites docs/reference."
+          ],
+          "freecad": false,
+          "cost": "instant"
+        },
+        {
+          "title": "Honest miss on an unknown material.",
+          "prompt": "What is the tensile strength of unobtainium?",
+          "talking_points": [
+            "Amber weak/none grounding badge.",
+            "The agent says it does not know instead of inventing a number."
+          ],
+          "freecad": false,
+          "cost": "instant"
+        },
+        {
+          "title": "RAG Lab: BM25 rescues, RRF fuses.",
+          "prompt": "Open the RAG Lab and search for ti64.",
+          "talking_points": [
+            "TF-IDF misranks, BM25 rescues, the fused ranking wins — shown, not claimed.",
+            "Ranker comparison and index stats live in one inspector page."
+          ],
+          "freecad": false,
+          "cost": "instant"
+        }
+      ]
+    },
+    {
+      "id": "ADR-014",
+      "title": "Curated RAG corpus (allowlist)",
+      "blurb": "Corpus ingestion is a declared allowlist that fails closed: only docs/reference and docs/adr get in, and the corpus fingerprint rides in the eval report.",
+      "steps": [
+        {
+          "title": "How big is the corpus?",
+          "prompt": "How many documents are in your grounding corpus, and where do they come from?",
+          "talking_points": [
+            "Exactly the allowlisted docs — docs/reference + docs/adr.",
+            "ADRs stay in the corpus so the agent can explain its own decisions."
+          ],
+          "freecad": false,
+          "cost": "instant"
+        },
+        {
+          "title": "A stray file stays invisible.",
+          "prompt": "What would happen if someone dropped a scratch markdown file into docs/?",
+          "talking_points": [
+            "Fail closed: the stray file is invisible to the agent until declared.",
+            "Corpus fingerprint is recorded in the eval report — re-baselines are visible."
+          ],
+          "freecad": false,
+          "cost": "instant"
+        }
+      ]
+    }
+  ]
+}

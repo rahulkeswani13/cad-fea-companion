@@ -8,7 +8,7 @@ from pathlib import Path
 from typing import Any
 
 from fastapi import FastAPI, Request
-from fastapi.responses import FileResponse, JSONResponse, StreamingResponse
+from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
@@ -19,11 +19,13 @@ from companion.rag.store import get_store, ingest_docs, retrieve_detail
 from companion.tools.cad_fea import (
     TOOL_SPECS,
     call_tool,
+    get_design_program,
     get_state,
     load_precomputed_results,
 )
 from companion.tools.freecad_runtime import find_freecad_cmd
 from companion.tools.outcome import wrap_tool_call
+from companion.tools.run_history import read_runs
 
 STATIC_DIR = Path(__file__).parent / "static"
 
@@ -183,6 +185,159 @@ def results_load(case: str = "auto") -> dict[str, Any]:
         ),
         state_fn=get_state,
     )
+
+
+RUN_ROW_KEYS = (
+    "run_id",
+    "part",
+    "web_type",
+    "force_n",
+    "method",
+    "max_von_mises_mpa",
+    "max_vm_location_mm",
+    "safety_factor_vs_yield",
+    "mesh_max_size_mm",
+    "divergence_flag",
+    "ts",
+)
+
+PROMPTS_PATH = Path(__file__).resolve().parents[1] / "data" / "prompts.json"
+
+
+def _load_prompts() -> dict[str, Any]:
+    """Console prompt library (ADR-015); data/prompts.json is the source of truth."""
+    return json.loads(PROMPTS_PATH.read_text(encoding="utf-8"))
+
+
+def _active_part_from_state() -> str | None:
+    geometry = get_state().get("geometry") or {}
+    part = str(geometry.get("part") or "").strip()
+    return part or None
+
+
+def _program_payload(result: dict[str, Any]) -> dict[str, Any]:
+    """Compact read-only view of get_design_program for the state rail."""
+    if not result.get("ok"):
+        return {
+            "ok": False,
+            "error": result.get("error"),
+            "correction": result.get("correction"),
+            "note": result.get("note"),
+            "programs": result.get("programs"),
+        }
+    params = result.get("params") or {}
+    payload: dict[str, Any] = {
+        "ok": True,
+        "part": result.get("part"),
+        "rev": result.get("rev"),
+        "params_hash": result.get("params_hash"),
+        "params": [
+            {"key": key, "value": params[key]} for key in sorted(params)
+        ],
+        "active_part": _active_part_from_state(),
+    }
+    if result.get("programs") is not None:
+        payload["programs"] = result["programs"]
+    if result.get("note") is not None:
+        payload["note"] = result["note"]
+    return payload
+
+
+def _run_row(run: dict[str, Any]) -> dict[str, Any]:
+    return {key: run.get(key) for key in RUN_ROW_KEYS if run.get(key) is not None}
+
+
+def _run_rows(part: str | None, limit: int) -> dict[str, Any]:
+    """Compact read-only view of run history for the state rail (F06)."""
+    limit = max(1, min(50, int(limit)))
+    settings = get_settings()
+    part = (part or "").strip() or _active_part_from_state()
+    if not part:
+        candidates = sorted(
+            settings.workspace_dir.glob("*_runs.jsonl"),
+            key=lambda p: p.stat().st_mtime,
+            reverse=True,
+        )
+        if not candidates:
+            return {"part": None, "runs": []}
+        part = candidates[0].name.removesuffix("_runs.jsonl")
+    rows = [_run_row(run) for run in read_runs(part, last_n=50)]
+    rows = [row for row in rows if row]
+    rows.sort(key=lambda row: str(row.get("ts") or ""), reverse=True)
+    return {"part": part, "runs": rows[:limit]}
+
+
+_CONSOLE_PLACEHOLDER = """<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<title>CAD/FEA Companion — Console</title>
+<style>body{background:#12140f;color:#e9ebe2;font:14px monospace;display:grid;
+place-items:center;min-height:100vh;margin:0}div{max-width:42ch;padding:2rem;
+border:1px solid #2e332a;border-radius:4px}code{color:#ff5c1f}</style></head>
+<body><div><strong>Console build missing.</strong><br><br>
+The React console is built from <code>web/</code> into
+<code>companion/static/app/</code> — run <code>npm run build</code> there
+(see ADR-015). The legacy console at <a href="/" style="color:#ff5c1f">/</a>
+still works.</div></body></html>"""
+
+
+@app.get("/app")
+def console() -> Any:
+    built = STATIC_DIR / "app" / "index.html"
+    if built.exists():
+        return FileResponse(built)
+    return HTMLResponse(_CONSOLE_PLACEHOLDER)
+
+
+@app.get("/api/prompts")
+def prompts() -> Any:
+    try:
+        return _load_prompts()
+    except FileNotFoundError:
+        return JSONResponse(
+            {
+                "error": f"prompt library missing at {PROMPTS_PATH.name}",
+                "correction": "restore data/prompts.json from version control (ADR-015).",
+            },
+            status_code=500,
+        )
+    except json.JSONDecodeError as exc:
+        return JSONResponse(
+            {
+                "error": f"prompt library is not valid JSON: {exc.msg}",
+                "correction": "fix data/prompts.json syntax and reload (ADR-015).",
+            },
+            status_code=500,
+        )
+    except Exception:  # noqa: BLE001 — compact failure, never a raw traceback
+        return JSONResponse(
+            {
+                "error": "prompt library could not be loaded",
+                "correction": "check server logs for the loader failure (ADR-015).",
+            },
+            status_code=500,
+        )
+
+
+@app.get("/api/design-program")
+def design_program(part: str | None = None) -> dict[str, Any]:
+    return _program_payload(get_design_program(part))
+
+
+@app.get("/api/runs")
+def runs(part: str | None = None, limit: int = 10) -> dict[str, Any]:
+    return _run_rows(part, limit)
+
+
+@app.get("/api/solver-status")
+def solver_status() -> dict[str, Any]:
+    settings = get_settings()
+    freecad_cmd = find_freecad_cmd()
+    return {
+        "freecad": bool(freecad_cmd),
+        "freecad_cmd": freecad_cmd,
+        "llm": provider_status(settings),
+        "require_tool_confirm": settings.agent_require_tool_confirm,
+    }
 
 
 if STATIC_DIR.exists():
