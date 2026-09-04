@@ -16,9 +16,10 @@ These counts measure different layers — never use them interchangeably:
 | Count | What it is | Where verified |
 | :--- | :--- | :--- |
 | 22 | Demo prompt cards in the interactive catalog | `demo/demo_catalog.html` |
-| 45 | Browser UI checks (36 isolated single-shot + 9 multi-turn journeys) against a mocked LLM | `tests/test_browser_ui.py` |
-| 66 | Behavior eval cases (43 tool / 15 agent / 8 RAG — 18 of them adversarial attacks) | `eval/cases.json` via `eval/run_eval.py` |
-| 166 | Unit + integration tests | `pytest tests/` |
+| 20 | Console library prompts + 10 feature walkthroughs (versioned data) | `data/prompts.json` via `GET /api/prompts` |
+| 50 | Browser UI checks (36 isolated single-shot + 9 multi-turn journeys + 5 console) against a mocked LLM | `tests/test_browser_ui.py` |
+| 72 | Behavior eval cases (44 tool / 15 agent / 8 RAG / 5 HTTP — 18 of them adversarial attacks) | `eval/cases.json` via `eval/run_eval.py` |
+| 262 | Unit + integration tests (excludes the browser suite) | `pytest tests/` |
 
 The headline number for interviews is the **eval count** — behavior checks
 that gate every push via CI. The 5 agent-level adversarial cases
@@ -1161,3 +1162,73 @@ from corpus-ordering tie-breaks, honestly recorded.
   a corpus change?* You can't assume it — so the corpus is fingerprinted
   into the eval report and history, and drift is annotated on the delta
   line. The corpus is a fixture; fixtures get versioned.
+
+---
+
+## F29 — React operator console at `/app` (prompt library, walkthroughs, state rail)
+
+**Pitch:** The default chat page was a single column with five hardcoded
+example buttons — fine for a first demo, but it couldn't *carry* one. I
+rebuilt the front-of-house as a React console (Vite + TS + Tailwind, no
+component kit) shipped additively at `/app`: the prompt library is versioned
+data with a dropdown *and* a ⌘K palette, ten scripted features became
+guided walkthroughs with talking points, a state rail shows the design
+program / run history / solver status live, and every FEA result renders as
+a stamped test-report card that states method, mesh, and what was *not*
+verified. The legacy console still works and the 45 original browser checks
+never moved.
+
+**Script (~2 min):** "The UI was the last piece of the demo story that lived
+in prose instead of software. Two decisions matter more than the pixels.
+First, the demo prompts became *data*: `data/prompts.json` behind
+`GET /api/prompts`, with FreeCAD and cost flags per item — the dropdown, the
+⌘K palette, and the walkthroughs all render from that one contract, and it
+has its own unit tests and eval cases. Second, the migration is additive by
+construction: the console is a second client at `/app` reusing the existing
+chat wire protocol — same SSE `node`/`final` events, same HITL resume flow —
+so the legacy page and its browser suite stayed green the whole time; that
+matches the same additive-first rule I apply to tools. Aesthetically I
+committed to one direction instead of a default dark dashboard: warm
+graphite, one signal-orange accent, IBM Plex Mono for every number, and
+green/amber/red reserved *exclusively* for solver semantics — so when you
+see a PASS stamp or a NOT VERIFIED caveat on a report card, color is telling
+the truth about a solve, not decorating a card."
+
+**Tests/evals:**
+- `tests/test_console_api.py` — 15 unit tests: `/app` shell, prompts
+  contract + failure envelope, program/run payload shaping, run-row
+  compaction + sort + limit clamps, solver status.
+- 5 new browser checks (PART 3 of `tests/test_browser_ui.py`) covering the
+  console shell, prompt library, dropdown insert, ⌘K palette send, and
+  walkthrough run-step against the mocked-LLM server.
+- 5 new `http`-type eval cases in `eval/cases.json` (new additive case type
+  in `eval/run_eval.py`) gating the API contracts key-less in CI.
+
+**Demo prompts:**
+1. Open `/app` → `⌘K` → type "convergence" → Enter. The palette fires the
+   study prompt straight into the stream.
+2. Left rail → "Design program layer" walkthrough → run the three steps in
+   order while reading the talking points aloud.
+3. Solve anything → point at the report card: variant/mass/σ/SF/method rows,
+   expected-vs-actual ratio, divergence flag, amber NOT VERIFIED caveats.
+4. Force a failure (`diag-guardrail` prompt: 0.8 mm struts) → the FAIL card
+   shows one error + one concrete CORRECTION — the outcome envelope, visible.
+5. Right rail after a create: design program rev + params update without a
+   page reload; run history grows a stamped row.
+
+**Likely interview questions:**
+- *Why React if you're a Python-first repo?* Because the console is panels,
+  lists and overlays — component structure pays for itself. The runtime is
+  still pure FastAPI + static files; node is build-time only, and the build
+  output is committed so CI stays npm-free.
+- *Why not stream UI straight from Features.md?* Prose is a moving target;
+  the console consumes a versioned JSON contract instead. The doc stays the
+  human script, the JSON stays the machine source of truth.
+- *Why keep the old page?* Additive-first is the repo's own law. Parity
+  first, flip later, and the legacy suite guards the wire protocol either
+  way.
+- *How do you keep the AI-generated look out of it?* One committed direction
+  ("Test Report": industrial/technical), self-hosted type with real
+  hierarchy, semantic-only color, borders over shadows, no gradients or
+  glow — and every interactive state (hover/focus/disabled/loading) actually
+  designed.

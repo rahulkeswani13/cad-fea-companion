@@ -17,3 +17,4 @@ dist/
 build/
 .zcode/
 data/results/eval_history.jsonl
+web/node_modules/

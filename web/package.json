@@ -1,0 +1,30 @@
+{
+  "name": "cad-fea-console",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "React console for the CAD/FEA Companion (built output served by FastAPI at /app).",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@fontsource-variable/archivo": "^5.2.8",
+    "@fontsource/ibm-plex-mono": "^5.2.8",
+    "@fontsource/ibm-plex-sans": "^5.2.8",
+    "dompurify": "^3.2.4",
+    "marked": "^15.0.7",
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "^4.1.18",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^5.1.4",
+    "tailwindcss": "^4.1.18",
+    "typescript": "~5.9.3",
+    "vite": "^7.3.4"
+  }
+}

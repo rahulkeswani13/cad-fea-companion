@@ -509,3 +509,74 @@ def test_journey_rag_and_out_of_domain(page: Page, test_server_url: str):
     expect(page.locator(".msg.assistant").last).to_contain_text("do not have access")
 
     assert len(errors) == 0
+
+
+# =========================================================================
+# PART 3: React console at /app (ADR-015) — UI mechanics, mocked LLM
+# =========================================================================
+
+def _console_errors(page: Page, test_server_url: str) -> list[str]:
+    """Opens /app with a JS-error listener attached."""
+    errors: list[str] = []
+    page.on("pageerror", lambda err: errors.append(err.message))
+    page.goto(test_server_url + "/app")
+    expect(page.locator("h1")).to_contain_text("CAD/FEA Companion")
+    return errors
+
+
+def test_console_shell_loads(page: Page, test_server_url: str):
+    errors = _console_errors(page, test_server_url)
+    expect(page.get_by_test_id("status-readout")).to_be_visible()
+    expect(page.get_by_test_id("rail-left")).to_be_visible()
+    expect(page.get_by_test_id("rail-right")).to_be_visible()
+    expect(page.get_by_test_id("design-program")).to_be_visible()
+    expect(page.get_by_test_id("run-history")).to_be_visible()
+    expect(page.get_by_test_id("solver-status")).to_be_visible()
+    assert len(errors) == 0
+
+
+def test_console_prompt_library_renders(page: Page, test_server_url: str):
+    errors = _console_errors(page, test_server_url)
+    library = page.get_by_test_id("prompt-library")
+    expect(library).to_be_visible()
+    # Seeded library: Grounded Q&A + CAD Builds at minimum, with real items.
+    expect(library).to_contain_text("Grounded Q&A", ignore_case=True)
+    expect(library).to_contain_text("CAD Builds", ignore_case=True)
+    assert len(errors) == 0
+
+
+def test_console_dropdown_inserts_prompt(page: Page, test_server_url: str):
+    errors = _console_errors(page, test_server_url)
+    page.get_by_test_id("prompts-button").click()
+    menu = page.get_by_test_id("prompt-menu")
+    expect(menu).to_be_visible()
+    expect(menu).to_contain_text("Grounded Q&A", ignore_case=True)
+    menu.get_by_role("button").filter(has_text="Al 6061-T6 yield strength").first.click()
+    value = page.get_by_test_id("composer-input").input_value()
+    assert "yield strength" in value.lower()
+    assert len(errors) == 0
+
+
+def test_console_palette_sends_prompt(page: Page, test_server_url: str):
+    errors = _console_errors(page, test_server_url)
+    page.keyboard.press("ControlOrMeta+k")
+    palette = page.get_by_test_id("command-palette")
+    expect(palette).to_be_visible()
+    palette.get_by_role("textbox").fill("convergence")
+    page.keyboard.press("Enter")
+    expect(page.get_by_test_id("msg-user").last).to_contain_text("convergence")
+    assert len(errors) == 0
+
+
+def test_console_walkthrough_run_step(page: Page, test_server_url: str):
+    errors = _console_errors(page, test_server_url)
+    page.get_by_test_id("walkthrough-list").get_by_role("button").filter(
+        has_text="Tool outcome envelope"
+    ).first.click()
+    step = page.get_by_test_id("walkthrough-step").first
+    expect(step).to_be_visible()
+    expect(step).to_contain_text("step 1", ignore_case=True)
+    assert step.locator("li").count() >= 1  # talking points render
+    step.get_by_role("button", name="Run step").click()
+    expect(page.get_by_test_id("msg-user").last).to_contain_text("receipt")
+    assert len(errors) == 0
