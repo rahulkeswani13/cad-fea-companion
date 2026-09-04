@@ -12,6 +12,11 @@ from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, Streamin
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
+from companion.agent.confirm import (
+    get_require_tool_confirm,
+    require_tool_confirm_source,
+    set_require_tool_confirm,
+)
 from companion.agent.graph import run_agent, session_usage, stream_agent
 from companion.config import get_settings
 from companion.llm.providers import provider_status
@@ -89,7 +94,7 @@ def health() -> dict[str, Any]:
         "state": get_state(),
         "agent": {
             "max_tool_rounds": settings.agent_max_tool_rounds,
-            "require_tool_confirm": settings.agent_require_tool_confirm,
+            "require_tool_confirm": get_require_tool_confirm(),
         },
         "session_usage": session_usage(),
     }
@@ -336,7 +341,23 @@ def solver_status() -> dict[str, Any]:
         "freecad": bool(freecad_cmd),
         "freecad_cmd": freecad_cmd,
         "llm": provider_status(settings),
-        "require_tool_confirm": settings.agent_require_tool_confirm,
+        "require_tool_confirm": get_require_tool_confirm(),
+        "confirm_source": require_tool_confirm_source(),
+    }
+
+
+class ToolConfirmRequest(BaseModel):
+    enabled: bool
+
+
+@app.post("/api/tool-confirm")
+def tool_confirm(req: ToolConfirmRequest) -> dict[str, Any]:
+    """Runtime HITL toggle (ADR-016): the operator decides per session whether
+    FreeCAD-mutating tools pause for confirmation. Effective immediately."""
+    enabled = set_require_tool_confirm(req.enabled)
+    return {
+        "require_tool_confirm": enabled,
+        "confirm_source": require_tool_confirm_source(),
     }
 
 

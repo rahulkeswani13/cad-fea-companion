@@ -1,8 +1,8 @@
 {
-  "passed": 67,
+  "passed": 68,
   "failed": 0,
   "skipped": 5,
-  "total": 72,
+  "total": 73,
   "rows": [
     {
       "id": "adv_solve_without_geometry",
@@ -117,12 +117,12 @@
     {
       "id": "tool_solve",
       "ok": true,
-      "detail": "stress=31.1141"
+      "detail": "stress=32.4668"
     },
     {
       "id": "tool_get_stress",
       "ok": true,
-      "detail": "stress=31.1141"
+      "detail": "stress=32.4668"
     },
     {
       "id": "agent_docs_question",
@@ -162,7 +162,7 @@
     {
       "id": "tool_solve_custom",
       "ok": true,
-      "detail": "stress=79.1403"
+      "detail": "stress=72.5412"
     },
     {
       "id": "agent_material_e",
@@ -202,7 +202,7 @@
     {
       "id": "f04_get_program_after_create",
       "ok": true,
-      "detail": "{\"ok\": true, \"part\": \"brake_pedal\", \"rev\": 105, \"params_hash\": \"4e8a711c19b3\", \"params\": {\"web_type\": \"xtruss\", \"cell_size_mm\": 15.0, \"strut_radius_mm\": 2.5, \"material\": \"al6061t6\""
+      "detail": "{\"ok\": true, \"part\": \"brake_pedal\", \"rev\": 134, \"params_hash\": \"4e8a711c19b3\", \"params\": {\"web_type\": \"xtruss\", \"cell_size_mm\": 15.0, \"strut_radius_mm\": 2.5, \"material\": \"al6061t6\""
     },
     {
       "id": "f04_update_cell_size",
@@ -212,12 +212,12 @@
     {
       "id": "f04_update_dry_run",
       "ok": true,
-      "detail": "{\"ok\": true, \"changed\": true, \"dry_run\": true, \"part\": \"brake_pedal\", \"current\": {\"rev\": 106, \"params_hash\": \"447503639393\"}, \"proposed\": {\"params\": {\"web_type\": \"xtruss\", \"cell_si"
+      "detail": "{\"ok\": true, \"changed\": true, \"dry_run\": true, \"part\": \"brake_pedal\", \"current\": {\"rev\": 135, \"params_hash\": \"447503639393\"}, \"proposed\": {\"params\": {\"web_type\": \"xtruss\", \"cell_si"
     },
     {
       "id": "f04_update_noop",
       "ok": true,
-      "detail": "{\"ok\": true, \"changed\": false, \"part\": \"brake_pedal\", \"rev\": 106, \"params_hash\": \"447503639393\", \"params\": {\"web_type\": \"xtruss\", \"cell_size_mm\": 12.0, \"strut_radius_mm\": 2.5, \"mat"
+      "detail": "{\"ok\": true, \"changed\": false, \"part\": \"brake_pedal\", \"rev\": 135, \"params_hash\": \"447503639393\", \"params\": {\"web_type\": \"xtruss\", \"cell_size_mm\": 12.0, \"strut_radius_mm\": 2.5, \"mat"
     },
     {
       "id": "f04_update_out_of_range",
@@ -227,12 +227,12 @@
     {
       "id": "f06_solve_pedal_records_run",
       "ok": true,
-      "detail": "{\"ok\": true, \"method\": \"calculix_ccx\", \"part\": \"brake_pedal\", \"web_type\": \"xtruss\", \"mesh_max_size_mm\": 5.0, \"force_n\": 500.0, \"node_count\": 5017, \"max_von_mises_mpa\": 21.791, \"max"
+      "detail": "{\"ok\": true, \"method\": \"calculix_ccx\", \"part\": \"brake_pedal\", \"web_type\": \"xtruss\", \"mesh_max_size_mm\": 5.0, \"force_n\": 500.0, \"node_count\": 5030, \"max_von_mises_mpa\": 21.6789, \"ma"
     },
     {
       "id": "f06_query_results_latest",
       "ok": true,
-      "detail": "{\"ok\": true, \"part\": \"brake_pedal\", \"latest\": {\"run_id\": \"20260903T011318_e0f11d\", \"ts\": \"2026-09-03T01:13:18+00:00\", \"part\": \"brake_pedal\", \"web_type\": \"xtruss\", \"cell_size_mm\": 1"
+      "detail": "{\"ok\": true, \"part\": \"brake_pedal\", \"latest\": {\"run_id\": \"20260904T223120_602d7f\", \"ts\": \"2026-09-04T22:31:20+00:00\", \"part\": \"brake_pedal\", \"web_type\": \"xtruss\", \"cell_size_mm\": 1"
     },
     {
       "id": "f06_query_results_bad_run_id",
@@ -272,12 +272,12 @@
     {
       "id": "f09_compare_materials",
       "ok": true,
-      "detail": "{\"ok\": true, \"part\": \"brake_pedal\", \"sf_threshold\": 1.5, \"base\": {\"source\": \"run_history\", \"run_id\": \"20260903T011318_e0f11d\", \"method\": \"calculix_ccx\", \"mesh_max_size_mm\": 5.0, \"f"
+      "detail": "{\"ok\": true, \"part\": \"brake_pedal\", \"sf_threshold\": 1.5, \"base\": {\"source\": \"run_history\", \"run_id\": \"20260904T223120_602d7f\", \"method\": \"calculix_ccx\", \"mesh_max_size_mm\": 5.0, \"f"
     },
     {
       "id": "f09_set_material_7075_dry_run",
       "ok": true,
-      "detail": "{\"ok\": true, \"changed\": true, \"dry_run\": true, \"part\": \"brake_pedal\", \"current\": {\"rev\": 107, \"params_hash\": \"7f150b9b3923\"}, \"proposed\": {\"params\": {\"web_type\": \"fcc\", \"cell_size_"
+      "detail": "{\"ok\": true, \"changed\": true, \"dry_run\": true, \"part\": \"brake_pedal\", \"current\": {\"rev\": 136, \"params_hash\": \"7f150b9b3923\"}, \"proposed\": {\"params\": {\"web_type\": \"fcc\", \"cell_size_"
     },
     {
       "id": "f09_unknown_material_rejected",
@@ -297,7 +297,7 @@
     {
       "id": "f26_update_uav_arm_cell_size",
       "ok": true,
-      "detail": "{\"ok\": true, \"changed\": false, \"part\": \"uav_arm\", \"rev\": 19, \"params_hash\": \"b7370e994dda\", \"params\": {\"web_type\": \"xtruss\", \"arm_length_mm\": 180.0, \"cell_size_mm\": 12.0, \"strut_ra"
+      "detail": "{\"ok\": true, \"changed\": false, \"part\": \"uav_arm\", \"rev\": 21, \"params_hash\": \"b7370e994dda\", \"params\": {\"web_type\": \"xtruss\", \"arm_length_mm\": 180.0, \"cell_size_mm\": 12.0, \"strut_ra"
     },
     {
       "id": "f26_solve_uav_arm_honesty",
@@ -367,14 +367,19 @@
     {
       "id": "http_solver_status_shape",
       "ok": true,
-      "detail": "status=200 keys=['freecad', 'freecad_cmd', 'llm', 'require_tool_confirm']"
+      "detail": "status=200 keys=['confirm_source', 'freecad', 'freecad_cmd', 'llm', 'require_tool_confirm']"
+    },
+    {
+      "id": "http_tool_confirm_toggle",
+      "ok": true,
+      "detail": "status=200 keys=['confirm_source', 'require_tool_confirm']"
     }
   ],
   "retrieval": {
     "queries": 20,
     "k": 4,
     "hit_rate_at_4": 1.0,
-    "mrr": 0.9417,
+    "mrr": 0.9167,
     "per_query": [
       {
         "query": "What is a typical yield strength for mild steel in MPa?",
@@ -416,14 +421,14 @@
           "docs/adr/ADR-007-preflight-analytical-estimates.md"
         ],
         "ranked_sources": [
+          "docs/reference/ARCHITECTURE.md",
           "docs/reference/freecad_fem_notes.md",
           "docs/reference/material_allowables.md",
-          "docs/reference/ARCHITECTURE.md",
           "docs/reference/tool_reference.md"
         ],
-        "first_relevant_rank": 1,
+        "first_relevant_rank": 2,
         "hit_at_k": true,
-        "reciprocal_rank": 1.0
+        "reciprocal_rank": 0.5
       },
       {
         "query": "What units does the companion use for stress?",
@@ -497,7 +502,7 @@
           "docs/reference/materials.md",
           "docs/reference/materials.md",
           "docs/adr/ADR-010-material-as-program-parameter.md",
-          "docs/reference/materials.md"
+          "docs/reference/tool_reference.md"
         ],
         "first_relevant_rank": 1,
         "hit_at_k": true,
@@ -621,8 +626,8 @@
         ],
         "ranked_sources": [
           "docs/adr/ADR-002-tool-outcome-envelope.md",
-          "docs/adr/ADR-002-tool-outcome-envelope.md",
           "docs/reference/ARCHITECTURE.md",
+          "docs/adr/ADR-002-tool-outcome-envelope.md",
           "docs/adr/ADR-009-mesh-convergence-study.md"
         ],
         "first_relevant_rank": 1,
@@ -638,8 +643,8 @@
         "ranked_sources": [
           "docs/reference/ARCHITECTURE.md",
           "docs/adr/ADR-006-run-history-and-result-querying.md",
-          "docs/adr/ADR-004-design-program-layer.md",
-          "docs/adr/ADR-002-tool-outcome-envelope.md"
+          "docs/adr/ADR-016-hitl-toggle-light-default.md",
+          "docs/adr/ADR-004-design-program-layer.md"
         ],
         "first_relevant_rank": 1,
         "hit_at_k": true,
@@ -684,9 +689,9 @@
         ],
         "ranked_sources": [
           "docs/adr/ADR-004-design-program-layer.md",
-          "docs/adr/ADR-002-tool-outcome-envelope.md",
           "docs/adr/ADR-004-design-program-layer.md",
-          "docs/adr/ADR-006-run-history-and-result-querying.md"
+          "docs/adr/ADR-002-tool-outcome-envelope.md",
+          "docs/reference/tool_reference.md"
         ],
         "first_relevant_rank": 1,
         "hit_at_k": true,
@@ -695,9 +700,9 @@
     ]
   },
   "corpus": {
-    "fingerprint": "0a83a1745e474df9",
-    "documents": 22,
-    "chunks": 128,
+    "fingerprint": "6ed7dc6ce92d4394",
+    "documents": 23,
+    "chunks": 134,
     "dirs": [
       "docs/reference",
       "docs/adr"

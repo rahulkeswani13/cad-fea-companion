@@ -29,7 +29,9 @@ class Settings(BaseSettings):
 
     # LangGraph agent loop
     agent_max_tool_rounds: int = 6
-    agent_require_tool_confirm: bool = False
+    # HITL gate defaults ON (ADR-016); the console can flip it at runtime
+    # via POST /api/tool-confirm — see companion/agent/confirm.py layering.
+    agent_require_tool_confirm: bool = True
     allow_remote: bool = False
 
     # H6: offline mode — when no LLM is configured (or it omits tools on a

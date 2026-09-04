@@ -14,6 +14,7 @@ from langgraph.graph import END, StateGraph
 from langgraph.graph.message import add_messages
 from langgraph.types import Command, interrupt
 
+from companion.agent.confirm import get_require_tool_confirm
 from companion.agent.context import condense_history
 from companion.agent.heuristics import HeuristicRouter
 from companion.agent.tools import FREECAD_MUTATING_TOOLS, get_langchain_tools
@@ -309,11 +310,10 @@ def build_graph(
     """Build retrieve → agent ⇄ tools graph. Injectables support unit tests."""
     settings = settings or get_settings()
     tool_fn = call_tool_fn or call_tool
-    confirm = (
-        settings.agent_require_tool_confirm
-        if require_tool_confirm is None
-        else require_tool_confirm
-    )
+    # ADR-016: an explicit param wins (tests inject it); None defers to the
+    # live operator toggle (runtime override → AGENT_REQUIRE_TOOL_CONFIRM)
+    # so POST /api/tool-confirm flips the gate without a graph rebuild.
+    confirm = require_tool_confirm
     max_rounds = (
         settings.agent_max_tool_rounds if max_tool_rounds is None else max_tool_rounds
     )
@@ -487,7 +487,10 @@ def build_graph(
         if not pending:
             return {"tools_node_visits": visits, "pending_tool_calls": []}
 
-        needs_confirm = confirm and any(
+        confirm_enabled = (
+            confirm if confirm is not None else get_require_tool_confirm()
+        )
+        needs_confirm = confirm_enabled and any(
             p.get("name") in FREECAD_MUTATING_TOOLS for p in pending
         )
         if needs_confirm:

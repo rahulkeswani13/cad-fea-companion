@@ -186,3 +186,44 @@ def test_solver_status_shape():
     assert isinstance(body["freecad"], bool)
     assert isinstance(body["llm"], dict)
     assert isinstance(body["require_tool_confirm"], bool)
+
+
+# --- /api/tool-confirm (runtime HITL toggle, ADR-016) ---
+
+
+@pytest.fixture
+def confirm_reset():
+    from companion.agent import confirm
+
+    yield
+    confirm.reset_require_tool_confirm()
+
+
+def test_tool_confirm_roundtrip(confirm_reset):
+    res = client.post("/api/tool-confirm", json={"enabled": False})
+    assert res.status_code == 200
+    body = res.json()
+    assert body["require_tool_confirm"] is False
+    assert body["confirm_source"] == "runtime"
+
+    status = client.get("/api/solver-status").json()
+    assert status["require_tool_confirm"] is False
+    assert status["confirm_source"] == "runtime"
+
+    health = client.get("/api/health").json()
+    assert health["agent"]["require_tool_confirm"] is False
+
+    res = client.post("/api/tool-confirm", json={"enabled": True})
+    assert res.json()["require_tool_confirm"] is True
+
+
+def test_tool_confirm_defaults_to_setting(confirm_reset):
+    """No runtime override: source is the setting, default ON (ADR-016)."""
+    status = client.get("/api/solver-status").json()
+    assert status["confirm_source"] == "setting"
+    assert status["require_tool_confirm"] is True
+
+
+def test_tool_confirm_rejects_missing_body():
+    res = client.post("/api/tool-confirm")
+    assert res.status_code == 422

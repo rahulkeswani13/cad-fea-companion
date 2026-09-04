@@ -35,6 +35,22 @@ export function fetchSolverStatus(): Promise<SolverStatus> {
   return getJson<SolverStatus>("/api/solver-status");
 }
 
+export interface ToolConfirmResponse {
+  require_tool_confirm: boolean;
+  confirm_source: string;
+}
+
+/** Flip the runtime HITL gate (ADR-016) — effective on the next tool call. */
+export async function setToolConfirm(enabled: boolean): Promise<ToolConfirmResponse> {
+  const res = await fetch("/api/tool-confirm", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ enabled }),
+  });
+  if (!res.ok) throw new Error(`/api/tool-confirm → HTTP ${res.status}`);
+  return (await res.json()) as ToolConfirmResponse;
+}
+
 export interface ResumeResponse {
   answer?: string;
   error?: string;
