@@ -7,6 +7,7 @@ import {
   fetchRuns,
   fetchSolverStatus,
   resumeChat,
+  setToolConfirm,
   streamChat,
 } from "./lib/api";
 import { renderMarkdown } from "./lib/markdown";
@@ -125,7 +126,8 @@ export default function App() {
   const [leftOpen, setLeftOpen] = useState(true);
   const [rightOpen, setRightOpen] = useState(true);
   const [theme, setTheme] = useState<"dark" | "light">(() =>
-    localStorage.getItem("cad_fea_theme") === "light" ? "light" : "dark",
+    // Light is the default (ADR-016); only a stored "dark" preference keeps dark.
+    localStorage.getItem("cad_fea_theme") === "dark" ? "dark" : "light",
   );
   // Chat column keeps >= 380px; rails may still cover well over half the screen.
   const centerMin = 380;
@@ -169,6 +171,19 @@ export default function App() {
       setSolver(null);
     }
   }, []);
+
+  const toggleToolConfirm = useCallback(
+    async (enabled: boolean) => {
+      try {
+        await setToolConfirm(enabled);
+      } catch {
+        // fall through — the refresh re-reads the server's actual state
+      }
+      refreshRails();
+      refreshStatus();
+    },
+    [refreshRails, refreshStatus],
+  );
 
   useEffect(() => {
     refreshStatus();
@@ -418,7 +433,12 @@ export default function App() {
             style={{ width: rightRail.w }}
           >
             <div className="absolute inset-0 overflow-y-auto">
-              <RailRight program={program} runs={runs} solver={solver} />
+              <RailRight
+                program={program}
+                runs={runs}
+                solver={solver}
+                onToggleConfirm={toggleToolConfirm}
+              />
             </div>
             <RailHandle rail="right" edge="left" onDrag={rightRail.startDrag} onReset={rightRail.reset} />
           </aside>

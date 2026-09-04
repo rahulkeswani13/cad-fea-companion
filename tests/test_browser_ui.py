@@ -580,3 +580,37 @@ def test_console_walkthrough_run_step(page: Page, test_server_url: str):
     step.get_by_role("button", name="Run step").click()
     expect(page.get_by_test_id("msg-user").last).to_contain_text("receipt")
     assert len(errors) == 0
+
+
+def test_console_hitl_toggle(page: Page, test_server_url: str):
+    """ADR-016: the HITL gate is a live switch — default on, flips via API."""
+    from companion.agent import confirm
+
+    errors = _console_errors(page, test_server_url)
+    try:
+        toggle = page.get_by_test_id("hitl-toggle")
+        expect(toggle).to_be_visible()
+        expect(toggle).to_have_attribute("aria-checked", "true")  # default ON
+        row = page.get_by_test_id("hitl-row")
+        expect(row).to_contain_text("confirm each tool")
+
+        toggle.click()  # off
+        expect(toggle).to_have_attribute("aria-checked", "false")
+        expect(row).to_contain_text("auto")
+
+        toggle.click()  # back on
+        expect(toggle).to_have_attribute("aria-checked", "true")
+        expect(row).to_contain_text("confirm each tool")
+        assert len(errors) == 0
+    finally:
+        # The mocked server shares this process — never leak the override.
+        confirm.reset_require_tool_confirm()
+
+
+def test_console_light_theme_default(page: Page, test_server_url: str):
+    """ADR-016: light theme is the default; dark stays a persisted choice."""
+    errors = _console_errors(page, test_server_url)
+    assert page.locator("html").get_attribute("data-theme") == "light"
+    page.get_by_test_id("theme-toggle").click()
+    assert page.locator("html").get_attribute("data-theme") is None  # dark = root
+    assert len(errors) == 0

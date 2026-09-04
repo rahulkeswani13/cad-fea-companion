@@ -114,6 +114,8 @@ export interface SolverStatus {
   freecad_cmd: string | null;
   llm: { provider?: string; model?: string; configured?: boolean };
   require_tool_confirm: boolean;
+  /** "runtime" (console toggle) | "setting" (AGENT_REQUIRE_TOOL_CONFIRM) */
+  confirm_source?: string;
 }
 
 export type Role = "user" | "assistant" | "status";

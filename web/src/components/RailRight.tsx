@@ -1,6 +1,6 @@
 import type { DesignProgram, RunRow, RunsPayload, SolverStatus } from "../lib/types";
 import { fmtNum } from "../lib/format";
-import { SectionLabel, Stamp } from "./primitives";
+import { SectionLabel, Stamp, Switch } from "./primitives";
 
 /** 03 design program — the persisted parametric source of truth (F04). */
 export function DesignProgramCard({ program }: { program: DesignProgram | null }) {
@@ -118,7 +118,14 @@ function StatusRow({ label, ok, value }: { label: string; ok: boolean | null; va
 }
 
 /** 05 solver status — what the machine can actually reach right now. */
-export function SolverStatusCard({ solver }: { solver: SolverStatus | null }) {
+export function SolverStatusCard({
+  solver,
+  onToggleConfirm,
+}: {
+  solver: SolverStatus | null;
+  onToggleConfirm?: (next: boolean) => void;
+}) {
+  const confirmOn = solver?.require_tool_confirm === true;
   return (
     <section className="px-3 py-3" data-testid="solver-status">
       <SectionLabel index="05" title="Solver status" />
@@ -133,11 +140,21 @@ export function SolverStatusCard({ solver }: { solver: SolverStatus | null }) {
           ok={solver ? solver.llm.configured === true : null}
           value={solver?.llm.provider ?? "…"}
         />
-        <StatusRow
-          label="HITL gate"
-          ok={null}
-          value={solver ? (solver.require_tool_confirm ? "confirm each tool" : "auto") : "…"}
-        />
+        <div className="flex items-center justify-between py-1.5" data-testid="hitl-row">
+          <span className="font-mono text-[10.5px] tracking-[0.1em] text-ink-faint uppercase">
+            HITL gate
+          </span>
+          <span className="flex items-center gap-2 font-mono text-[11px] text-ink">
+            {solver ? (confirmOn ? "confirm each tool" : "auto") : "…"}
+            <Switch
+              checked={confirmOn}
+              onToggle={(next) => onToggleConfirm?.(next)}
+              label="FreeCAD tool confirmation (HITL)"
+              title="Require operator approval before FreeCAD tools run (ADR-016)"
+              testid="hitl-toggle"
+            />
+          </span>
+        </div>
       </div>
     </section>
   );
@@ -148,10 +165,12 @@ export function RailRight({
   program,
   runs,
   solver,
+  onToggleConfirm,
 }: {
   program: DesignProgram | null;
   runs: RunsPayload | null;
   solver: SolverStatus | null;
+  onToggleConfirm?: (next: boolean) => void;
 }) {
   return (
     <div className="flex min-h-full flex-col">
@@ -159,7 +178,7 @@ export function RailRight({
       <div className="hairline-t" />
       <RunHistoryCard runs={runs} />
       <div className="hairline-t" />
-      <SolverStatusCard solver={solver} />
+      <SolverStatusCard solver={solver} onToggleConfirm={onToggleConfirm} />
     </div>
   );
 }

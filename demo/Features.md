@@ -1232,3 +1232,69 @@ the truth about a solve, not decorating a card."
   hierarchy, semantic-only color, borders over shadows, no gradients or
   glow — and every interactive state (hover/focus/disabled/loading) actually
   designed.
+
+## F30 — Runtime HITL toggle + light-first console (ADR-016)
+
+**Pitch:** The FreeCAD confirmation gate was a startup-only env flag — the
+operator had to restart the server to change safety posture, and it defaulted
+off, so a fresh install auto-ran mutating tools silently. The gate is now a
+live switch in the console's solver rail, default **on**: every FreeCAD
+mutating tool call pauses for explicit Approve/Reject until the operator says
+otherwise. Light theme is also the default now — the graphite dark mode stays
+one click away as a persisted preference.
+
+**Script (~90 sec):** "One design decision here: safety posture should be an
+operational control, not a deployment constant. The confirm decision used to
+be baked into the compiled LangGraph at build time — flipping
+`AGENT_REQUIRE_TOOL_CONFIRM` needed a restart. I moved the resolution to
+tool-node visit time through a small `companion/agent/confirm.py` layer:
+explicit injection wins (that's how tests pin behavior), then the runtime
+override set by `POST /api/tool-confirm`, then the setting. So the switch in
+the right rail flips the gate mid-session — the very next tool call pauses,
+no rebuild, no reload, and the same compiled graph keeps its checkpointed
+history. Defaults flipped to *safe*: the gate is on for a fresh install, and
+the eval harness pins it off explicitly because a headless sweep has no
+operator to approve anything. Console-only concern, by the way — the legacy
+page already had Approve/Reject, and the default flip just exercises it.
+Light-default theme is the same philosophy on the presentation side: the
+projector-friendly paper surface is the out-of-box experience, dark graphite
+is an explicit persisted choice, and the anti-flash boot script applies the
+stored preference before first paint."
+
+**Tests/evals:**
+- `tests/test_hitl.py` — new runtime-toggle test: interrupt on approve flow,
+  then flip the toggle mid-session on the *same* compiled graph and watch the
+  next tool call auto-run.
+- `tests/test_console_api.py` — `POST /api/tool-confirm` roundtrip (status,
+  health, and solver-status all reflect it), `confirm_source` defaults to
+  `setting`, 422 on a missing body.
+- Browser checks — the switch renders checked (default ON), toggles to
+  "auto" and back live; light theme asserts as the boot default.
+- `eval/cases.json` — solver-status contract gains `confirm_source`; new
+  POST case for `/api/tool-confirm` (additive `method`/`json_body` support in
+  the `http` case type). `eval/run_eval.py` pins the gate off for headless
+  runs.
+
+**Demo prompts:**
+1. Solver rail → flip "HITL gate" off → run any create prompt → tool
+   receipts stream straight through (status shows "auto").
+2. Flip it back on → same prompt → the amber confirm bar stamps in:
+   "OK to run create_brake_pedal?" → Reject → the log shows the cancelled
+   envelope, and the active revision is untouched.
+3. Approve path: run again → Approve → tool executes and the design program
+   card updates.
+4. Top bar HITL cell mirrors the switch after every turn; `/api/health`
+   reports the same value for scripted checks.
+
+**Likely interview questions:**
+- *Why not rebuild the graph when the flag changes?* The graph is compiled
+  once and cached with checkpointed thread history; rebuilding risks losing
+  or duplicating session state. Reading the gate at tool-node visit time is
+  one `if` at the right layer instead of lifecycle surgery.
+- *Is a runtime safety toggle a footgun?* The default is the safe side
+  (confirm on), the switch is operator-visible in the rail rather than a
+  buried env var, and the outcome envelope records `user_cancelled` on every
+  rejected call — the audit trail shows which posture each run had.
+- *Why flip the theme default?* Demos run on projectors; light-on-paper was
+  the better default surface and dark graphite is a deliberate mode, not the
+  lazy default. It's one boot-script decision plus a state flip.

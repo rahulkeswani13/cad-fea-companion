@@ -140,3 +140,37 @@ export function CostChip({ cost }: { cost?: string }) {
   const label = cost === "solve" ? "SOLVE" : cost === "seconds" ? "~SEC" : "INSTANT";
   return <Stamp kind={kind} label={label} />;
 }
+
+/** Toggle switch (role=switch) — gates like HITL tool confirmation (ADR-016). */
+export function Switch({
+  checked,
+  onToggle,
+  label,
+  title,
+  testid,
+}: {
+  checked: boolean;
+  onToggle: (next: boolean) => void;
+  label: string;
+  title?: string;
+  testid?: string;
+}) {
+  return (
+    <button
+      type="button"
+      role="switch"
+      aria-checked={checked}
+      aria-label={label}
+      title={title ?? label}
+      data-testid={testid}
+      onClick={() => onToggle(!checked)}
+      className="inline-flex h-[20px] w-[36px] shrink-0 items-center rounded-full border border-line-strong bg-raised px-[2px] transition-colors duration-150 hover:border-accent aria-checked:border-accent"
+    >
+      <span
+        className={`h-[12px] w-[12px] rounded-full transition-transform duration-150 ${
+          checked ? "translate-x-[18px] bg-accent" : "translate-x-0 bg-ink-faint"
+        }`}
+      />
+    </button>
+  );
+}

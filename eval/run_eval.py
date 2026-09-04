@@ -18,6 +18,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
+from companion.agent.confirm import set_require_tool_confirm
 from companion.agent.graph import run_agent
 from companion.config import get_settings
 from companion.rag.store import corpus_fingerprint, ingest_docs, retrieve
@@ -57,6 +58,11 @@ def _print_row(cid: str, ok: bool, detail: str) -> None:
 
 
 def main() -> int:
+    # The HITL gate defaults ON (ADR-016) for the interactive console; eval is
+    # a headless sweep, so force it off for this run — cases expect tools to
+    # auto-run. Done in main(), not at import: tests import this module during
+    # pytest collection and must not inherit the override.
+    set_require_tool_confirm(False)
     cases_path = ROOT / "eval" / "cases.json"
     cases = json.loads(cases_path.read_text(encoding="utf-8"))
     ingest = ingest_docs()
@@ -183,7 +189,10 @@ def main() -> int:
 
                     from companion.main import app as _http_app
                     _HTTP_CLIENT = TestClient(_http_app)
-                res = _HTTP_CLIENT.get(case["path"])
+                if str(case.get("method") or "get").lower() == "post":
+                    res = _HTTP_CLIENT.post(case["path"], json=case.get("json_body") or {})
+                else:
+                    res = _HTTP_CLIENT.get(case["path"])
                 ok = res.status_code == case.get("expect_status", 200)
                 detail = f"status={res.status_code}"
                 if ok and case.get("expect_text"):
