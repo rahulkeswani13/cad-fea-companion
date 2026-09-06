@@ -1298,3 +1298,71 @@ stored preference before first paint."
 - *Why flip the theme default?* Demos run on projectors; light-on-paper was
   the better default surface and dark graphite is a deliberate mode, not the
   lazy default. It's one boot-script decision plus a state flip.
+
+## F31 — Console honesty pass: origin labels + execution status (ADR-017, PR 1/4)
+
+**Pitch:** The console used to stamp a blanket PASS on successful tool
+results — which conflates "the solver ran" with "the design is safe" — and a
+fallback result could present itself as a live simulation because the
+`fallback: true` flag on the wire was never surfaced. Every result now
+states its origin (Live simulation / Analytical estimate / Saved reference
+result / Fallback result), the card stamp is the *execution outcome* only
+(Completed / Failed), the safety factor carries the engineering verdict via
+threshold colors, and missing numbers render as "—" instead of zero. Raw
+evidence is one click away under Technical details.
+
+**Script (~90 sec):** "Solver honesty has a presentation half. The backend
+already stamps `fallback: true` and a `method` on every solve — the console
+just wasn't showing it. The label precedence reads only wire evidence:
+explicit analytical methods say *Analytical estimate* with an ESTIMATE
+stamp, precomputed sources say *Saved reference result* with REFERENCE, a
+fallback with unclear origin says *Fallback result* with FALLBACK, and a
+CalculiX solve without fallback is the only thing allowed to read *Live
+simulation* — and a fallback flag always overrides a live-sounding label.
+Never equate fallback with analytical: an analytical estimate is a model, a
+fallback is 'we couldn't run what you asked'. The header stamp is now the
+execution outcome — Completed or Failed — because 'PASS' on a report card
+answers the wrong question. The engineering verdict lives where evidence
+lives: the safety factor number, colored by thresholds — under 1 is red,
+under 1.5 amber. Same in run history: no verdict stamps, the SF number *is*
+the verdict, divergence stays as a factual flag. Numeric honesty too: the
+old formatter coerced null to zero — `Number(null)` is `0` in JavaScript —
+so missing deflections looked like measured zeros. Now unavailable is an
+em dash and real zeros survive. Sources stay visible as a compact line; raw
+payloads, retrieval scores and excerpts collapse under Technical details;
+tool names are plain language with raw names preserved there too."
+
+**Tests/evals:**
+- `tests/test_browser_ui.py` PART 4 — deterministic SSE fixtures intercept
+  `/api/chat/stream` and `/api/runs`: method-label precedence (five cases
+  including fallback-over-live), execution status vs verdict, missing
+  values vs legitimate zeros across all displacement variants, threshold
+  colors in history (and no pass/fail stamps), sources visible with
+  Technical details collapsed, friendly names on cards with raw names in
+  the disclosure.
+- **Eval delta: none** — presentation-only change, no tool or agent
+  semantics moved. Documented explicitly per the solver-honesty rule.
+
+**Demo prompts:**
+1. Run "Solve the +500 N footpad load" with FreeCAD unavailable → the card
+   reads **Fallback result** with a FALLBACK stamp and the calibrated-demo
+   note — the origin is undeniable on screen.
+2. With FreeCAD available → **Live simulation**, method `calculix_ccx`,
+   SF colored by threshold.
+3. Ask for a material comparison → rows show **Saved reference result**
+   (REFERENCE) where the base run was precomputed.
+4. Open Technical details on any message → raw tool payload verbatim, raw
+   tool name, retrieval ranks/scores.
+
+**Likely interview questions:**
+- *Why not just add "PASS" when the solve succeeds?* Because success and
+  safety are different axes. A tool can complete successfully on a design
+  with SF 0.4 — stamping PASS there is a lie the interviewer will catch.
+  Execution status (Completed/Failed) and the SF number answer separate
+  questions.
+- *Where do the labels come from?* Only fields already on the wire
+  (`method`, `fallback`) with a documented precedence; the frontend invents
+  nothing. If evidence is missing, no label — the raw string shows as-is.
+- *Does labeling fix provenance?* No — this is presentation. A clearer
+  FALLBACK badge doesn't validate a saved result against changed geometry;
+  backend provenance stays as recorded (per-run `method` + `fallback`).

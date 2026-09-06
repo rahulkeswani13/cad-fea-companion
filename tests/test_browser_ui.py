@@ -5,6 +5,8 @@ Tests all 36 demo prompts + 9 multi-turn feature journeys (45 total tests).
 
 from __future__ import annotations
 
+import json
+
 import re
 import pytest
 from playwright.sync_api import Page, expect
@@ -613,4 +615,235 @@ def test_console_light_theme_default(page: Page, test_server_url: str):
     assert page.locator("html").get_attribute("data-theme") == "light"
     page.get_by_test_id("theme-toggle").click()
     assert page.locator("html").get_attribute("data-theme") is None  # dark = root
+    assert len(errors) == 0
+
+
+# =========================================================================
+# PART 4: React console honesty pass (ADR-017) — method labels, execution
+# status, numeric honesty, sources/technical details. These tests intercept
+# /api/chat/stream (and /api/runs) with deterministic SSE fixtures so result
+# *presentation* is tested independently of which solver the host machine has.
+# =========================================================================
+
+def _sse_final(payload: dict) -> str:
+    return "data: " + json.dumps(payload) + "\n\n"
+
+
+def _mock_stream_by_keyword(page: Page, payloads: dict[str, dict]) -> None:
+    """Fulfill /api/chat/stream with a fixture chosen by a keyword in the
+    sent message. Each response is one `final` SSE frame."""
+
+    def handler(route):
+        body = route.request.post_data_json
+        message = str(body.get("message", "")).lower() if isinstance(body, dict) else ""
+        for keyword, payload in payloads.items():
+            if keyword in message:
+                route.fulfill(status=200, content_type="text/event-stream", body=_sse_final(payload))
+                return
+        route.fulfill(
+            status=200,
+            content_type="text/event-stream",
+            body=_sse_final({"type": "final", "answer": "no fixture", "thread_id": "t"}),
+        )
+
+    page.route("**/api/chat/stream", handler)
+
+
+def _console_send(page: Page, text: str) -> None:
+    page.get_by_test_id("composer-input").fill(text)
+    page.get_by_test_id("composer-input").press("Enter")
+
+
+def _solve_fixture(method: str | None, fallback: bool | None, **extra) -> dict:
+    result = {"ok": True, "part": "brake_pedal", "force_n": 500}
+    if method is not None:
+        result["method"] = method
+    if fallback is not None:
+        result["fallback"] = fallback
+    result.update(extra)
+    return {"type": "final", "answer": "Solve done.", "thread_id": "t", "tool_results": [{"name": "apply_load_and_solve", "result": result}]}
+
+
+def test_console_method_label_precedence(page: Page, test_server_url: str):
+    """ADR-017: origin labels follow wire evidence with strict precedence —
+    analytical > saved/precomputed > fallback > live — and a fallback flag
+    overrides a live-sounding method."""
+    errors = _console_errors(page, test_server_url)
+    _mock_stream_by_keyword(
+        page,
+        {
+            "live case": _solve_fixture("calculix_ccx", None, max_von_mises_mpa=120.0, safety_factor_vs_yield=2.3),
+            "saved case": _solve_fixture("precomputed_demo_estimate", True, max_von_mises_mpa=24.6, safety_factor_vs_yield=11.2),
+            "unknown fallback case": _solve_fixture(None, True, max_von_mises_mpa=24.6),
+            "override case": _solve_fixture("calculix_ccx", True, max_von_mises_mpa=24.6),
+            "analytical case": _solve_fixture("analytical_euler_bernoulli", None, expected_vs_actual={"expected": 120.0, "actual": 120.0, "ratio": 1.0}),
+        },
+    )
+
+    card = page.get_by_test_id("report-card").last
+
+    _console_send(page, "live case")
+    expect(card).to_contain_text("Live simulation")
+    expect(card).not_to_contain_text("ESTIMATE")
+    expect(card).not_to_contain_text("REFERENCE")
+    expect(card).not_to_contain_text("FALLBACK")
+
+    _console_send(page, "saved case")
+    expect(card).to_contain_text("Saved reference result")
+    expect(card).to_contain_text("REFERENCE")
+
+    _console_send(page, "unknown fallback case")
+    expect(card).to_contain_text("Fallback result")
+    expect(card).to_contain_text("FALLBACK")
+
+    _console_send(page, "override case")
+    expect(card).to_contain_text("Fallback result")
+    expect(card).not_to_contain_text("Live simulation")
+
+    _console_send(page, "analytical case")
+    expect(card).to_contain_text("Analytical estimate")
+    expect(card).to_contain_text("ESTIMATE")
+
+    assert len(errors) == 0
+
+
+def test_console_execution_status_not_verdict(page: Page, test_server_url: str):
+    """ADR-017: the card stamp is the execution outcome (Completed/Failed);
+    PASS/FAIL design verdicts are gone from cards."""
+    errors = _console_errors(page, test_server_url)
+    _mock_stream_by_keyword(
+        page,
+        {
+            "good solve": _solve_fixture("calculix_ccx", None, safety_factor_vs_yield=2.3),
+            "bad solve": {
+                "type": "final",
+                "answer": "Rejected.",
+                "thread_id": "t",
+                "tool_results": [
+                    {
+                        "name": "apply_load_and_solve",
+                        "result": {"ok": False, "error": "No active geometry", "correction": "Create a part first"},
+                    }
+                ],
+            },
+        },
+    )
+
+    card = page.get_by_test_id("report-card").last
+
+    _console_send(page, "good solve")
+    expect(card.get_by_test_id("exec-status")).to_contain_text("Completed")
+    expect(card).not_to_contain_text("PASS")
+    expect(card).not_to_contain_text("FAIL")
+
+    _console_send(page, "bad solve")
+    expect(card.get_by_test_id("exec-status")).to_contain_text("Failed")
+    expect(card).to_contain_text("No active geometry")
+    expect(card).to_contain_text("Create a part first")
+
+    assert len(errors) == 0
+
+
+def test_console_missing_values_and_zeros(page: Page, test_server_url: str):
+    """ADR-017: present-but-unavailable values render as em dashes; legitimate
+    zeros survive; all displacement variants are covered."""
+    errors = _console_errors(page, test_server_url)
+    _mock_stream_by_keyword(
+        page,
+        {
+            "gap case": _solve_fixture(
+                "calculix_ccx",
+                None,
+                mass_kg=0.0,
+                max_von_mises_mpa=120.0,
+                safety_factor_vs_yield=None,
+                pad_deflection_mm=None,
+                tip_deflection_mm=1.5,
+            ),
+        },
+    )
+
+    _console_send(page, "gap case")
+    card = page.get_by_test_id("report-card").last
+    expect(card).to_contain_text("0.000 kg")  # legitimate zero preserved
+    rows = card.locator("dl > div")
+    expect(rows.filter(has_text="SF yield")).to_contain_text("—")
+    expect(rows.filter(has_text="δ pad")).to_contain_text("—")
+    expect(rows.filter(has_text="δ tip")).to_contain_text("1.500 mm")
+
+    assert len(errors) == 0
+
+
+def test_console_sf_threshold_colors_and_history(page: Page, test_server_url: str):
+    """ADR-017: SF carries the verdict via threshold colors on cards and in
+    run history; history rows no longer render pass/fail stamps; divergence
+    stays a factual flag."""
+    runs_payload = {
+        "part": "brake_pedal",
+        "runs": [
+            {"run_id": "r1", "part": "brake_pedal", "web_type": "solid", "method": "calculix_ccx", "max_von_mises_mpa": 210.0, "safety_factor_vs_yield": 0.8, "ts": "2026-09-06T00:00:00Z"},
+            {"run_id": "r2", "part": "brake_pedal", "web_type": "xtruss", "method": "calculix_ccx", "max_von_mises_mpa": 24.6, "safety_factor_vs_yield": 11.2, "ts": "2026-09-06T00:01:00Z"},
+            {"run_id": "r3", "part": "brake_pedal", "web_type": "fcc", "method": "precomputed_demo_estimate", "max_von_mises_mpa": 24.6, "safety_factor_vs_yield": 11.2, "divergence_flag": True, "ts": "2026-09-06T00:02:00Z"},
+        ],
+    }
+    page.route("**/api/runs*", lambda route: route.fulfill(status=200, content_type="application/json", body=json.dumps(runs_payload)))
+    errors = _console_errors(page, test_server_url)
+
+    history = page.get_by_test_id("run-history")
+    expect(history).to_be_visible()
+    expect(history).not_to_contain_text("pass")
+    stamps = history.locator("span", has_text=re.compile(r"^(pass|caution|fail)$", re.I))
+    assert stamps.count() == 0
+    # SF 0.8 row colored as failure, both 11.2 rows as pass (divergence is an
+    # independent factual flag, not an SF override).
+    expect(history.locator(".text-fail")).to_have_count(1)
+    expect(history.locator(".text-pass")).to_have_count(2)
+    expect(history).to_contain_text("diverged")
+
+    assert len(errors) == 0
+
+
+def test_console_sources_and_technical_details(page: Page, test_server_url: str):
+    """ADR-017: sources stay visible and compact; raw payloads, rankings and
+    excerpts collapse under Technical details; friendly names on cards keep
+    raw names inspectable."""
+    errors = _console_errors(page, test_server_url)
+    _mock_stream_by_keyword(
+        page,
+        {
+            "cited case": {
+                "type": "final",
+                "answer": "Al 6061-T6 yields at 276 MPa.",
+                "thread_id": "t",
+                "grounding": "strong",
+                "citations": [
+                    {"source": "docs/reference/materials.md", "text": "Al 6061-T6 yield 276 MPa density 2.70", "tfidf_rank": 1, "bm25_rank": 2, "score": 0.81},
+                    {"source": "docs/fea/calculix.md", "text": "Linear static workflow", "tfidf_rank": 3, "bm25_rank": 1, "score": 0.62},
+                ],
+                "tool_results": [
+                    {"name": "query_results", "result": {"ok": True, "method": "precomputed_demo_estimate", "fallback": True, "runs_found": 2}},
+                ],
+            },
+        },
+    )
+
+    _console_send(page, "cited case")
+    msg = page.get_by_test_id("msg-assistant").last
+    sources = msg.get_by_test_id("msg-sources")
+    expect(sources).to_be_visible()
+    expect(sources).to_contain_text("docs/reference/materials.md")
+    expect(sources).to_contain_text("docs/fea/calculix.md")
+
+    details = msg.get_by_test_id("technical-details")
+    expect(details).to_be_visible()
+    details.locator("summary").click()
+    # Raw tool name (not the friendly name) with the verbatim payload.
+    expect(msg.get_by_test_id("raw-payloads")).to_contain_text("query_results")
+    expect(msg.get_by_test_id("raw-payloads")).to_contain_text('"fallback": true')
+    expect(msg.get_by_test_id("retrieval-diagnostics")).to_contain_text("tfidf #1")
+    expect(msg.get_by_test_id("retrieval-diagnostics")).to_contain_text("cos 0.810")
+
+    # Report card header shows the friendly mapping, not the raw name.
+    card = msg.get_by_test_id("report-card").first
+    expect(card).to_contain_text("Run history query")
     assert len(errors) == 0
