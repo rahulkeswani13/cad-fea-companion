@@ -541,9 +541,9 @@ def test_console_prompt_library_renders(page: Page, test_server_url: str):
     errors = _console_errors(page, test_server_url)
     library = page.get_by_test_id("prompt-library")
     expect(library).to_be_visible()
-    # Seeded library: Grounded Q&A + CAD Builds at minimum, with real items.
-    expect(library).to_contain_text("Grounded Q&A", ignore_case=True)
-    expect(library).to_contain_text("CAD Builds", ignore_case=True)
+    # Task-oriented groups (ADR-017 PR 2); validation group present but collapsed.
+    expect(library).to_contain_text("Create a part", ignore_case=True)
+    expect(library).to_contain_text("Run analysis", ignore_case=True)
     assert len(errors) == 0
 
 
@@ -552,7 +552,7 @@ def test_console_dropdown_inserts_prompt(page: Page, test_server_url: str):
     page.get_by_test_id("prompts-button").click()
     menu = page.get_by_test_id("prompt-menu")
     expect(menu).to_be_visible()
-    expect(menu).to_contain_text("Grounded Q&A", ignore_case=True)
+    expect(menu).to_contain_text("Engineering help", ignore_case=True)
     menu.get_by_role("button").filter(has_text="Al 6061-T6 yield strength").first.click()
     value = page.get_by_test_id("composer-input").input_value()
     assert "yield strength" in value.lower()
@@ -560,27 +560,88 @@ def test_console_dropdown_inserts_prompt(page: Page, test_server_url: str):
 
 
 def test_console_palette_sends_prompt(page: Page, test_server_url: str):
+    """ADR-017 PR 2: palette Enter fills the composer — the send shortcut
+    is retired (only Send executes)."""
     errors = _console_errors(page, test_server_url)
     page.keyboard.press("ControlOrMeta+k")
     palette = page.get_by_test_id("command-palette")
     expect(palette).to_be_visible()
     palette.get_by_role("textbox").fill("convergence")
     page.keyboard.press("Enter")
-    expect(page.get_by_test_id("msg-user").last).to_contain_text("convergence")
+    value = page.get_by_test_id("composer-input").input_value()
+    assert "convergence" in value.lower()
+    assert page.get_by_test_id("msg-user").count() == 0
     assert len(errors) == 0
 
 
 def test_console_walkthrough_run_step(page: Page, test_server_url: str):
+    """ADR-017 PR 2: guided journeys replace feature tours — manual
+    navigation (Previous/Next), explicit step position, and Use prompt
+    fills the composer without sending."""
     errors = _console_errors(page, test_server_url)
-    page.get_by_test_id("walkthrough-list").get_by_role("button").filter(
-        has_text="Tool outcome envelope"
+    page.get_by_test_id("journey-list").get_by_role("button").filter(
+        has_text="UAV arm design iteration"
     ).first.click()
-    step = page.get_by_test_id("walkthrough-step").first
-    expect(step).to_be_visible()
-    expect(step).to_contain_text("step 1", ignore_case=True)
-    assert step.locator("li").count() >= 1  # talking points render
-    step.get_by_role("button", name="Run step").click()
-    expect(page.get_by_test_id("msg-user").last).to_contain_text("receipt")
+    detail = page.get_by_test_id("journey-detail")
+    expect(detail).to_be_visible()
+    expect(detail).to_contain_text("step 1 of 5")
+    expect(detail).to_contain_text("prerequisites", ignore_case=True)
+
+    prev = page.get_by_test_id("journey-prev")
+    nxt = page.get_by_test_id("journey-next")
+    expect(prev).to_be_disabled()
+    nxt.click()
+    expect(detail).to_contain_text("step 2 of 5")
+    nxt.click()
+    expect(detail).to_contain_text("step 3 of 5")
+    prev.click()
+    expect(detail).to_contain_text("step 2 of 5")
+
+    # Use prompt fills the composer; nothing executes.
+    page.get_by_test_id("journey-detail").get_by_role("button", name="Use prompt").click()
+    value = page.get_by_test_id("composer-input").input_value()
+    assert "UAV" in value or "uav" in value
+    assert page.get_by_test_id("msg-user").count() == 0
+    assert len(errors) == 0
+
+
+def test_console_every_entry_fills_not_sends(page: Page, test_server_url: str):
+    """ADR-017 PR 2: sidebar, palette Enter, and starters all fill the
+    composer; only Send executes."""
+    errors = _console_errors(page, test_server_url)
+
+    # Sidebar library item → fills.
+    page.get_by_test_id("prompt-library").get_by_role("button").filter(
+        has_text="Al 6061-T6 yield strength"
+    ).first.click()
+    value = page.get_by_test_id("composer-input").input_value()
+    assert "yield strength" in value.lower()
+    assert page.get_by_test_id("msg-user").count() == 0
+
+    # Palette Enter → fills (the send shortcut is retired).
+    page.keyboard.press("ControlOrMeta+k")
+    palette = page.get_by_test_id("command-palette")
+    expect(palette).to_be_visible()
+    palette.get_by_role("textbox").fill("convergence")
+    page.keyboard.press("Enter")
+    value = page.get_by_test_id("composer-input").input_value()
+    assert "convergence" in value.lower()
+    assert page.get_by_test_id("msg-user").count() == 0
+
+    # Composer keeps the filled text for inspection and editing.
+    assert page.get_by_test_id("command-palette").count() == 0
+
+    assert len(errors) == 0
+
+
+def test_console_starters_fill_composer(page: Page, test_server_url: str):
+    errors = _console_errors(page, test_server_url)
+    starters = page.get_by_test_id("starters")
+    expect(starters).to_be_visible()
+    starters.get_by_role("button", name="Create a brake pedal").click()
+    value = page.get_by_test_id("composer-input").input_value()
+    assert "brake pedal" in value.lower()
+    assert page.get_by_test_id("msg-user").count() == 0
     assert len(errors) == 0
 
 

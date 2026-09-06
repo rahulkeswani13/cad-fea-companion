@@ -34,9 +34,9 @@ export function CommandPalette({
     el?.scrollIntoView({ block: "nearest" });
   }, [cursor]);
 
-  function pickCurrent(send: boolean) {
+  function pickCurrent() {
     const item = flat[cursor];
-    if (item) onPick(item, { send });
+    if (item) onPick(item, { send: false });
   }
 
   function onKeyDown(e: React.KeyboardEvent) {
@@ -51,7 +51,7 @@ export function CommandPalette({
       setCursor((c) => Math.max(c - 1, 0));
     } else if (e.key === "Enter") {
       e.preventDefault();
-      pickCurrent(true);
+      pickCurrent();
     }
   }
 
@@ -74,7 +74,7 @@ export function CommandPalette({
             ref={inputRef}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search prompts — Enter sends, click inserts…"
+            placeholder="Search prompts — Enter or click fills the composer…"
             className="w-full bg-transparent text-[13px] text-ink outline-none placeholder:text-ink-faint"
           />
         </div>
@@ -124,8 +124,8 @@ export function CommandPalette({
         </div>
         <div className="flex items-center gap-4 border-t border-line px-3 py-1.5 font-mono text-[10px] text-ink-faint">
           <span>↑↓ navigate</span>
-          <span>↵ send now</span>
-          <span>click inserts</span>
+          <span>↵ fills composer</span>
+          <span>click fills composer</span>
           <span className="ml-auto">esc closes</span>
         </div>
       </div>
