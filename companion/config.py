@@ -46,11 +46,11 @@ class Settings(BaseSettings):
 
     docs_dir: Path = Field(default_factory=lambda: ROOT / "docs")
 
-    # ADR-014: curated RAG corpus — allowlist ingestion. Only files under the
+    # ADR-018: curated RAG corpus — allowlist ingestion. Only files under the
     # declared dirs (relative to ROOT) are ingested; everything else fails
-    # closed. Comma-separated in env: RAG_CORPUS_DIRS=docs/reference,docs/adr
+    # closed. Comma-separated in env: RAG_CORPUS_DIRS=docs/reference
     rag_corpus_dirs: list[str] = Field(
-        default_factory=lambda: ["docs/reference", "docs/adr"]
+        default_factory=lambda: ["docs/reference"]
     )
     data_dir: Path = Field(default_factory=lambda: ROOT / "data")
     workspace_dir: Path = Field(default_factory=lambda: ROOT / "data" / "workspace")
