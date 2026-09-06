@@ -394,7 +394,7 @@ def ingest_docs(
             candidate.save()
             _STORE = candidate
             return {**report, "reused": False}
-        except (OSError, ValueError, TypeError, KeyError) as exc:
+        except Exception as exc:  # noqa: BLE001 — rebuild boundary preserves accepted index
             return {
                 "ok": False, "error": "RAG index rebuild failed; accepted index retained.",
                 "correction": "Check the corpus manifest and readable reference files, then rebuild.",

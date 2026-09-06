@@ -116,3 +116,16 @@ def test_metadata_edit_changes_fingerprint():
     one = [{'path': 'a', 'chunks': 1, 'content_sha256': 'abc', 'metadata': {'version': '1'}}]
     two = [{**one[0], 'metadata': {'version': '2'}}]
     assert rag.corpus_fingerprint(one) != rag.corpus_fingerprint(two)
+
+
+def test_runtime_build_error_is_a_compact_failure(isolated_index, monkeypatch):
+    assert rag.ingest_docs([isolated_index])['ok']
+    accepted = rag.get_store()
+    def failed(self, *args, **kwargs):
+        raise RuntimeError('dependency-specific failure with private diagnostic')
+    monkeypatch.setattr(rag.LocalTfidfStore, 'build', failed)
+    result = rag.ingest_docs([isolated_index])
+    assert result['ok'] is False
+    assert result['reason'] == 'RuntimeError'
+    assert 'private diagnostic' not in str(result)
+    assert rag.get_store() is accepted
