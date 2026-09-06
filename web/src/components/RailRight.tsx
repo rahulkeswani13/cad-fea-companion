@@ -1,6 +1,12 @@
-import type { DesignProgram, RunRow, RunsPayload, SolverStatus } from "../lib/types";
-import { fmtNum } from "../lib/format";
+import type { DesignProgram, RunsPayload, SolverStatus } from "../lib/types";
+import { fmtNum, sfTone, type Tone } from "../lib/format";
 import { SectionLabel, Stamp, Switch } from "./primitives";
+
+const TONE_CLASS: Record<Tone, string> = {
+  pass: "text-pass",
+  caution: "text-caution",
+  fail: "text-fail",
+};
 
 /** 03 design program — the persisted parametric source of truth (F04). */
 export function DesignProgramCard({ program }: { program: DesignProgram | null }) {
@@ -39,15 +45,9 @@ export function DesignProgramCard({ program }: { program: DesignProgram | null }
   );
 }
 
-function RunStamp({ run }: { run: RunRow }) {
-  const sf = Number(run.safety_factor_vs_yield ?? NaN);
-  if (run.divergence_flag) return <Stamp kind="caution" label="diverged" />;
-  if (Number.isFinite(sf) && sf < 1) return <Stamp kind="fail" label="fail" />;
-  if (Number.isFinite(sf) && sf < 1.5) return <Stamp kind="caution" label="caution" />;
-  return <Stamp kind="pass" label="pass" />;
-}
-
-/** 04 run history — per-run solve records (F06), latest first. */
+/** 04 run history — per-run solve records (F06), latest first. Verdict
+ *  stamps are gone (ADR-017): the SF number carries the engineering
+ *  verdict via threshold colors; only factual flags render as stamps. */
 export function RunHistoryCard({ runs }: { runs: RunsPayload | null }) {
   const rows = runs?.runs ?? [];
   return (
@@ -69,32 +69,37 @@ export function RunHistoryCard({ runs }: { runs: RunsPayload | null }) {
             <span>run</span>
             <span className="text-right">σ MPa</span>
             <span className="text-right">SF</span>
-            <span className="text-right">state</span>
+            <span className="text-right">flag</span>
           </div>
-          {rows.slice(0, 8).map((run) => (
-            <div
-              key={run.run_id ?? run.ts}
-              className="grid grid-cols-[1fr_auto_auto_auto] items-baseline gap-x-3 border-b border-line/60 py-1.5 last:border-b-0"
-            >
-              <span className="min-w-0">
-                <span className="block truncate font-mono text-[11px] text-ink">
-                  {run.web_type ?? run.part ?? "run"}
+          {rows.slice(0, 8).map((run) => {
+            const tone = sfTone(run.safety_factor_vs_yield);
+            return (
+              <div
+                key={run.run_id ?? run.ts}
+                className="grid grid-cols-[1fr_auto_auto_auto] items-baseline gap-x-3 border-b border-line/60 py-1.5 last:border-b-0"
+              >
+                <span className="min-w-0">
+                  <span className="block truncate font-mono text-[11px] text-ink">
+                    {run.web_type ?? run.part ?? "run"}
+                  </span>
+                  <span className="block truncate font-mono text-[9.5px] text-ink-faint">
+                    {run.ts ?? run.run_id} {run.method ? `· ${run.method}` : ""}
+                  </span>
                 </span>
-                <span className="block truncate font-mono text-[9.5px] text-ink-faint">
-                  {run.ts ?? run.run_id} {run.method ? `· ${run.method}` : ""}
+                <span className="text-right font-mono text-[11px] text-ink">
+                  {fmtNum(run.max_von_mises_mpa, 1) ?? "—"}
                 </span>
-              </span>
-              <span className="text-right font-mono text-[11px] text-ink">
-                {fmtNum(run.max_von_mises_mpa, 1) ?? "—"}
-              </span>
-              <span className="text-right font-mono text-[11px] text-ink">
-                {fmtNum(run.safety_factor_vs_yield, 2) ?? "—"}
-              </span>
-              <span className="text-right">
-                <RunStamp run={run} />
-              </span>
-            </div>
-          ))}
+                <span
+                  className={`text-right font-mono text-[11px] ${tone ? TONE_CLASS[tone] : "text-ink"}`}
+                >
+                  {fmtNum(run.safety_factor_vs_yield, 2) ?? "—"}
+                </span>
+                <span className="text-right">
+                  {run.divergence_flag ? <Stamp kind="caution" label="diverged" /> : null}
+                </span>
+              </div>
+            );
+          })}
         </div>
       )}
     </section>

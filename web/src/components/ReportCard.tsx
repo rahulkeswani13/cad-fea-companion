@@ -1,15 +1,22 @@
-import { caveatLines, deriveStamp, kpiRows } from "../lib/format";
+import { caveatLines, friendlyToolName, kpiRows, type Tone } from "../lib/format";
 import type { ToolResult } from "../lib/types";
 import { Stamp } from "./primitives";
 
+const TONE_CLASS: Record<Tone, string> = {
+  pass: "text-pass",
+  caution: "text-caution",
+  fail: "text-fail",
+};
+
 /**
  * The signature detail (ADR-015): every tool result renders as a test-report
- * card — tool name, semantic stamp, KPI rows, honest caveats. FEA solves get
- * the solver-honesty treatment: method, mesh, divergence, NOT VERIFIED.
+ * card. ADR-017 honesty pass: the header stamp is the *execution outcome*
+ * only (Completed / Failed) — engineering verdicts live in the numbers
+ * (SF colored by threshold) and the origin stamp states how the result was
+ * produced (ESTIMATE / REFERENCE / FALLBACK), never conflated with success.
  */
 export function ReportCard({ tr }: { tr: ToolResult }) {
   const r = tr.result ?? {};
-  const stamp = deriveStamp(r);
   const failed = r.ok === false;
   const rows = kpiRows(r);
   const caveats = caveatLines(r);
@@ -19,17 +26,15 @@ export function ReportCard({ tr }: { tr: ToolResult }) {
   return (
     <div className="stamp-in overflow-hidden rounded-[4px] border border-line bg-panel" data-testid="report-card">
       <div className="flex items-center gap-2 border-b border-line bg-raised/60 px-3 py-1.5">
-        <span className="font-mono text-[11px] font-semibold tracking-[0.06em] text-ink">
-          {tr.name}
+        <span className="font-mono text-[11px] font-semibold tracking-[0.06em] text-ink" title={tr.name}>
+          {friendlyToolName(tr.name)}
         </span>
-        <span className="ml-auto">
-          {stamp && (
-            <Stamp
-              kind={stamp}
-              label={stamp === "pass" ? "PASS" : stamp === "caution" ? "CAUTION" : "FAIL"}
-            />
+        <span className="ml-auto" data-testid="exec-status">
+          {failed ? (
+            <Stamp kind="fail" label="Failed" />
+          ) : (
+            <Stamp kind="neutral" label="Completed" />
           )}
-          {!stamp && !failed && <Stamp kind="neutral" label="OK" />}
         </span>
       </div>
 
@@ -54,7 +59,19 @@ export function ReportCard({ tr }: { tr: ToolResult }) {
               <dt className="font-mono text-[10.5px] tracking-[0.08em] text-ink-faint uppercase">
                 {row.label}
               </dt>
-              <dd className="text-right font-mono text-[12px] text-ink">{row.value}</dd>
+              <dd
+                className={`text-right font-mono text-[12px] ${row.tone ? TONE_CLASS[row.tone] : "text-ink"}`}
+              >
+                {row.stamp && (
+                  <span className="mr-1.5 inline-flex translate-y-px">
+                    <Stamp
+                      kind={row.stamp === "reference" ? "neutral" : "caution"}
+                      label={row.stamp.toUpperCase()}
+                    />
+                  </span>
+                )}
+                {row.value}
+              </dd>
             </div>
           ))}
         </dl>
