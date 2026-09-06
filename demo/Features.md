@@ -1366,3 +1366,86 @@ tool names are plain language with raw names preserved there too."
 - *Does labeling fix provenance?* No — this is presentation. A clearer
   FALLBACK badge doesn't validate a saved result against changed geometry;
   backend provenance stays as recorded (per-run `method` + `fallback`).
+
+## F32 — Console demo flow: guided journeys + task-oriented library (ADR-017, PR 2/4)
+
+**Pitch:** The console's left rail sold the architecture, not the product:
+library groups were named after internal taxonomy and every walkthrough was
+an engineering tour (F02, F03, ADR-014…). Now the rail opens with three
+**customer journeys** — UAV arm design iteration, cantilever analysis
+checks, brake pedal material comparison — the library is grouped by what a
+user *wants to do* (Create a part / Run analysis / Compare options / Edit a
+design / Inspect results / Engineering help, plus a collapsed **Try
+validation errors** group), and **every entry point fills the composer;
+only Send executes**. No more misclick-fires-a-solve.
+
+**Script (~90 sec):** "Two demo-safety decisions here. First, selection is
+never execution: picking a library prompt, pressing Enter in the palette,
+or clicking a welcome starter fills the composer for inspection — the only
+thing that runs is Send. The palette used to send on Enter; that shortcut
+is retired because the cost of a wrong send is a FreeCAD solve mid-demo.
+Second, journeys replace feature tours. Journeys are defined in frontend
+configuration and *reference canonical library prompts by id* — the
+executable text stays single-sourced in `data/prompts.json` per ADR-015,
+so a journey can't drift from the library it demos. Each journey shows its
+purpose, prerequisites, and explicit step position — 'step 2 of 5' — with
+Previous/Next and Use prompt. Navigation is manual: the console never
+claims a step completed, because claiming it would require verifying it,
+which is the backend's job, not the UI's. The technical feature tours
+survive in `demo/Features.md` and in the served `features` data — they're
+interview material, not the landing surface."
+
+**Customer journey scripts:**
+
+1. **UAV arm design iteration** (5 steps) — *create solid → solve 120 N →
+   switch to X-truss → re-solve → explain the differences.*
+   Talking points: flagship part family (F26); the re-solve shows variant
+   iteration without touching the accepted revision; the explain step makes
+   the agent compare mass, peak stress, and SF across variants and state
+   what it would not claim without a live solve.
+2. **Cantilever analysis checks** (4 steps) — *create benchmark → solve
+   +100 N → compare against beam theory → mesh sensitivity study.*
+   Talking points: the benchmark exists to be honest about accuracy
+   (F07 expected-vs-actual); the convergence study (F08) shows each step is
+   a real re-solve; final claims cite the asymptotic delta.
+3. **Brake pedal material comparison** (5 steps) — *create → solve +500 N →
+   compare Ti vs Al → change material → re-solve.*
+   Talking points: materials are program parameters with cited properties
+   (F09); the compare step scales from one base solve; the commit step
+   bumps the design-program revision.
+
+**Tests/evals:**
+- `tests/test_console_api.py` — library shape/unique-id checks still pass
+  with the regrouped categories and four new items (`solve-cantilever`,
+  `qa-material-guidance`, `err-solve-empty`, `err-unknown-material`);
+  the `features` array is preserved untouched (wire shape stable).
+- Browser checks — journey navigation (Previous/Next, step position,
+  prerequisites) with Use prompt *filling* the composer; sidebar, palette
+  Enter, and starters all fill without sending (`msg-user` count stays 0);
+  library renders the new task-oriented groups.
+- `eval/cases.json` — `tool_reject_unknown_material` (create with
+  `unobtainium-42` → `bad_params` + correction naming valid ids); the
+  RAG-side refusal (`agent_refuse_unknown_alloy`) already existed.
+
+**Demo prompts:**
+1. Welcome screen → click **Create a UAV arm** → composer fills → inspect →
+   Send.
+2. Open the UAV journey → walk Previous/Next → Use prompt on step 3
+   (X-truss switch) → Send.
+3. Library → **Try validation errors** (collapsed by default) → expand →
+   "Solve before creating a part" → the no-geometry envelope lands with one
+   correction.
+4. ⌘K → type "convergence" → Enter → composer fills, nothing runs.
+
+**Likely interview questions:**
+- *Why fill-instead-of-send everywhere?* Asymmetric cost: filling costs one
+  extra keypress; sending costs a FreeCAD solve you didn't want on a
+  projector. Demo safety is a UI contract, not operator discipline.
+- *Why are journeys in frontend config while prompts stay served?* Journeys
+  are UI orchestration (which step next, prerequisites copy); prompts are
+  executable contracts. Journeys reference prompt ids so the executable
+  text stays single-sourced — ADR-015's rule, applied to journeys.
+- *Why keep the internal feature walkthroughs out of the UI?* They answer
+  "how is it built" — great for engineering interviews, noise for a
+  customer. They live in `demo/Features.md` and the served `features` data;
+  the UI surfaces the customer story.

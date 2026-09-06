@@ -79,7 +79,42 @@ this file:
 
 ## Decisions — PR 2: prompts, journeys, starters
 
-*(recorded when PR 2 merges)*
+1. **Task-oriented library groups** in `data/prompts.json` (version 1.1):
+   Create a part / Run analysis / Compare options / Edit a design /
+   Inspect results / Engineering help, plus **Try validation errors**
+   (collapsed by default in the UI) holding `diag-guardrail` and two new
+   validation prompts (`err-solve-empty` — no-geometry solve, `err-unknown-material`
+   — unknown material). Existing item ids are preserved; four items added
+   (`solve-cantilever`, `qa-material-guidance`, the two validation
+   prompts). Operation coverage is unchanged.
+2. **Selection never executes**: every entry point — sidebar, ⌘K palette
+   (Enter included), composer dropdown, journeys, starters — fills the
+   composer for inspection and editing; only **Send** runs. The palette's
+   Enter-to-send shortcut is retired (demo safety: a wrong send costs a
+   FreeCAD solve).
+3. **Three guided journeys** replace the internal feature tours as the
+   visible walkthroughs: UAV arm design iteration (5 steps), cantilever
+   analysis checks (4), brake pedal material comparison (5). Journeys live
+   in **frontend configuration** (`web/src/lib/journeys.ts`) and reference
+   canonical library prompt ids; conversational steps may carry inline
+   text. The prompt API and `features` wire shape are preserved untouched —
+   the technical walkthroughs stay served in `features` and documented in
+   `demo/Features.md`; the UI does not render them.
+4. **Journey presentation**: purpose, prerequisites, explicit step position
+   ("step k of n"), Previous/Next, **Use prompt** (fills). Navigation is
+   manual — the console never claims a step completed.
+5. **Four welcome starters** on the empty state, referencing library items:
+   Create a UAV arm, Create a brake pedal, Create a cantilever beam,
+   Ask about materials (→ `qa-material-guidance`). Fill-only.
+6. **Eval**: `tool_reject_unknown_material` (create with an unknown
+   material → `bad_params` + correction naming valid ids). The RAG-side
+   refusal case already existed.
+
+### PR 2 verification
+
+- Browser tests: journey navigation + Use-prompt-fills; sidebar/palette/
+  starters fill without sending (`msg-user` count stays 0); new group
+  titles render; prompts shape/unique-id API tests unchanged and green.
 
 ## Decisions — PR 3: session semantics
 

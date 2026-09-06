@@ -31,6 +31,7 @@ import { Composer } from "./components/Composer";
 import { CommandPalette } from "./components/CommandPalette";
 import { Btn, RailHandle, Stamp } from "./components/primitives";
 import type { PickOptions } from "./components/PromptMenu";
+import { JOURNEYS, STARTERS, resolveStarterPrompt } from "./lib/journeys";
 
 const THREAD_KEY = "cad_fea_thread_id";
 
@@ -122,7 +123,7 @@ export default function App() {
   const [busy, setBusy] = useState(false);
   const [interrupt, setInterrupt] = useState<InterruptState | null>(null);
   const [paletteOpen, setPaletteOpen] = useState(false);
-  const [activeFeature, setActiveFeature] = useState<string | null>(null);
+  const [activeJourney, setActiveJourney] = useState<string | null>(null);
   const [leftOpen, setLeftOpen] = useState(true);
   const [rightOpen, setRightOpen] = useState(true);
   const [theme, setTheme] = useState<"dark" | "light">(() =>
@@ -303,15 +304,14 @@ export default function App() {
   );
 
   const onPick = useCallback(
-    (item: PromptItem, opts: PickOptions) => {
-      if (opts.send) {
-        send(item.prompt);
-      } else {
-        setPaletteOpen(false);
-        setComposer(item.prompt);
-      }
+    (item: PromptItem, _opts: PickOptions) => {
+      // ADR-017: every selection fills the composer for inspection and
+      // editing — only Send executes. The palette's Enter-to-send shortcut
+      // is retired; opts.send is accepted but ignored.
+      setPaletteOpen(false);
+      setComposer(item.prompt);
     },
-    [send],
+    [],
   );
 
   function newSession() {
@@ -352,9 +352,13 @@ export default function App() {
             <div className="absolute inset-0 overflow-y-auto">
               <RailLeft
                 library={library}
-                onPick={(prompt) => send(prompt)}
-                activeFeature={activeFeature}
-                onSelectFeature={setActiveFeature}
+                onPick={(prompt) => {
+                  // Fill the composer — nothing runs until Send.
+                  setPaletteOpen(false);
+                  setComposer(prompt);
+                }}
+                activeJourney={activeJourney}
+                onSelectJourney={setActiveJourney}
               />
             </div>
             <RailHandle rail="left" edge="right" onDrag={leftRail.startDrag} onReset={leftRail.reset} />
@@ -372,11 +376,28 @@ export default function App() {
                   Parametric CAD, meshing and FEA solves.
                 </h2>
                 <p className="mt-3 max-w-[58ch] text-[13px] leading-relaxed text-ink-dim">
-                  Open the prompt palette{" "}
-                  <span className="font-mono text-[11.5px] text-accent">⌘K</span> for the scripted
-                  library, or pick a feature walkthrough in the left rail. FEA answers arrive as
-                  report cards stating method, mesh and what was not verified.
+                  Start with a prompt below, open the library{" "}
+                  <span className="font-mono text-[11.5px] text-accent">⌘K</span>, or pick a guided
+                  journey in the left rail. FEA answers arrive as report cards stating method, mesh
+                  and what was not verified.
                 </p>
+                <div className="mt-5 flex flex-wrap gap-2" data-testid="starters">
+                  {STARTERS.map((s) => {
+                    const prompt = resolveStarterPrompt(s.ref, library);
+                    return (
+                      <button
+                        key={s.ref}
+                        type="button"
+                        disabled={!prompt}
+                        title={prompt ?? "Library offline"}
+                        onClick={() => prompt && setComposer(prompt)}
+                        className="rounded-[2px] border border-line-strong px-2.5 py-1.5 font-mono text-[11px] tracking-[0.06em] text-ink-dim transition-colors duration-150 hover:border-accent hover:text-accent disabled:cursor-not-allowed disabled:opacity-40"
+                      >
+                        {s.label}
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
             ) : (
               <div className="mx-auto max-w-[860px] space-y-5 px-6 py-6">
@@ -418,7 +439,7 @@ export default function App() {
                 <span>enter sends · shift+enter newline</span>
                 <span>
                   {library
-                    ? `${library.categories.reduce((n, c) => n + c.items.length, 0)} library prompts · ${library.features.length} walkthroughs`
+                    ? `${library.categories.reduce((n, c) => n + c.items.length, 0)} library prompts · ${JOURNEYS.length} guided journeys`
                     : "library offline"}
                 </span>
               </div>
