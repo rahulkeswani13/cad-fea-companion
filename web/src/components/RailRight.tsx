@@ -1,5 +1,6 @@
-import type { DesignProgram, RunsPayload, SolverStatus } from "../lib/types";
+import type { DesignProgram, RunRow, RunsPayload, SolverStatus } from "../lib/types";
 import { fmtNum, sfTone, type Tone } from "../lib/format";
+import type { SessionRun } from "../lib/session";
 import { SectionLabel, Stamp, Switch } from "./primitives";
 
 const TONE_CLASS: Record<Tone, string> = {
@@ -8,12 +9,17 @@ const TONE_CLASS: Record<Tone, string> = {
   fail: "text-fail",
 };
 
-/** 03 design program — the persisted parametric source of truth (F04). */
+/** 03 saved workspace design — the persisted parametric source of truth
+ *  (F04). Global by design: the design program on disk is the accepted
+ *  revision, which may belong to another session (ADR-017 PR 3). */
 export function DesignProgramCard({ program }: { program: DesignProgram | null }) {
   const active = program?.part ?? program?.active_part ?? null;
   return (
     <section className="px-3 py-3" data-testid="design-program">
-      <SectionLabel index="03" title="Design program" />
+      <SectionLabel index="03" title="Saved workspace design" />
+      <p className="pb-1 font-mono text-[9.5px] leading-relaxed text-ink-faint">
+        Saved workspace state — may belong to another session.
+      </p>
       {active && program?.rev != null ? (
         <>
           <div className="flex items-baseline justify-between py-2">
@@ -45,80 +51,74 @@ export function DesignProgramCard({ program }: { program: DesignProgram | null }
   );
 }
 
-/** 04 run history — per-run solve records (F06), latest first. Verdict
- *  stamps are gone (ADR-017): the SF number carries the engineering
- *  verdict via threshold colors; only factual flags render as stamps. */
-export function RunHistoryCard({ runs }: { runs: RunsPayload | null }) {
-  const rows = runs?.runs ?? [];
+function RunGrid({ rows }: { rows: (RunRow | SessionRun)[] }) {
   return (
-    <section className="px-3 py-3" data-testid="run-history">
-      <SectionLabel
-        index="04"
-        title="Run history"
-        right={
-          runs?.part ? <span className="font-mono text-[10px] text-ink-faint">{runs.part}</span> : null
-        }
-      />
-      {rows.length === 0 ? (
-        <p className="pt-2 font-mono text-[11px] text-ink-faint">
-          {runs?.error ?? "No solves recorded yet."}
-        </p>
-      ) : (
-        <div className="pt-1">
-          <div className="grid grid-cols-[1fr_auto_auto_auto] gap-x-3 border-b border-line pb-1 font-mono text-[9.5px] tracking-[0.1em] text-ink-faint uppercase">
-            <span>run</span>
-            <span className="text-right">σ MPa</span>
-            <span className="text-right">SF</span>
-            <span className="text-right">flag</span>
+    <div className="pt-1">
+      <div className="grid grid-cols-[1fr_auto_auto_auto] gap-x-3 border-b border-line pb-1 font-mono text-[9.5px] tracking-[0.1em] text-ink-faint uppercase">
+        <span>run</span>
+        <span className="text-right">σ MPa</span>
+        <span className="text-right">SF</span>
+        <span className="text-right">flag</span>
+      </div>
+      {rows.map((run, idx) => {
+        const tone = sfTone(run.safety_factor_vs_yield);
+        const failed = (run as SessionRun).failed === true;
+        const unrecorded = (run as SessionRun).unrecorded === true;
+        return (
+          <div
+            key={run.run_id ?? `${run.ts ?? "run"}-${idx}`}
+            className="grid grid-cols-[1fr_auto_auto_auto] items-baseline gap-x-3 border-b border-line/60 py-1.5 last:border-b-0"
+          >
+            <span className="min-w-0">
+              <span className="block truncate font-mono text-[11px] text-ink">
+                {run.web_type ?? run.part ?? "run"}
+              </span>
+              <span className="block truncate font-mono text-[9.5px] text-ink-faint">
+                {run.ts ?? run.run_id ?? ""}
+                {run.method ? ` · ${run.method}` : ""}
+                {run.run_id && run.ts ? ` · id ${run.run_id}` : ""}
+              </span>
+            </span>
+            <span className="text-right font-mono text-[11px] text-ink">
+              {fmtNum(run.max_von_mises_mpa, 1) ?? "—"}
+            </span>
+            <span
+              className={`text-right font-mono text-[11px] ${tone ? TONE_CLASS[tone] : "text-ink"}`}
+            >
+              {fmtNum(run.safety_factor_vs_yield, 2) ?? "—"}
+            </span>
+            <span className="text-right">
+              {failed ? (
+                <Stamp kind="fail" label="failed" />
+              ) : run.divergence_flag ? (
+                <Stamp kind="caution" label="diverged" />
+              ) : unrecorded ? (
+                <Stamp kind="neutral" label="unrecorded" />
+              ) : null}
+            </span>
           </div>
-          {rows.slice(0, 8).map((run) => {
-            const tone = sfTone(run.safety_factor_vs_yield);
-            return (
-              <div
-                key={run.run_id ?? run.ts}
-                className="grid grid-cols-[1fr_auto_auto_auto] items-baseline gap-x-3 border-b border-line/60 py-1.5 last:border-b-0"
-              >
-                <span className="min-w-0">
-                  <span className="block truncate font-mono text-[11px] text-ink">
-                    {run.web_type ?? run.part ?? "run"}
-                  </span>
-                  <span className="block truncate font-mono text-[9.5px] text-ink-faint">
-                    {run.ts ?? run.run_id} {run.method ? `· ${run.method}` : ""}
-                  </span>
-                </span>
-                <span className="text-right font-mono text-[11px] text-ink">
-                  {fmtNum(run.max_von_mises_mpa, 1) ?? "—"}
-                </span>
-                <span
-                  className={`text-right font-mono text-[11px] ${tone ? TONE_CLASS[tone] : "text-ink"}`}
-                >
-                  {fmtNum(run.safety_factor_vs_yield, 2) ?? "—"}
-                </span>
-                <span className="text-right">
-                  {run.divergence_flag ? <Stamp kind="caution" label="diverged" /> : null}
-                </span>
-              </div>
-            );
-          })}
-        </div>
-      )}
-    </section>
+        );
+      })}
+    </div>
   );
 }
 
-function StatusRow({ label, ok, value }: { label: string; ok: boolean | null; value: string }) {
+/** 04 runs in this session — solve operations observed during this
+ *  frontend session only (ADR-017 PR 3): arrival order, run_id dedup,
+ *  convergence sub-runs included, failed mesh attempts visible. Historical
+ *  query results never become session runs. */
+export function SessionRunsCard({ sessionRuns }: { sessionRuns: SessionRun[] }) {
   return (
-    <div className="flex items-center justify-between py-1.5">
-      <span className="font-mono text-[10.5px] tracking-[0.1em] text-ink-faint uppercase">{label}</span>
-      <span className="flex items-center gap-1.5 font-mono text-[11px] text-ink">
-        {value}
-        <span
-          className={`inline-block h-1.5 w-1.5 rounded-full ${
-            ok == null ? "bg-ink-faint" : ok ? "bg-pass" : "bg-caution"
-          }`}
-        />
-      </span>
-    </div>
+    <section className="px-3 py-3" data-testid="session-runs">
+      <SectionLabel index="04" title="Runs in this session" />
+      {sessionRuns.length === 0 ? (
+        <p className="pt-2 font-mono text-[11px] text-ink-faint">
+          No solves yet in this session.
+        </p>
+      ) : (
+        <RunGrid rows={sessionRuns} />
+      )}
+    </section>
   );
 }
 
@@ -165,25 +165,63 @@ export function SolverStatusCard({
   );
 }
 
-/** Right rail composite: 03 design program · 04 run history · 05 solver status. */
+/** Right rail composite: saved workspace design · runs in this session (+ saved
+ *  disclosure) · solver status. */
 export function RailRight({
   program,
   runs,
   solver,
+  sessionRuns,
   onToggleConfirm,
 }: {
   program: DesignProgram | null;
   runs: RunsPayload | null;
   solver: SolverStatus | null;
+  sessionRuns: SessionRun[];
   onToggleConfirm?: (next: boolean) => void;
 }) {
+  const savedRows = runs?.runs ?? [];
   return (
     <div className="flex min-h-full flex-col">
       <DesignProgramCard program={program} />
       <div className="hairline-t" />
-      <RunHistoryCard runs={runs} />
+      <SessionRunsCard sessionRuns={sessionRuns} />
+      <div className="hairline-t" />
+      <section className="px-3 py-3" data-testid="run-history">
+        <details data-testid="saved-runs">
+          <summary className="cursor-pointer select-none font-mono text-[10.5px] tracking-[0.1em] text-ink-dim uppercase transition-colors duration-150 hover:text-ink">
+            Recent saved runs
+          </summary>
+          <div className="pt-2 font-mono text-[9.5px] text-ink-faint">
+            {runs?.part ? `part: ${runs.part}` : "no part selected"} · latest {Math.min(savedRows.length, 8)} records
+          </div>
+          {savedRows.length === 0 ? (
+            <p className="pt-2 font-mono text-[11px] text-ink-faint">
+              {runs?.error ?? "No saved runs returned."}
+            </p>
+          ) : (
+            <RunGrid rows={savedRows.slice(0, 8)} />
+          )}
+        </details>
+      </section>
       <div className="hairline-t" />
       <SolverStatusCard solver={solver} onToggleConfirm={onToggleConfirm} />
+    </div>
+  );
+}
+
+function StatusRow({ label, ok, value }: { label: string; ok: boolean | null; value: string }) {
+  return (
+    <div className="flex items-center justify-between py-1.5">
+      <span className="font-mono text-[10.5px] tracking-[0.1em] text-ink-faint uppercase">{label}</span>
+      <span className="flex items-center gap-1.5 font-mono text-[11px] text-ink">
+        {value}
+        <span
+          className={`inline-block h-1.5 w-1.5 rounded-full ${
+            ok == null ? "bg-ink-faint" : ok ? "bg-pass" : "bg-caution"
+          }`}
+        />
+      </span>
     </div>
   );
 }

@@ -908,3 +908,184 @@ def test_console_sources_and_technical_details(page: Page, test_server_url: str)
     card = msg.get_by_test_id("report-card").first
     expect(card).to_contain_text("Run history query")
     assert len(errors) == 0
+
+
+# =========================================================================
+# PART 5: React console session semantics (ADR-017 PR 3) — fresh-on-load,
+# runs in this session, saved-runs disclosure, busy protection, obsolete
+# responses, missing run ids, convergence sub-runs.
+# =========================================================================
+
+def test_console_session_runs_and_saved_history(page: Page, test_server_url: str):
+    """Clean launch shows an empty session rail while the saved disclosure
+    carries disk history; a solved run lands in the session; New session
+    clears it again."""
+    runs_payload = {
+        "part": "brake_pedal",
+        "runs": [
+            {"run_id": "old-1", "part": "brake_pedal", "web_type": "solid", "method": "calculix_ccx", "max_von_mises_mpa": 24.6, "safety_factor_vs_yield": 11.2, "ts": "2026-09-01T10:00:00Z"},
+            {"run_id": "old-2", "part": "brake_pedal", "web_type": "xtruss", "method": "calculix_ccx", "max_von_mises_mpa": 21.8, "safety_factor_vs_yield": 12.7, "ts": "2026-09-02T10:00:00Z"},
+        ],
+    }
+    page.route("**/api/runs*", lambda route: route.fulfill(status=200, content_type="application/json", body=json.dumps(runs_payload)))
+    page.route(
+        "**/api/chat/stream",
+        lambda route: route.fulfill(
+            status=200,
+            content_type="text/event-stream",
+            body=_sse_final(
+                _solve_fixture("calculix_ccx", None, run_id="s1", web_type="solid", max_von_mises_mpa=24.6, safety_factor_vs_yield=11.2)
+            ),
+        ),
+    )
+    errors = _console_errors(page, test_server_url)
+
+    session = page.get_by_test_id("session-runs")
+    expect(session).to_contain_text("No solves yet in this session")
+
+    saved = page.get_by_test_id("saved-runs")
+    saved.locator("summary").click()
+    expect(saved).to_contain_text("part: brake_pedal")
+    expect(saved).to_contain_text("old-1")
+    expect(saved).to_contain_text("old-2")
+
+    _console_send(page, "solve it")
+    expect(session).to_contain_text("id s1")
+
+    page.get_by_test_id("new-session").click()
+    expect(session).to_contain_text("No solves yet in this session")
+    assert page.get_by_test_id("composer-input").input_value() == ""
+    assert len(errors) == 0
+
+
+def test_console_busy_protections_and_obsolete_response(page: Page, test_server_url: str):
+    """New session is disabled while busy; a forced reset past the disabled
+    guard makes the in-flight response obsolete — it must not land. The hold
+    lives inside the page (patched fetch) so the Playwright driver never
+    blocks."""
+    page.add_init_script(
+        """
+        (() => {
+          const orig = window.fetch;
+          window.__holdNext = false;
+          window.fetch = async (url, opts) => {
+            const res = await orig(url, opts);
+            if (String(url).includes("/api/chat/stream") && window.__holdNext) {
+              window.__holdNext = false;
+              const text = await res.text();
+              return new Promise((resolve) => {
+                window.__resolveHeld = () =>
+                  resolve(new Response(text, { status: 200, headers: { "Content-Type": "text/event-stream" } }));
+              });
+            }
+            return res;
+          };
+        })();
+        """
+    )
+    stale_payload = _solve_fixture("calculix_ccx", None, run_id="stale-1", max_von_mises_mpa=1.0)
+    page.route(
+        "**/api/chat/stream",
+        lambda route: route.fulfill(status=200, content_type="text/event-stream", body=_sse_final(stale_payload)),
+    )
+    errors = _console_errors(page, test_server_url)
+
+    page.evaluate("() => { window.__holdNext = true; }")
+    _console_send(page, "slow solve")
+    new_btn = page.get_by_test_id("new-session")
+    expect(new_btn).to_be_disabled()
+    expect(page.get_by_test_id("busy-note")).to_contain_text("work continues")
+
+    # Force the reset past the disabled guard (the guard exists for races);
+    # the in-flight response now belongs to an obsolete session.
+    # Wait until the fetch hold has engaged before forcing the reset.
+    page.wait_for_function("() => typeof window.__resolveHeld === 'function'")
+    # Invoke the button's real handler directly — a disabled <button> never
+    # fires click events, but the guard must stay exercisable for races.
+    page.evaluate(
+        """
+        () => {
+          const btn = document.querySelector('[data-testid="new-session"]');
+          const key = Object.keys(btn).find((k) => k.startsWith("__reactProps$"));
+          btn[key].onClick();
+        }
+        """
+    )
+    page.evaluate("() => window.__resolveHeld()")
+    page.wait_for_timeout(300)
+    assert page.get_by_test_id("msg-user").count() == 0
+    assert page.get_by_test_id("msg-assistant").count() == 0
+    expect(page.get_by_test_id("session-runs")).to_contain_text("No solves yet in this session")
+
+    # The next send (current generation) lands normally.
+    _console_send(page, "fresh solve")
+    expect(page.get_by_test_id("msg-user").last).to_contain_text("fresh solve")
+    assert len(errors) == 0
+
+
+def test_console_solve_without_run_id_shows_unrecorded(page: Page, test_server_url: str):
+    """A solve whose history write degraded still displays its result with an
+    explicit unrecorded marker — no invented persisted identity."""
+    page.route(
+        "**/api/chat/stream",
+        lambda route: route.fulfill(
+            status=200,
+            content_type="text/event-stream",
+            body=_sse_final(
+                _solve_fixture(
+                    "calculix_ccx",
+                    None,
+                    max_von_mises_mpa=24.6,
+                    safety_factor_vs_yield=11.2,
+                    history_write_error="disk full",
+                )
+            ),
+        ),
+    )
+    errors = _console_errors(page, test_server_url)
+    _console_send(page, "solve without history")
+    session = page.get_by_test_id("session-runs")
+    expect(session).to_contain_text("24.6")
+    expect(session).to_contain_text("unrecorded")
+    assert len(errors) == 0
+
+
+def test_console_convergence_subruns_dedup_and_failures(page: Page, test_server_url: str):
+    """Convergence sub-runs become session rows in order; replayed run ids
+    deduplicate; failed mesh attempts show as failed."""
+    payload = {
+        "type": "final",
+        "answer": "Convergence study complete.",
+        "thread_id": "t",
+        "tool_results": [
+            {
+                "name": "run_convergence_study",
+                "result": {
+                    "ok": True,
+                    "method": "calculix_ccx",
+                    "run_id": "r10",
+                    "max_von_mises_mpa": 120.5,
+                    "safety_factor_vs_yield": 2.1,
+                    "runs": [
+                        {"run_id": "r10", "ok": True, "method": "calculix_ccx", "web_type": "cantilever", "max_von_mises_mpa": 118.0, "safety_factor_vs_yield": 2.2},
+                        {"run_id": "r11", "ok": True, "method": "calculix_ccx", "web_type": "cantilever", "max_von_mises_mpa": 120.5, "safety_factor_vs_yield": 2.1},
+                        {"ok": False, "error": "mesh generation failed at 1.2 mm", "web_type": "cantilever"},
+                    ],
+                },
+            }
+        ],
+    }
+    page.route(
+        "**/api/chat/stream",
+        lambda route: route.fulfill(status=200, content_type="text/event-stream", body=_sse_final(payload)),
+    )
+    errors = _console_errors(page, test_server_url)
+    _console_send(page, "run convergence")
+
+    session = page.get_by_test_id("session-runs")
+    # r10 appears once (deduplicated across base + sub-run), r11 once, and
+    # the failed mesh attempt is visible.
+    expect(session.get_by_text("id r10")).to_have_count(1)
+    expect(session.get_by_text("id r11")).to_have_count(1)
+    expect(session).to_contain_text("failed")
+    assert len(errors) == 0

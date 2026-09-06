@@ -1449,3 +1449,63 @@ interview material, not the landing surface."
   "how is it built" — great for engineering interviews, noise for a
   customer. They live in `demo/Features.md` and the served `features` data;
   the UI surfaces the customer story.
+
+## F33 — Console session semantics: runs in this session (ADR-017, PR 3/4)
+
+**Pitch:** The console's rails used to read global disk state, so a demo on
+a used machine opened with stale runs and someone else's design program
+presented as if the agent had just produced them. Now every page load
+starts a fresh conversation, the rail shows **Runs in this session** — only
+solves actually observed here — with the persisted audit trail one click
+away under **Recent saved runs**, and the design panel is honestly labeled
+**Saved workspace design (may belong to another session)**.
+
+**Script (~90 sec):** "Session honesty is about answering 'what did the
+agent just do?' — and its twin, 'what was already here?'. Three mechanisms.
+First, fresh-on-load: the stored thread id is never restored, so a reload
+is a new conversation — the server's checkpointed threads stay on disk,
+untouched. Second, the session rail is built only from solve operations
+observed in this session's tool results, in arrival order, deduplicated by
+run id — which matters because a convergence study replays its base run.
+Sub-runs show up, failed mesh attempts show up as failed, and a solve whose
+history write degraded still shows with an explicit *unrecorded* marker —
+we never invent a persisted identity. Historical query results stay in the
+conversation; they never become session runs — the agent *reading* history
+is not the agent *producing* one. Third, in-flight responses carry a
+frontend session generation: reset mid-flight and a stale response is
+dropped instead of landing in your fresh conversation. New session is
+disabled while busy, and the leave warning never claims cancellation — the
+browser owns that dialog; we just register the guard and explain in our own
+UI that work continues after leaving."
+
+**Tests/evals:**
+- Browser tests (deterministic fixtures): clean launch with disk history —
+  session rail empty, saved-runs disclosure populated; reset clears chat,
+  composer, journey progress, and session runs; busy state disables New
+  session and shows the leave note; a forced reset past the disabled guard
+  proves the in-flight response is ignored (no invented messages, no
+  phantom runs); solve without `run_id` renders `unrecorded`; convergence
+  sub-runs deduplicate by `run_id` with failed attempts visible.
+- **Eval delta: none** — frontend state only.
+
+**Demo prompts:**
+1. Load the console with history on disk → session rail says "No solves
+   yet"; expand **Recent saved runs** → the audit trail is there, labeled
+   with its part and run ids.
+2. Run a solve → the row lands in **Runs in this session** with its run id.
+3. Click **New session** → everything clears; the saved disclosure still
+   carries history.
+4. Point at the design panel → "Saved workspace design — may belong to
+   another session."
+
+**Likely interview questions:**
+- *Why not just filter the global history by time?* Time filters guess;
+  observation doesn't. A run belongs to this session when the frontend saw
+  the solve happen — attribution by evidence, not by timestamp heuristics.
+- *What if the SSE drops mid-solve?* The solve is still recorded server-side
+  and shows under Recent saved runs; the session rail only claims what it
+  observed — conservative by design.
+- *Why keep global history at all?* The audit trail is a feature (F06):
+  run history survives restarts and the agent can query it. Session
+  scoping fixes confusion ("what did the agent just do?") without killing
+  proof ("the system remembers everything").

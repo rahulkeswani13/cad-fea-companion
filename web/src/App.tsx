@@ -32,8 +32,7 @@ import { CommandPalette } from "./components/CommandPalette";
 import { Btn, RailHandle, Stamp } from "./components/primitives";
 import type { PickOptions } from "./components/PromptMenu";
 import { JOURNEYS, STARTERS, resolveStarterPrompt } from "./lib/journeys";
-
-const THREAD_KEY = "cad_fea_thread_id";
+import { extractSessionRuns, type SessionRun } from "./lib/session";
 
 /** Rail width with localStorage persistence, drag resize. Max is a live
  *  share of the viewport, capped so the chat column stays usable (the
@@ -87,12 +86,11 @@ function useRailWidth(
 }
 
 function getThreadId(): string {
-  let id = localStorage.getItem(THREAD_KEY);
-  if (!id) {
-    id = crypto.randomUUID();
-    localStorage.setItem(THREAD_KEY, id);
-  }
-  return id;
+  // ADR-017 PR 3: every full page load starts a fresh conversation — the
+  // stored thread id is never restored (stale key removed on boot; server
+  // thread checkpoints on disk stay untouched).
+  localStorage.removeItem("cad_fea_thread_id");
+  return crypto.randomUUID();
 }
 
 let nextMsgId = 1;
@@ -122,8 +120,13 @@ export default function App() {
   const [composer, setComposer] = useState("");
   const [busy, setBusy] = useState(false);
   const [interrupt, setInterrupt] = useState<InterruptState | null>(null);
+  const [sessionRuns, setSessionRuns] = useState<SessionRun[]>([]);
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [activeJourney, setActiveJourney] = useState<string | null>(null);
+  // Obsolete-response guard (ADR-017 PR 3): responses carrying a stale
+  // generation are dropped instead of landing in a newer conversation.
+  const sessionGen = useRef(1);
+  const seenRunIds = useRef(new Set<string>());
   const [leftOpen, setLeftOpen] = useState(true);
   const [rightOpen, setRightOpen] = useState(true);
   const [theme, setTheme] = useState<"dark" | "light">(() =>
@@ -216,9 +219,11 @@ export default function App() {
   }, [paletteOpen]);
 
   const applyFinal = useCallback(
-    (data: FinalPayload) => {
+    (data: FinalPayload, gen: number) => {
+      if (gen !== sessionGen.current) return; // obsolete session — ignored
       if (data.thread_id) {
-        localStorage.setItem(THREAD_KEY, data.thread_id);
+        // Adopt the server's thread id in memory only — never persisted
+        // across page loads (fresh conversation per load, ADR-017 PR 3).
         setThreadId(data.thread_id);
       }
       if (data.interrupted) {
@@ -237,6 +242,8 @@ export default function App() {
       } else {
         setMessages((m) => [...m, finalToMessage(data, Boolean(data.error))]);
       }
+      const newRuns = extractSessionRuns(data.tool_results, seenRunIds.current, new Date().toISOString());
+      if (newRuns.length > 0) setSessionRuns((prev) => [...prev, ...newRuns]);
       refreshStatus();
       refreshRails();
     },
@@ -247,6 +254,7 @@ export default function App() {
     async (raw: string) => {
       const message = raw.trim();
       if (!message || busy) return;
+      const gen = sessionGen.current;
       setBusy(true);
       setPaletteOpen(false);
       setComposer("");
@@ -261,12 +269,14 @@ export default function App() {
       try {
         const data = await streamChat(message, threadId, setStatus);
         setMessages((m) => m.filter((msg) => msg.id !== statusId));
-        applyFinal(data);
+        applyFinal(data, gen);
       } catch (err) {
-        setMessages((m) => [
-          ...m.filter((msg) => msg.id !== statusId),
-          { id: nextMsgId++, role: "assistant", text: `Request failed: ${err}` },
-        ]);
+        if (gen === sessionGen.current) {
+          setMessages((m) => [
+            ...m.filter((msg) => msg.id !== statusId),
+            { id: nextMsgId++, role: "assistant", text: `Request failed: ${err}` },
+          ]);
+        }
       } finally {
         setBusy(false);
       }
@@ -278,6 +288,7 @@ export default function App() {
     async (approved: boolean) => {
       setBusy(true);
       setInterrupt(null);
+      const gen = sessionGen.current;
       const statusId = nextMsgId++;
       setMessages((m) => [
         ...m,
@@ -290,12 +301,14 @@ export default function App() {
       try {
         const data = await resumeChat(threadId, approved);
         setMessages((m) => m.filter((msg) => msg.id !== statusId));
-        applyFinal(data as FinalPayload);
+        applyFinal(data as FinalPayload, gen);
       } catch (err) {
-        setMessages((m) => [
-          ...m.filter((msg) => msg.id !== statusId),
-          { id: nextMsgId++, role: "assistant", text: `Resume failed: ${err}` },
-        ]);
+        if (gen === sessionGen.current) {
+          setMessages((m) => [
+            ...m.filter((msg) => msg.id !== statusId),
+            { id: nextMsgId++, role: "assistant", text: `Resume failed: ${err}` },
+          ]);
+        }
       } finally {
         setBusy(false);
       }
@@ -315,14 +328,33 @@ export default function App() {
   );
 
   function newSession() {
-    const id = crypto.randomUUID();
-    localStorage.setItem(THREAD_KEY, id);
-    setThreadId(id);
+    // The user-facing guard is the disabled button (busy); the function
+    // stays callable for the race path — generation increment is what makes
+    // any in-flight response obsolete (ADR-017 PR 3).
+    sessionGen.current += 1;
+    seenRunIds.current = new Set();
+    setThreadId(crypto.randomUUID());
     setMessages([]);
+    setComposer("");
     setInterrupt(null);
+    setSessionRuns([]);
+    setActiveJourney(null);
     refreshStatus();
     refreshRails();
   }
+
+  // Browser leave warning while busy: the native dialog text is the
+  // browser's; we only register the guard. Work continues after leaving —
+  // never claim cancellation (ADR-017 PR 3).
+  useEffect(() => {
+    if (!busy) return;
+    const onLeave = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+      e.returnValue = "";
+    };
+    window.addEventListener("beforeunload", onLeave);
+    return () => window.removeEventListener("beforeunload", onLeave);
+  }, [busy]);
 
   const usage = health?.session_usage?.threads?.[threadId];
   const tokens = usage?.total_tokens ?? 0;
@@ -333,6 +365,7 @@ export default function App() {
         health={health}
         threadId={threadId}
         tokens={tokens}
+        busy={busy}
         leftOpen={leftOpen}
         rightOpen={rightOpen}
         theme={theme}
@@ -435,6 +468,12 @@ export default function App() {
                 library={library}
                 onPick={onPick}
               />
+              {busy && (
+                <div className="px-1 pb-1 font-mono text-[10px] text-caution" data-testid="busy-note">
+                  Agent working — you can leave; the work continues after you do. A reload starts a
+                  fresh conversation.
+                </div>
+              )}
               <div className="flex items-center justify-between px-1 pt-1.5 font-mono text-[10px] text-ink-faint">
                 <span>enter sends · shift+enter newline</span>
                 <span>
@@ -458,6 +497,7 @@ export default function App() {
                 program={program}
                 runs={runs}
                 solver={solver}
+                sessionRuns={sessionRuns}
                 onToggleConfirm={toggleToolConfirm}
               />
             </div>

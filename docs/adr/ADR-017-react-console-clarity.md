@@ -118,7 +118,48 @@ this file:
 
 ## Decisions — PR 3: session semantics
 
-*(recorded when PR 3 merges)*
+1. **Fresh conversation on every full page load**: the stored thread id is
+   never restored (the legacy `cad_fea_thread_id` key is removed on boot);
+   the server thread id returned in responses is adopted in memory only.
+   Theme and rail-width preferences still persist. Server-side thread
+   checkpoints on disk are untouched.
+2. **New session** clears chat, composer, interruptions, journey progress,
+   and session runs; the top-bar button is **disabled while busy**.
+3. **Leave warning while busy**: a `beforeunload` guard registers when a
+   request is in flight; the console explains in its own UI that work may
+   continue after leaving and never claims cancellation — the native
+   dialog wording belongs to the browser.
+4. **Obsolete-response guard**: each send/resume captures a frontend
+   session generation; a response belonging to an older generation is
+   dropped instead of landing in a newer conversation. The guard is
+   defense-in-depth behind the disabled button (the function is kept
+   callable for the race path; browser click suppression on disabled
+   buttons is not relied on).
+5. **Runs in this session**: the rail's run card lists only solve
+   operations observed during this frontend session — arrival order,
+   `run_id` deduplication (convergence replays the base run), convergence
+   sub-runs included, failed mesh attempts shown as `failed`. Results
+   returned by historical queries (`query_results`) never become session
+   runs. A solve whose recording degraded (no `run_id`) still displays
+   with an explicit **unrecorded** marker — no invented persisted identity.
+6. **Saved workspace design**: the global design panel is renamed and
+   carries a visible note that it may belong to another session — the
+   design program on disk is the accepted source of truth (AGENTS.md),
+   not the conversation's live state.
+7. **Recent saved runs**: a collapsed disclosure over the existing
+   `/api/runs` endpoint shows the selected part and the latest eight
+   records — the persistence/audit-trail story stays reachable without
+   polluting the session view.
+8. **Eval delta: none** — frontend state and presentation only; no agent
+   or tool semantics changed.
+
+### PR 3 verification
+
+- Browser tests: clean launch with disk history (session empty, disclosure
+  populated), reset clearing everything, busy-state protection (button
+  disabled, note visible) with a forced reset proving stale responses are
+  ignored, missing-`run_id` unrecorded marker, convergence sub-run dedup
+  with failed attempts.
 
 ## Decisions — PR 4: cleanup and documentation
 

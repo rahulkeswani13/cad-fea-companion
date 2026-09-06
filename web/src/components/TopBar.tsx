@@ -30,6 +30,7 @@ export function TopBar({
   health,
   threadId,
   tokens,
+  busy,
   leftOpen,
   rightOpen,
   theme,
@@ -42,6 +43,7 @@ export function TopBar({
   threadId: string;
   tokens: number;
   turns?: number;
+  busy?: boolean;
   leftOpen: boolean;
   rightOpen: boolean;
   theme: "dark" | "light";
@@ -99,7 +101,13 @@ export function TopBar({
         >
           {theme === "dark" ? <Sun /> : <Moon />}
         </IconBtn>
-        <Btn variant="outline" onClick={onNewSession} title="Reset thread and clear the log">
+        <Btn
+          variant="outline"
+          onClick={onNewSession}
+          disabled={busy}
+          testid="new-session"
+          title={busy ? "Disabled while the agent is working" : "Reset thread and clear the log"}
+        >
           <Plus size={12} /> Session
         </Btn>
       </div>
