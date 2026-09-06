@@ -734,7 +734,7 @@ def test_console_method_label_precedence(page: Page, test_server_url: str):
         page,
         {
             "live case": _solve_fixture("calculix_ccx", None, max_von_mises_mpa=120.0, safety_factor_vs_yield=2.3),
-            "saved case": _solve_fixture("precomputed_demo_estimate", True, max_von_mises_mpa=24.6, safety_factor_vs_yield=11.2),
+            "saved case": _solve_fixture("precomputed_demo_estimate", True, max_von_mises_mpa=24.6, safety_factor_vs_yield=11.2, note="Demo FEA estimate when live CalculiX is unavailable."),
             "unknown fallback case": _solve_fixture(None, True, max_von_mises_mpa=24.6),
             "override case": _solve_fixture("calculix_ccx", True, max_von_mises_mpa=24.6),
             "analytical case": _solve_fixture("analytical_euler_bernoulli", None, expected_vs_actual={"expected": 120.0, "actual": 120.0, "ratio": 1.0}),
@@ -752,6 +752,9 @@ def test_console_method_label_precedence(page: Page, test_server_url: str):
     _console_send(page, "saved case")
     expect(card).to_contain_text("Saved reference result")
     expect(card).to_contain_text("REFERENCE")
+    # The fallback note renders as an honest NOT VERIFIED caveat (ADR-017).
+    expect(card).to_contain_text("NOT VERIFIED")
+    expect(card).to_contain_text("Demo FEA estimate")
 
     _console_send(page, "unknown fallback case")
     expect(card).to_contain_text("Fallback result")

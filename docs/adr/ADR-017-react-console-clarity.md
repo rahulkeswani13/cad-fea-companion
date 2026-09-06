@@ -163,7 +163,30 @@ this file:
 
 ## Decisions — PR 4: cleanup and documentation
 
-*(recorded when PR 4 merges)*
+1. **Numbered section prefixes (01–05) and visible feature ids are
+   removed from the console UI**; headings are plain language
+   (Saved workspace design / Runs in this session / Recent saved runs /
+   Solver status / Guided journeys / Prompt library). Internal ids remain
+   in data files and test selectors.
+2. **TopBar keeps its thread/token display** (compact, demo-relevant);
+   raw payloads and diagnostics live under Technical details per PR 1.
+3. **Documentation**: `web/README.md` documents the demo contract
+   (fill-only selection, journeys, session semantics, gates);
+   `docs/PLAN.md` records the work as F31; `demo/Features.md` carries the
+   talking-script sections (F31–F34) alongside the preserved technical
+   feature walkthroughs.
+4. **Explicit caveat, stated twice on purpose**: clearer fallback labels
+   are presentation honesty only — they do **not** validate saved or
+   fallback results against changed geometry. A Saved reference result
+   replayed after parameters changed is still a saved result; check the
+   design-program revision before trusting it.
+5. **Classic console (`/`) and RAG Lab (`rag.html`) untouched**; verified
+   they do not consume `/api/prompts` — the regrouped `data/prompts.json`
+   categories affect the React console only.
+
+## Status
+
+Accepted and fully implemented across the four PRs (2026-09-06).
 
 ## Consequences
 

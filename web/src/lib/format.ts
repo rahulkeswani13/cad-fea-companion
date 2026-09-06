@@ -165,7 +165,9 @@ export function kpiRows(r: Record<string, unknown>): KpiRow[] {
   return rows;
 }
 
-/** Honest caveats surfaced on the report card (solver-honesty pattern). */
+/** Honest caveats surfaced on the report card (solver-honesty pattern).
+ *  `note` is included: fallback results carry their honesty caveat there
+ *  (e.g. "Coarse tets under-predict peak strut stress"). */
 export function caveatLines(r: Record<string, unknown>): string[] {
   const out: string[] = [];
   const push = (v: unknown) => {
@@ -174,6 +176,7 @@ export function caveatLines(r: Record<string, unknown>): string[] {
   if (Array.isArray(r.caveats)) r.caveats.forEach(push);
   if (Array.isArray(r.disclaimers)) r.disclaimers.forEach(push);
   if (typeof r.warning === "string") push(r.warning);
+  if (typeof r.note === "string") push(r.note);
   const eva = r.expected_vs_actual as Record<string, unknown> | null | undefined;
   if (eva && typeof eva === "object") {
     if (Array.isArray(eva.caveats)) eva.caveats.forEach(push);

@@ -5,13 +5,14 @@ export function SectionLabel({
   title,
   right,
 }: {
-  index: string;
+  /** Numbered prefixes are retired from visible navigation (ADR-017). */
+  index?: string;
   title: string;
   right?: ReactNode;
 }) {
   return (
     <div className="section-label hairline-b pb-2">
-      <span className="index">{index}</span>
+      {index != null && <span className="index">{index}</span>}
       <span className="truncate">{title}</span>
       {right != null && <span className="ml-auto normal-case tracking-normal">{right}</span>}
     </div>

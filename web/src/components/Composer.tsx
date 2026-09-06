@@ -56,10 +56,10 @@ export function Composer({
         rows={1}
         value={value}
         disabled={busy}
-        placeholder={busy ? "Agent working…" : "Ask about materials, or request CAD/FEA tools…"}
+        placeholder={busy ? "Agent working…" : "Ask about materials…"}
         onChange={(e) => onChange(e.target.value)}
         onKeyDown={onKeyDown}
-        className="max-h-40 min-h-[38px] flex-1 resize-none bg-transparent px-1 py-2 text-[13.5px] leading-relaxed text-ink outline-none placeholder:text-ink-faint"
+        className="composer-input max-h-40 min-h-[38px] flex-1 resize-none bg-transparent px-1 py-2 text-[13.5px] leading-relaxed text-ink outline-none placeholder:text-ink-faint"
       />
 
       <button
