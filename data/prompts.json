@@ -1,70 +1,214 @@
 {
-  "version": "1.1",
+  "version": "1.2",
   "categories": [
     {
       "id": "create",
       "title": "Create a part",
       "items": [
-        { "id": "cad-pedal-solid", "title": "Solid brake pedal + FEA", "prompt": "Create a solid aluminum brake pedal and solve the +500 N footpad load along +X. Open FreeCAD so I can see it.", "freecad": true, "cost": "solve" },
-        { "id": "cad-pedal-xtruss", "title": "X-truss pedal + FEA", "prompt": "Rebuild the brake pedal with a 2.5D X-truss lattice web (15 mm cells, 2.5 mm struts), same envelope, then solve and show stress in FreeCAD.", "freecad": true, "cost": "solve" },
-        { "id": "cad-cantilever", "title": "Benchmark cantilever beam", "prompt": "Create the benchmark cantilever beam (100 x 20 x 5 mm) in aluminum 6061-T6.", "freecad": true, "cost": "seconds" },
-        { "id": "cad-uav-solid", "title": "Solid UAV arm", "prompt": "Create the solid UAV arm in aluminum 6061-T6.", "freecad": true, "cost": "seconds" },
-        { "id": "cad-uav-xtruss", "title": "X-truss UAV arm", "prompt": "Create the UAV arm with the X-truss lattice web and 2.5 mm chord rails.", "freecad": true, "cost": "seconds" }
+        {
+          "id": "cad-pedal-solid",
+          "title": "Solid brake pedal",
+          "prompt": "Create a solid aluminum brake pedal and open FreeCAD so I can see it.",
+          "freecad": true,
+          "cost": "seconds"
+        },
+        {
+          "id": "cad-pedal-xtruss",
+          "title": "X-truss pedal",
+          "prompt": "Rebuild the brake pedal with a 2.5D X-truss lattice web (15 mm cells, 2.5 mm struts), same envelope, and show it in FreeCAD.",
+          "freecad": true,
+          "cost": "seconds"
+        },
+        {
+          "id": "cad-cantilever",
+          "title": "Benchmark cantilever beam",
+          "prompt": "Create the benchmark cantilever beam (100 x 20 x 5 mm) in aluminum 6061-T6.",
+          "freecad": true,
+          "cost": "seconds"
+        },
+        {
+          "id": "cad-uav-solid",
+          "title": "Solid UAV arm",
+          "prompt": "Create the solid UAV arm in aluminum 6061-T6.",
+          "freecad": true,
+          "cost": "seconds"
+        },
+        {
+          "id": "cad-uav-xtruss",
+          "title": "X-truss UAV arm",
+          "prompt": "Create the UAV arm with the X-truss lattice web and 2.5 mm chord rails.",
+          "freecad": true,
+          "cost": "seconds"
+        }
       ]
     },
     {
       "id": "run",
       "title": "Run analysis",
       "items": [
-        { "id": "solve-pedal-500n", "title": "Solve pedal +500 N", "prompt": "Solve the +500 N footpad load on the current brake pedal and report max stress and safety factor.", "freecad": true, "cost": "solve" },
-        { "id": "solve-uav-120n", "title": "Solve UAV arm 120 N thrust", "prompt": "Solve the 120 N tip thrust on the current UAV arm.", "freecad": true, "cost": "solve" },
-        { "id": "solve-cantilever", "title": "Solve cantilever +100 N", "prompt": "Solve the cantilever benchmark with a 100 N tip load and report max stress, safety factor, and the analytical reference.", "freecad": true, "cost": "solve" },
-        { "id": "solve-convergence", "title": "Mesh convergence study", "prompt": "Is the current mesh converged? Run a mesh convergence study on the cantilever.", "freecad": true, "cost": "solve" }
+        {
+          "id": "solve-pedal-500n",
+          "title": "Solve pedal +500 N",
+          "prompt": "Solve the +500 N footpad load on the current brake pedal and report max stress and safety factor.",
+          "freecad": true,
+          "cost": "solve"
+        },
+        {
+          "id": "solve-uav-120n",
+          "title": "Solve UAV arm 120 N thrust",
+          "prompt": "Solve the 120 N tip thrust on the current UAV arm.",
+          "freecad": true,
+          "cost": "solve"
+        },
+        {
+          "id": "solve-cantilever",
+          "title": "Solve cantilever +100 N",
+          "prompt": "Solve the cantilever benchmark with a 100 N tip load and report max stress, safety factor, and the analytical reference.",
+          "freecad": true,
+          "cost": "solve"
+        },
+        {
+          "id": "solve-convergence",
+          "title": "Mesh convergence study",
+          "prompt": "Is the current mesh converged? Run a mesh convergence study on the cantilever.",
+          "freecad": true,
+          "cost": "solve"
+        }
       ]
     },
     {
       "id": "compare",
       "title": "Compare options",
       "items": [
-        { "id": "var-compare-pedal", "title": "Compare pedal lattice variants", "prompt": "Compare solid, X-truss, and FCC brake-pedal variants — which is lightest with safety factor at least 1.5?", "freecad": false, "cost": "instant" },
-        { "id": "var-compare-materials", "title": "Ti vs Al comparison", "prompt": "Compare Ti-6Al-4V vs Al 6061-T6 for the current part, with citations.", "freecad": false, "cost": "instant" }
+        {
+          "id": "var-compare-pedal",
+          "title": "Compare pedal lattice variants",
+          "prompt": "Compare solid, X-truss, and FCC brake-pedal variants \u2014 which is lightest with safety factor at least 1.5?",
+          "freecad": false,
+          "cost": "instant"
+        },
+        {
+          "id": "var-compare-materials",
+          "title": "Ti vs Al comparison",
+          "prompt": "Compare Ti-6Al-4V vs Al 6061-T6 for the current part, with citations.",
+          "freecad": false,
+          "cost": "instant"
+        }
       ]
     },
     {
       "id": "edit",
       "title": "Edit a design",
       "items": [
-        { "id": "var-switch-ti", "title": "Switch to titanium + re-solve", "prompt": "Switch the pedal to titanium and re-solve the +500 N load.", "freecad": true, "cost": "solve" }
+        {
+          "id": "var-switch-ti",
+          "title": "Switch to titanium + re-solve",
+          "prompt": "Switch the pedal to titanium and re-solve the +500 N load.",
+          "freecad": true,
+          "cost": "solve"
+        }
       ]
     },
     {
       "id": "inspect",
       "title": "Inspect results",
       "items": [
-        { "id": "diag-hotspot", "title": "Where is the stress?", "prompt": "Where is the stress concentrated in the brake pedal right now?", "freecad": false, "cost": "instant" },
-        { "id": "diag-history", "title": "Recent run history", "prompt": "Show the recent run history for the brake pedal.", "freecad": false, "cost": "instant" },
-        { "id": "diag-program", "title": "Read the design program", "prompt": "Read the design program for the current part — parameters and revision.", "freecad": false, "cost": "instant" },
-        { "id": "gui-open", "title": "Open latest model", "prompt": "Open the latest model in FreeCAD.", "freecad": true, "cost": "seconds" }
+        {
+          "id": "diag-hotspot",
+          "title": "Where is the stress?",
+          "prompt": "Where is the stress concentrated in the brake pedal right now?",
+          "freecad": false,
+          "cost": "instant"
+        },
+        {
+          "id": "diag-history",
+          "title": "Recent run history",
+          "prompt": "Show the recent run history for the brake pedal.",
+          "freecad": false,
+          "cost": "instant"
+        },
+        {
+          "id": "diag-program",
+          "title": "Read the design program",
+          "prompt": "Read the design program for the current part \u2014 parameters and revision.",
+          "freecad": false,
+          "cost": "instant"
+        },
+        {
+          "id": "gui-open",
+          "title": "Open latest model",
+          "prompt": "Open the latest model in FreeCAD.",
+          "freecad": true,
+          "cost": "seconds"
+        }
       ]
     },
     {
       "id": "help",
       "title": "Engineering help",
       "items": [
-        { "id": "qa-al-yield", "title": "Al 6061-T6 yield strength", "prompt": "What yield strength should I assume for aluminum 6061-T6?", "freecad": false, "cost": "instant" },
-        { "id": "qa-cantilever-formula", "title": "Analytical bending stress formula", "prompt": "What is the analytical bending stress formula for a rectangular cantilever beam?", "freecad": false, "cost": "instant" },
-        { "id": "qa-ti64-density", "title": "Ti-6Al-4V density", "prompt": "What density should I assume for Ti-6Al-4V, and how does it compare to aluminum?", "freecad": false, "cost": "instant" },
-        { "id": "qa-material-guidance", "title": "Material selection guidance", "prompt": "Which material would you pick for the brake pedal, and why? Compare the trade-offs with citations.", "freecad": false, "cost": "instant" },
-        { "id": "qa-unobtainium", "title": "Honest no-match grounding", "prompt": "What is the tensile strength of unobtainium?", "freecad": false, "cost": "instant" }
+        {
+          "id": "qa-al-yield",
+          "title": "Al 6061-T6 yield strength",
+          "prompt": "What yield strength should I assume for aluminum 6061-T6?",
+          "freecad": false,
+          "cost": "instant"
+        },
+        {
+          "id": "qa-cantilever-formula",
+          "title": "Analytical bending stress formula",
+          "prompt": "What is the analytical bending stress formula for a rectangular cantilever beam?",
+          "freecad": false,
+          "cost": "instant"
+        },
+        {
+          "id": "qa-ti64-density",
+          "title": "Ti-6Al-4V density",
+          "prompt": "What density should I assume for Ti-6Al-4V, and how does it compare to aluminum?",
+          "freecad": false,
+          "cost": "instant"
+        },
+        {
+          "id": "qa-material-guidance",
+          "title": "Material selection guidance",
+          "prompt": "Which material would you pick for the brake pedal, and why? Compare the trade-offs with citations.",
+          "freecad": false,
+          "cost": "instant"
+        },
+        {
+          "id": "qa-unobtainium",
+          "title": "Honest no-match grounding",
+          "prompt": "What is the tensile strength of unobtainium?",
+          "freecad": false,
+          "cost": "instant"
+        }
       ]
     },
     {
       "id": "validate",
       "title": "Try validation errors",
       "items": [
-        { "id": "err-solve-empty", "title": "Solve before creating a part", "prompt": "Solve the current part.", "freecad": false, "cost": "instant" },
-        { "id": "err-unknown-material", "title": "Unknown material guardrail", "prompt": "Switch the pedal to unobtainium-42 and re-solve the +500 N load.", "freecad": false, "cost": "instant" },
-        { "id": "diag-guardrail", "title": "Strut-floor guardrail", "prompt": "Try to rebuild the X-truss pedal with 0.8 mm struts — show me the guardrail fire.", "freecad": false, "cost": "instant" }
+        {
+          "id": "err-solve-empty",
+          "title": "Solve before creating a part",
+          "prompt": "Solve the current part.",
+          "freecad": false,
+          "cost": "instant"
+        },
+        {
+          "id": "err-unknown-material",
+          "title": "Unknown material guardrail",
+          "prompt": "Switch the pedal to unobtainium-42 and re-solve the +500 N load.",
+          "freecad": false,
+          "cost": "instant"
+        },
+        {
+          "id": "diag-guardrail",
+          "title": "Strut-floor guardrail",
+          "prompt": "Try to rebuild the X-truss pedal with 0.8 mm struts \u2014 show me the guardrail fire.",
+          "freecad": false,
+          "cost": "instant"
+        }
       ]
     }
   ],
@@ -74,9 +218,35 @@
       "title": "Tool outcome envelope",
       "blurb": "Every tool returns one compact envelope: result, one error, one correction, a receipt.",
       "steps": [
-        { "title": "Solve with no geometry — the envelope carries one error and one concrete correction.", "prompt": "Run an FEA solve without creating any geometry first.", "talking_points": ["One error, one correction — no traceback soup in LLM context.", "The correction names the next tool to call."], "freecad": false, "cost": "instant" },
-        { "title": "Call an unknown tool — the router refuses it by name.", "prompt": "Execute tool nonexistent_cad_generator.", "talking_points": ["Unknown tools are refused before dispatch.", "The refusal lists what is available."], "freecad": false, "cost": "instant" },
-        { "title": "Invalid dimension — validation keeps the accepted revision intact.", "prompt": "Create a cantilever beam with length -50 mm.", "talking_points": ["Rejected args never mutate state."], "freecad": false, "cost": "instant" }
+        {
+          "title": "Solve with no geometry \u2014 the envelope carries one error and one concrete correction.",
+          "prompt": "Run an FEA solve without creating any geometry first.",
+          "talking_points": [
+            "One error, one correction \u2014 no traceback soup in LLM context.",
+            "The correction names the next tool to call."
+          ],
+          "freecad": false,
+          "cost": "instant"
+        },
+        {
+          "title": "Call an unknown tool \u2014 the router refuses it by name.",
+          "prompt": "Execute tool nonexistent_cad_generator.",
+          "talking_points": [
+            "Unknown tools are refused before dispatch.",
+            "The refusal lists what is available."
+          ],
+          "freecad": false,
+          "cost": "instant"
+        },
+        {
+          "title": "Invalid dimension \u2014 validation keeps the accepted revision intact.",
+          "prompt": "Create a cantilever beam with length -50 mm.",
+          "talking_points": [
+            "Rejected args never mutate state."
+          ],
+          "freecad": false,
+          "cost": "instant"
+        }
       ]
     },
     {
@@ -84,8 +254,24 @@
       "title": "Pre-mesh B-Rep validation gate",
       "blurb": "Geometry is validated watertight before any meshing attempt.",
       "steps": [
-        { "title": "Strut radius larger than the cell radius — self-intersecting solid rejected pre-mesh.", "prompt": "Create an X-truss pedal with strut radius 8 mm.", "talking_points": ["The gate rejects before FreeCAD ever meshes."], "freecad": false, "cost": "instant" },
-        { "title": "Zero-volume cantilever — degenerate solid rejected.", "prompt": "Create a cantilever beam with height 0.", "talking_points": ["Degenerate geometry never reaches the solver."], "freecad": false, "cost": "instant" }
+        {
+          "title": "Strut radius larger than the cell radius \u2014 self-intersecting solid rejected pre-mesh.",
+          "prompt": "Create an X-truss pedal with strut radius 8 mm.",
+          "talking_points": [
+            "The gate rejects before FreeCAD ever meshes."
+          ],
+          "freecad": false,
+          "cost": "instant"
+        },
+        {
+          "title": "Zero-volume cantilever \u2014 degenerate solid rejected.",
+          "prompt": "Create a cantilever beam with height 0.",
+          "talking_points": [
+            "Degenerate geometry never reaches the solver."
+          ],
+          "freecad": false,
+          "cost": "instant"
+        }
       ]
     },
     {
@@ -93,9 +279,33 @@
       "title": "Design program layer",
       "blurb": "The design program is the source of truth: persisted params, revision hash, transactional edits.",
       "steps": [
-        { "title": "Dry-run preview — proposed change without touching disk.", "prompt": "Preview changing the pedal cell size to 12 mm without applying it.", "talking_points": ["Dry runs never bump the revision."], "freecad": false, "cost": "instant" },
-        { "title": "No-op update — same params, no new revision.", "prompt": "Change the pedal cell size to 12 mm again.", "talking_points": ["changed: false keeps rev history honest."], "freecad": false, "cost": "instant" },
-        { "title": "Applied edit — revision bumps, hash changes.", "prompt": "Change the pedal cell size to 12 mm and re-solve.", "talking_points": ["Failed rebuilds never clobber the accepted revision."], "freecad": true, "cost": "solve" }
+        {
+          "title": "Dry-run preview \u2014 proposed change without touching disk.",
+          "prompt": "Preview changing the pedal cell size to 12 mm without applying it.",
+          "talking_points": [
+            "Dry runs never bump the revision."
+          ],
+          "freecad": false,
+          "cost": "instant"
+        },
+        {
+          "title": "No-op update \u2014 same params, no new revision.",
+          "prompt": "Change the pedal cell size to 12 mm again.",
+          "talking_points": [
+            "changed: false keeps rev history honest."
+          ],
+          "freecad": false,
+          "cost": "instant"
+        },
+        {
+          "title": "Applied edit \u2014 revision bumps, hash changes.",
+          "prompt": "Change the pedal cell size to 12 mm and re-solve.",
+          "talking_points": [
+            "Failed rebuilds never clobber the accepted revision."
+          ],
+          "freecad": true,
+          "cost": "solve"
+        }
       ]
     },
     {
@@ -103,8 +313,25 @@
       "title": "Run history + query_results",
       "blurb": "Every solve appends a run record with run_id; the agent can query history.",
       "steps": [
-        { "title": "List recent runs from disk.", "prompt": "List all simulation runs.", "talking_points": ["Run records persist across restarts.", "run_id is sortable and unique."], "freecad": false, "cost": "instant" },
-        { "title": "Locate the peak stress of the latest run.", "prompt": "Where is the peak stress in the latest run located?", "talking_points": ["Spatial results are queryable by run."], "freecad": false, "cost": "instant" }
+        {
+          "title": "List recent runs from disk.",
+          "prompt": "List all simulation runs.",
+          "talking_points": [
+            "Run records persist across restarts.",
+            "run_id is sortable and unique."
+          ],
+          "freecad": false,
+          "cost": "instant"
+        },
+        {
+          "title": "Locate the peak stress of the latest run.",
+          "prompt": "Where is the peak stress in the latest run located?",
+          "talking_points": [
+            "Spatial results are queryable by run."
+          ],
+          "freecad": false,
+          "cost": "instant"
+        }
       ]
     },
     {
@@ -112,8 +339,24 @@
       "title": "Pre-flight analytical estimates",
       "blurb": "Before solving, the agent estimates the answer analytically and compares afterwards.",
       "steps": [
-        { "title": "Estimate pedal stress by beam envelope.", "prompt": "Give me a pre-flight analytical estimate for a brake pedal under 500 N.", "talking_points": ["The estimate sets the expected range before compute."], "freecad": false, "cost": "instant" },
-        { "title": "Compare FEA vs beam theory on the benchmark.", "prompt": "Compare the FEA stress to the beam theory value for the cantilever.", "talking_points": ["expected_vs_actual rides on every solve record."], "freecad": false, "cost": "instant" }
+        {
+          "title": "Estimate pedal stress by beam envelope.",
+          "prompt": "Give me a pre-flight analytical estimate for a brake pedal under 500 N.",
+          "talking_points": [
+            "The estimate sets the expected range before compute."
+          ],
+          "freecad": false,
+          "cost": "instant"
+        },
+        {
+          "title": "Compare FEA vs beam theory on the benchmark.",
+          "prompt": "Compare the FEA stress to the beam theory value for the cantilever.",
+          "talking_points": [
+            "expected_vs_actual rides on every solve record."
+          ],
+          "freecad": false,
+          "cost": "instant"
+        }
       ]
     },
     {
@@ -121,8 +364,24 @@
       "title": "Mesh convergence study",
       "blurb": "run_convergence_study re-meshes and re-solves until the KPIs settle.",
       "steps": [
-        { "title": "Run the convergence sweep on the cantilever.", "prompt": "Is the current mesh converged? Run a mesh convergence study on the cantilever.", "talking_points": ["Each step is a real re-solve, not an interpolation."], "freecad": true, "cost": "solve" },
-        { "title": "Explain the deflection trend.", "prompt": "How does tip deflection change across the mesh steps?", "talking_points": ["Convergence claims cite the asymptotic delta."], "freecad": false, "cost": "instant" }
+        {
+          "title": "Run the convergence sweep on the cantilever.",
+          "prompt": "Is the current mesh converged? Run a mesh convergence study on the cantilever.",
+          "talking_points": [
+            "Each step is a real re-solve, not an interpolation."
+          ],
+          "freecad": true,
+          "cost": "solve"
+        },
+        {
+          "title": "Explain the deflection trend.",
+          "prompt": "How does tip deflection change across the mesh steps?",
+          "talking_points": [
+            "Convergence claims cite the asymptotic delta."
+          ],
+          "freecad": false,
+          "cost": "instant"
+        }
       ]
     },
     {
@@ -130,9 +389,33 @@
       "title": "Material as parameter",
       "blurb": "Materials are program parameters with cited properties and physics scaling.",
       "steps": [
-        { "title": "Compare Ti vs Al on the current part.", "prompt": "Compare titanium vs aluminum 6061-T6 for the current part.", "talking_points": ["Scaling derives from one base solve plus cited properties."], "freecad": false, "cost": "instant" },
-        { "title": "Switch to PA12 and watch deflection caveats.", "prompt": "Switch the pedal to PA12 nylon and re-solve.", "talking_points": ["Polymer deflection is flagged NOT VERIFIED."], "freecad": true, "cost": "solve" },
-        { "title": "Unknown material — named guardrail.", "prompt": "Switch the pedal to vibranium.", "talking_points": ["Validation names every valid id."], "freecad": false, "cost": "instant" }
+        {
+          "title": "Compare Ti vs Al on the current part.",
+          "prompt": "Compare titanium vs aluminum 6061-T6 for the current part.",
+          "talking_points": [
+            "Scaling derives from one base solve plus cited properties."
+          ],
+          "freecad": false,
+          "cost": "instant"
+        },
+        {
+          "title": "Switch to PA12 and watch deflection caveats.",
+          "prompt": "Switch the pedal to PA12 nylon and re-solve.",
+          "talking_points": [
+            "Polymer deflection is flagged NOT VERIFIED."
+          ],
+          "freecad": true,
+          "cost": "solve"
+        },
+        {
+          "title": "Unknown material \u2014 named guardrail.",
+          "prompt": "Switch the pedal to vibranium.",
+          "talking_points": [
+            "Validation names every valid id."
+          ],
+          "freecad": false,
+          "cost": "instant"
+        }
       ]
     },
     {
@@ -140,9 +423,33 @@
       "title": "UAV arm flagship",
       "blurb": "The flagship part family: solid and lattice webs, real solve pipeline.",
       "steps": [
-        { "title": "Create the solid UAV arm.", "prompt": "Create the solid UAV arm in aluminum 6061-T6.", "talking_points": ["Flagship demonstrates the full create → solve → report loop."], "freecad": true, "cost": "seconds" },
-        { "title": "Solve 120 N thrust.", "prompt": "Solve the 120 N tip thrust on the current UAV arm.", "talking_points": ["Report states method, mesh, and NOT VERIFIED scope."], "freecad": true, "cost": "solve" },
-        { "title": "Switch to the X-truss web.", "prompt": "Create the UAV arm with the X-truss lattice web and 2.5 mm chord rails.", "talking_points": ["Variant iteration without touching the accepted revision."], "freecad": true, "cost": "solve" }
+        {
+          "title": "Create the solid UAV arm.",
+          "prompt": "Create the solid UAV arm in aluminum 6061-T6.",
+          "talking_points": [
+            "Flagship demonstrates the full create \u2192 solve \u2192 report loop."
+          ],
+          "freecad": true,
+          "cost": "seconds"
+        },
+        {
+          "title": "Solve 120 N thrust.",
+          "prompt": "Solve the 120 N tip thrust on the current UAV arm.",
+          "talking_points": [
+            "Report states method, mesh, and NOT VERIFIED scope."
+          ],
+          "freecad": true,
+          "cost": "solve"
+        },
+        {
+          "title": "Switch to the X-truss web.",
+          "prompt": "Create the UAV arm with the X-truss lattice web and 2.5 mm chord rails.",
+          "talking_points": [
+            "Variant iteration without touching the accepted revision."
+          ],
+          "freecad": true,
+          "cost": "solve"
+        }
       ]
     },
     {
@@ -150,9 +457,33 @@
       "title": "Hybrid retrieval + RAG Lab",
       "blurb": "BM25 + TF-IDF hybrid retrieval with grounding labels and an inspection lab.",
       "steps": [
-        { "title": "Ask a grounded materials question.", "prompt": "What yield strength should I assume for aluminum 6061-T6?", "talking_points": ["Answers cite the corpus source."], "freecad": false, "cost": "instant" },
-        { "title": "Ask something outside the corpus.", "prompt": "What is the tensile strength of unobtainium?", "talking_points": ["No-match grounding refuses to invent numbers."], "freecad": false, "cost": "instant" },
-        { "title": "Open the RAG Lab to inspect retrieval.", "prompt": "Open the RAG Lab.", "talking_points": ["The lab shows rank fusion end to end."], "freecad": false, "cost": "instant" }
+        {
+          "title": "Ask a grounded materials question.",
+          "prompt": "What yield strength should I assume for aluminum 6061-T6?",
+          "talking_points": [
+            "Answers cite the corpus source."
+          ],
+          "freecad": false,
+          "cost": "instant"
+        },
+        {
+          "title": "Ask something outside the corpus.",
+          "prompt": "What is the tensile strength of unobtainium?",
+          "talking_points": [
+            "No-match grounding refuses to invent numbers."
+          ],
+          "freecad": false,
+          "cost": "instant"
+        },
+        {
+          "title": "Open the RAG Lab to inspect retrieval.",
+          "prompt": "Open the RAG Lab.",
+          "talking_points": [
+            "The lab shows rank fusion end to end."
+          ],
+          "freecad": false,
+          "cost": "instant"
+        }
       ]
     },
     {
@@ -160,8 +491,24 @@
       "title": "Curated RAG corpus (allowlist)",
       "blurb": "Ingestion is allowlisted; the corpus stays curated and auditable.",
       "steps": [
-        { "title": "Ask a question the curated corpus answers.", "prompt": "What yield strength should I assume for aluminum 6061-T6?", "talking_points": ["Allowlisted sources only."], "freecad": false, "cost": "instant" },
-        { "title": "Confirm the refusal path stays honest.", "prompt": "What is the tensile strength of unobtainium?", "talking_points": ["Curation is visible in the refusal."], "freecad": false, "cost": "instant" }
+        {
+          "title": "Ask a question the curated corpus answers.",
+          "prompt": "What yield strength should I assume for aluminum 6061-T6?",
+          "talking_points": [
+            "Allowlisted sources only."
+          ],
+          "freecad": false,
+          "cost": "instant"
+        },
+        {
+          "title": "Confirm the refusal path stays honest.",
+          "prompt": "What is the tensile strength of unobtainium?",
+          "talking_points": [
+            "Curation is visible in the refusal."
+          ],
+          "freecad": false,
+          "cost": "instant"
+        }
       ]
     }
   ]
