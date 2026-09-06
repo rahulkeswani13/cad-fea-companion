@@ -117,12 +117,12 @@
     {
       "id": "tool_solve",
       "ok": true,
-      "detail": "stress=33.2333"
+      "detail": "stress=33.1795"
     },
     {
       "id": "tool_get_stress",
       "ok": true,
-      "detail": "stress=33.2333"
+      "detail": "stress=33.1795"
     },
     {
       "id": "agent_docs_question",
@@ -132,7 +132,7 @@
     {
       "id": "agent_create_solve",
       "ok": true,
-      "detail": "tools=['create_cantilever', 'apply_load_and_solve']"
+      "detail": "tools=['create_cantilever', 'create_cantilever', 'apply_load_and_solve']"
     },
     {
       "id": "agent_pedal_lattice",
@@ -162,7 +162,7 @@
     {
       "id": "tool_solve_custom",
       "ok": true,
-      "detail": "stress=71.9529"
+      "detail": "stress=75.9609"
     },
     {
       "id": "agent_material_e",
@@ -202,7 +202,7 @@
     {
       "id": "f04_get_program_after_create",
       "ok": true,
-      "detail": "{\"ok\": true, \"part\": \"brake_pedal\", \"rev\": 179, \"params_hash\": \"4e8a711c19b3\", \"params\": {\"web_type\": \"xtruss\", \"cell_size_mm\": 15.0, \"strut_radius_mm\": 2.5, \"material\": \"al6061t6\""
+      "detail": "{\"ok\": true, \"part\": \"brake_pedal\", \"rev\": 191, \"params_hash\": \"4e8a711c19b3\", \"params\": {\"web_type\": \"xtruss\", \"cell_size_mm\": 15.0, \"strut_radius_mm\": 2.5, \"material\": \"al6061t6\""
     },
     {
       "id": "f04_update_cell_size",
@@ -212,12 +212,12 @@
     {
       "id": "f04_update_dry_run",
       "ok": true,
-      "detail": "{\"ok\": true, \"changed\": true, \"dry_run\": true, \"part\": \"brake_pedal\", \"current\": {\"rev\": 180, \"params_hash\": \"447503639393\"}, \"proposed\": {\"params\": {\"web_type\": \"xtruss\", \"cell_si"
+      "detail": "{\"ok\": true, \"changed\": true, \"dry_run\": true, \"part\": \"brake_pedal\", \"current\": {\"rev\": 192, \"params_hash\": \"447503639393\"}, \"proposed\": {\"params\": {\"web_type\": \"xtruss\", \"cell_si"
     },
     {
       "id": "f04_update_noop",
       "ok": true,
-      "detail": "{\"ok\": true, \"changed\": false, \"part\": \"brake_pedal\", \"rev\": 180, \"params_hash\": \"447503639393\", \"params\": {\"web_type\": \"xtruss\", \"cell_size_mm\": 12.0, \"strut_radius_mm\": 2.5, \"mat"
+      "detail": "{\"ok\": true, \"changed\": false, \"part\": \"brake_pedal\", \"rev\": 192, \"params_hash\": \"447503639393\", \"params\": {\"web_type\": \"xtruss\", \"cell_size_mm\": 12.0, \"strut_radius_mm\": 2.5, \"mat"
     },
     {
       "id": "f04_update_out_of_range",
@@ -227,12 +227,12 @@
     {
       "id": "f06_solve_pedal_records_run",
       "ok": true,
-      "detail": "{\"ok\": true, \"method\": \"calculix_ccx\", \"part\": \"brake_pedal\", \"web_type\": \"xtruss\", \"mesh_max_size_mm\": 5.0, \"force_n\": 500.0, \"node_count\": 5013, \"max_von_mises_mpa\": 21.7696, \"ma"
+      "detail": "{\"ok\": true, \"method\": \"calculix_ccx\", \"part\": \"brake_pedal\", \"web_type\": \"xtruss\", \"mesh_max_size_mm\": 5.0, \"force_n\": 500.0, \"node_count\": 5015, \"max_von_mises_mpa\": 21.7814, \"ma"
     },
     {
       "id": "f06_query_results_latest",
       "ok": true,
-      "detail": "{\"ok\": true, \"part\": \"brake_pedal\", \"latest\": {\"run_id\": \"20260906T065417_6ae399\", \"ts\": \"2026-09-06T06:54:17+00:00\", \"part\": \"brake_pedal\", \"web_type\": \"xtruss\", \"cell_size_mm\": 1"
+      "detail": "{\"ok\": true, \"part\": \"brake_pedal\", \"latest\": {\"run_id\": \"20260906T133818_a3d64f\", \"ts\": \"2026-09-06T13:38:18+00:00\", \"part\": \"brake_pedal\", \"web_type\": \"xtruss\", \"cell_size_mm\": 1"
     },
     {
       "id": "f06_query_results_bad_run_id",
@@ -272,12 +272,12 @@
     {
       "id": "f09_compare_materials",
       "ok": true,
-      "detail": "{\"ok\": true, \"part\": \"brake_pedal\", \"sf_threshold\": 1.5, \"base\": {\"source\": \"run_history\", \"run_id\": \"20260906T065417_6ae399\", \"method\": \"calculix_ccx\", \"mesh_max_size_mm\": 5.0, \"f"
+      "detail": "{\"ok\": true, \"part\": \"brake_pedal\", \"sf_threshold\": 1.5, \"base\": {\"source\": \"run_history\", \"run_id\": \"20260906T133818_a3d64f\", \"method\": \"calculix_ccx\", \"mesh_max_size_mm\": 5.0, \"f"
     },
     {
       "id": "f09_set_material_7075_dry_run",
       "ok": true,
-      "detail": "{\"ok\": true, \"changed\": true, \"dry_run\": true, \"part\": \"brake_pedal\", \"current\": {\"rev\": 181, \"params_hash\": \"7f150b9b3923\"}, \"proposed\": {\"params\": {\"web_type\": \"fcc\", \"cell_size_"
+      "detail": "{\"ok\": true, \"changed\": true, \"dry_run\": true, \"part\": \"brake_pedal\", \"current\": {\"rev\": 193, \"params_hash\": \"7f150b9b3923\"}, \"proposed\": {\"params\": {\"web_type\": \"fcc\", \"cell_size_"
     },
     {
       "id": "f09_unknown_material_rejected",
@@ -297,7 +297,7 @@
     {
       "id": "f26_update_uav_arm_cell_size",
       "ok": true,
-      "detail": "{\"ok\": true, \"changed\": false, \"part\": \"uav_arm\", \"rev\": 29, \"params_hash\": \"b7370e994dda\", \"params\": {\"web_type\": \"xtruss\", \"arm_length_mm\": 180.0, \"cell_size_mm\": 12.0, \"strut_ra"
+      "detail": "{\"ok\": true, \"changed\": false, \"part\": \"uav_arm\", \"rev\": 31, \"params_hash\": \"b7370e994dda\", \"params\": {\"web_type\": \"xtruss\", \"arm_length_mm\": 180.0, \"cell_size_mm\": 12.0, \"strut_ra"
     },
     {
       "id": "f26_solve_uav_arm_honesty",
@@ -491,7 +491,7 @@
           "docs/reference/freecad_fem_notes.md",
           "docs/adr/ADR-006-run-history-and-result-querying.md",
           "docs/reference/brake_pedal_lattice.md",
-          "docs/adr/ADR-007-preflight-analytical-estimates.md"
+          "docs/adr/ADR-017-react-console-clarity.md"
         ],
         "first_relevant_rank": 2,
         "hit_at_k": true,
@@ -569,9 +569,9 @@
         ],
         "ranked_sources": [
           "docs/reference/freecad_fem_notes.md",
-          "docs/reference/ARCHITECTURE.md",
           "docs/adr/ADR-008-remove-engine-mount.md",
-          "docs/reference/brake_pedal_lattice.md"
+          "docs/reference/ARCHITECTURE.md",
+          "docs/adr/ADR-017-react-console-clarity.md"
         ],
         "first_relevant_rank": 1,
         "hit_at_k": true,
@@ -586,8 +586,8 @@
         "ranked_sources": [
           "docs/reference/brake_pedal_lattice.md",
           "docs/reference/tool_reference.md",
-          "docs/adr/ADR-003-premesh-brep-validation-gate.md",
-          "docs/reference/freecad_fem_notes.md"
+          "docs/reference/freecad_fem_notes.md",
+          "docs/adr/ADR-003-premesh-brep-validation-gate.md"
         ],
         "first_relevant_rank": 1,
         "hit_at_k": true,
@@ -695,7 +695,7 @@
         "ranked_sources": [
           "docs/adr/ADR-004-design-program-layer.md",
           "docs/adr/ADR-004-design-program-layer.md",
-          "docs/reference/ARCHITECTURE.md",
+          "docs/adr/ADR-017-react-console-clarity.md",
           "docs/adr/ADR-002-tool-outcome-envelope.md"
         ],
         "first_relevant_rank": 1,
@@ -705,9 +705,9 @@
     ]
   },
   "corpus": {
-    "fingerprint": "dce8195285b33812",
+    "fingerprint": "ed32ab6d8c7e7876",
     "documents": 24,
-    "chunks": 153,
+    "chunks": 156,
     "dirs": [
       "docs/reference",
       "docs/adr"

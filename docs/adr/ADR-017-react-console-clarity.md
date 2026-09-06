@@ -184,9 +184,30 @@ this file:
    they do not consume `/api/prompts` — the regrouped `data/prompts.json`
    categories affect the React console only.
 
+## Amendments (2026-09-06, operator review of the live console)
+
+Recorded here rather than in a new ADR — both are copy-level corrections to
+PR 2/PR 4 decisions, no contract impact:
+
+1. **No internal identifiers in visible copy.** The pedal-materials journey
+   prerequisite "Material table loaded (ADR-010)" exposed an internal
+   decision id in the UI; it now reads "Material table loaded with cited
+   properties". Extends the PR 4 no-visible-ids rule to ADR references in
+   journey copy.
+2. **"Create a part" means create only.** `cad-pedal-solid` and
+   `cad-pedal-xtruss` were one-click create+solve prompts ("+ FEA" titles);
+   the operator rejected the combined flow. Both prompts are trimmed to
+   creation-only (FreeCAD open/show included, solve removed), titles drop
+   "+ FEA", cost hints drop to `seconds`, and solving stays owned by the
+   **Run analysis** group. Item ids unchanged; `data/prompts.json` version
+   1.1 → 1.2. The pedal journey sequence (create → solve) is now strictly
+   stepwise, and the "Create a brake pedal" starter no longer triggers a
+   solve.
+
 ## Status
 
-Accepted and fully implemented across the four PRs (2026-09-06).
+Accepted and fully implemented across the four PRs (2026-09-06), amended
+same day per operator review.
 
 ## Consequences
 

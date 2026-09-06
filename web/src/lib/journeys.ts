@@ -73,7 +73,7 @@ export const JOURNEYS: Journey[] = [
       "Weigh titanium against aluminum on the brake pedal, then commit the switch and re-solve.",
     prerequisites: [
       "No prior session state needed (the journey creates the part)",
-      "Material table loaded (ADR-010)",
+      "Material table loaded with cited properties",
     ],
     steps: [
       { title: "Create the solid brake pedal", ref: "cad-pedal-solid" },
