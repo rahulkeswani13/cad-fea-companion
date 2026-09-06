@@ -17,11 +17,11 @@ function Cell({
     tone === "pass" ? "text-pass" : tone === "caution" ? "text-caution" : "text-ink";
   return (
     <div
-      className="flex items-baseline gap-2 border-l border-line px-3 py-2 first:border-l-0"
+      className="flex min-w-0 items-baseline gap-2 border-l border-line px-3 py-2 first:border-l-0"
       title={title}
     >
-      <span className="font-mono text-[10px] tracking-[0.12em] text-ink-faint uppercase">{label}</span>
-      <span className={`truncate font-mono text-[11px] ${toneCls}`}>{value}</span>
+      <span className="shrink-0 font-mono text-[10px] tracking-[0.12em] text-ink-faint uppercase">{label}</span>
+      <span className={`min-w-0 truncate font-mono text-[11px] ${toneCls}`}>{value}</span>
     </div>
   );
 }
@@ -76,7 +76,7 @@ export function TopBar({
         </span>
       </div>
 
-      <div className="ml-auto hidden items-stretch md:flex" data-testid="status-readout">
+      <div className="ml-auto hidden min-w-0 items-stretch overflow-hidden md:flex" data-testid="status-readout">
         <Cell
           label="LLM"
           value={llm ? `${llm.provider ?? "?"} ${llmReady ? "ready" : "needs key"}` : "…"}
@@ -87,10 +87,16 @@ export function TopBar({
           value={freecadOk ? "found" : "missing"}
           tone={freecadOk ? "pass" : "caution"}
         />
-        <Cell label="Model" value={llm?.model || "-"} title={llm?.model || undefined} />
+        <div className="hidden xl:block">
+          <Cell label="Model" value={llm?.model || "-"} title={llm?.model || undefined} />
+        </div>
         <Cell label="HITL" value={hitl ? "on" : "off"} tone={hitl ? "pass" : "ink"} />
-        <Cell label="Thread" value={threadId.slice(0, 8)} title={threadId} />
-        <Cell label="Tokens" value={tokens.toLocaleString("en-US")} />
+        <div className="hidden lg:block">
+          <Cell label="Thread" value={threadId.slice(0, 8)} title={threadId} />
+        </div>
+        <div className="hidden xl:block">
+          <Cell label="Tokens" value={tokens.toLocaleString("en-US")} />
+        </div>
       </div>
 
       <div className="flex items-center gap-2 px-3">

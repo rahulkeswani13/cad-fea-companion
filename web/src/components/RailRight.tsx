@@ -16,7 +16,7 @@ export function DesignProgramCard({ program }: { program: DesignProgram | null }
   const active = program?.part ?? program?.active_part ?? null;
   return (
     <section className="px-3 py-3" data-testid="design-program">
-      <SectionLabel index="03" title="Saved workspace design" />
+      <SectionLabel title="Saved workspace design" />
       <p className="pb-1 font-mono text-[9.5px] leading-relaxed text-ink-faint">
         Saved workspace state — may belong to another session.
       </p>
@@ -110,7 +110,7 @@ function RunGrid({ rows }: { rows: (RunRow | SessionRun)[] }) {
 export function SessionRunsCard({ sessionRuns }: { sessionRuns: SessionRun[] }) {
   return (
     <section className="px-3 py-3" data-testid="session-runs">
-      <SectionLabel index="04" title="Runs in this session" />
+      <SectionLabel title="Runs in this session" />
       {sessionRuns.length === 0 ? (
         <p className="pt-2 font-mono text-[11px] text-ink-faint">
           No solves yet in this session.
@@ -133,7 +133,7 @@ export function SolverStatusCard({
   const confirmOn = solver?.require_tool_confirm === true;
   return (
     <section className="px-3 py-3" data-testid="solver-status">
-      <SectionLabel index="05" title="Solver status" />
+      <SectionLabel title="Solver status" />
       <div className="pt-1">
         <StatusRow
           label="FreeCAD"

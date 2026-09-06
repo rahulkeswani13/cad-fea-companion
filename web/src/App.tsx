@@ -43,6 +43,7 @@ function useRailWidth(
   min: number,
   maxShare: number,
   dir: 1 | -1,
+  siblingOpen: boolean,
   getExtraMax?: () => number,
 ) {
   const clamp = useCallback(
@@ -62,6 +63,17 @@ function useRailWidth(
   useEffect(() => {
     localStorage.setItem(key, String(w));
   }, [key, w]);
+  // Re-clamp when the sibling rail toggles or the viewport resizes: the
+  // mount-time init can't see the other rail, and persisted widths can
+  // squeeze the chat column below its minimum on narrow viewports.
+  const reclamp = useCallback(() => setW((cur) => clamp(cur)), [clamp]);
+  useEffect(() => {
+    reclamp();
+  }, [reclamp, siblingOpen]);
+  useEffect(() => {
+    window.addEventListener("resize", reclamp);
+    return () => window.removeEventListener("resize", reclamp);
+  }, [reclamp]);
   const startDrag = useCallback(
     (e: ReactPointerEvent) => {
       e.preventDefault();
@@ -82,7 +94,7 @@ function useRailWidth(
     },
     [clamp, dir, w],
   );
-  return { w, startDrag, reset: () => setW(def) };
+  return { w, startDrag, reset: () => setW(def), reclamp };
 }
 
 function getThreadId(): string {
@@ -135,11 +147,23 @@ export default function App() {
   );
   // Chat column keeps >= 380px; rails may still cover well over half the screen.
   const centerMin = 380;
-  const leftRail = useRailWidth("cad_fea_left_w", 280, 220, 0.7, 1, () =>
-    window.innerWidth - centerMin - (rightOpen ? rightRail.w : 0),
+  const leftRail = useRailWidth(
+    "cad_fea_left_w",
+    280,
+    220,
+    0.7,
+    1,
+    rightOpen,
+    () => window.innerWidth - centerMin - (rightOpen ? rightRail.w : 0),
   );
-  const rightRail = useRailWidth("cad_fea_right_w", 320, 260, 0.7, -1, () =>
-    window.innerWidth - centerMin - (leftOpen ? leftRail.w : 0),
+  const rightRail = useRailWidth(
+    "cad_fea_right_w",
+    320,
+    260,
+    0.7,
+    -1,
+    leftOpen,
+    () => window.innerWidth - centerMin - (leftOpen ? leftRail.w : 0),
   );
   const logRef = useRef<HTMLDivElement>(null);
 
@@ -474,7 +498,7 @@ export default function App() {
                   fresh conversation.
                 </div>
               )}
-              <div className="flex items-center justify-between px-1 pt-1.5 font-mono text-[10px] text-ink-faint">
+              <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-0.5 px-1 pt-1.5 font-mono text-[10px] text-ink-faint">
                 <span>enter sends · shift+enter newline</span>
                 <span>
                   {library

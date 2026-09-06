@@ -1509,3 +1509,36 @@ UI that work continues after leaving."
   run history survives restarts and the agent can query it. Session
   scoping fixes confusion ("what did the agent just do?") without killing
   proof ("the system remembers everything").
+
+## F34 — Console cleanup: plain-language surface (ADR-017, PR 4/4)
+
+**Pitch:** The numbered section prefixes (01–05) and internal feature ids
+are gone from the console's visible navigation; headings are plain language
+(Saved workspace design, Runs in this session, Recent saved runs, Solver
+status, Guided journeys, Prompt library). The classic console and RAG Lab
+are untouched, and the prompt-library regroup was verified to have no other
+consumers.
+
+**Script (~30 sec):** "Cleanup is part of the honesty story: a customer
+shouldn't need our internal roadmap to read the UI. Ids stay in the data
+files and the test selectors — where they belong. One caveat we state twice
+in the docs on purpose: clearer fallback labels are presentation honesty,
+not re-validation — a saved reference result replayed after the parameters
+changed is still a saved result, so check the design-program revision
+before trusting it."
+
+**Tests/evals:**
+- Full suite green (legacy 45 + console checks); eval unchanged this PR.
+- Verified `companion/static/index.html` and `rag.html` do not consume
+  `/api/prompts` — library regroup affects the React console only.
+
+**Demo prompts:**
+1. Open `/app` → no numbered prefixes, no feature ids anywhere in the rails.
+2. Top bar keeps the compact thread/token readout; open Technical details
+   on any message for the raw evidence.
+
+**Likely interview questions:**
+- *Why keep ids in data but not the UI?* Ids are machine contracts
+  (`data/prompts.json`, tests, ADRs); the visible surface speaks the
+  user's language. Internal identifiers stay greppable without leaking
+  into the demo.
