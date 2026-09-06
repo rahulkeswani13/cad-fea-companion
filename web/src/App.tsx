@@ -31,8 +31,8 @@ import { Composer } from "./components/Composer";
 import { CommandPalette } from "./components/CommandPalette";
 import { Btn, RailHandle, Stamp } from "./components/primitives";
 import type { PickOptions } from "./components/PromptMenu";
-
-const THREAD_KEY = "cad_fea_thread_id";
+import { JOURNEYS, STARTERS, resolveStarterPrompt } from "./lib/journeys";
+import { extractSessionRuns, type SessionRun } from "./lib/session";
 
 /** Rail width with localStorage persistence, drag resize. Max is a live
  *  share of the viewport, capped so the chat column stays usable (the
@@ -43,6 +43,7 @@ function useRailWidth(
   min: number,
   maxShare: number,
   dir: 1 | -1,
+  siblingOpen: boolean,
   getExtraMax?: () => number,
 ) {
   const clamp = useCallback(
@@ -62,6 +63,17 @@ function useRailWidth(
   useEffect(() => {
     localStorage.setItem(key, String(w));
   }, [key, w]);
+  // Re-clamp when the sibling rail toggles or the viewport resizes: the
+  // mount-time init can't see the other rail, and persisted widths can
+  // squeeze the chat column below its minimum on narrow viewports.
+  const reclamp = useCallback(() => setW((cur) => clamp(cur)), [clamp]);
+  useEffect(() => {
+    reclamp();
+  }, [reclamp, siblingOpen]);
+  useEffect(() => {
+    window.addEventListener("resize", reclamp);
+    return () => window.removeEventListener("resize", reclamp);
+  }, [reclamp]);
   const startDrag = useCallback(
     (e: ReactPointerEvent) => {
       e.preventDefault();
@@ -82,16 +94,15 @@ function useRailWidth(
     },
     [clamp, dir, w],
   );
-  return { w, startDrag, reset: () => setW(def) };
+  return { w, startDrag, reset: () => setW(def), reclamp };
 }
 
 function getThreadId(): string {
-  let id = localStorage.getItem(THREAD_KEY);
-  if (!id) {
-    id = crypto.randomUUID();
-    localStorage.setItem(THREAD_KEY, id);
-  }
-  return id;
+  // ADR-017 PR 3: every full page load starts a fresh conversation — the
+  // stored thread id is never restored (stale key removed on boot; server
+  // thread checkpoints on disk stay untouched).
+  localStorage.removeItem("cad_fea_thread_id");
+  return crypto.randomUUID();
 }
 
 let nextMsgId = 1;
@@ -121,8 +132,13 @@ export default function App() {
   const [composer, setComposer] = useState("");
   const [busy, setBusy] = useState(false);
   const [interrupt, setInterrupt] = useState<InterruptState | null>(null);
+  const [sessionRuns, setSessionRuns] = useState<SessionRun[]>([]);
   const [paletteOpen, setPaletteOpen] = useState(false);
-  const [activeFeature, setActiveFeature] = useState<string | null>(null);
+  const [activeJourney, setActiveJourney] = useState<string | null>(null);
+  // Obsolete-response guard (ADR-017 PR 3): responses carrying a stale
+  // generation are dropped instead of landing in a newer conversation.
+  const sessionGen = useRef(1);
+  const seenRunIds = useRef(new Set<string>());
   const [leftOpen, setLeftOpen] = useState(true);
   const [rightOpen, setRightOpen] = useState(true);
   const [theme, setTheme] = useState<"dark" | "light">(() =>
@@ -131,11 +147,23 @@ export default function App() {
   );
   // Chat column keeps >= 380px; rails may still cover well over half the screen.
   const centerMin = 380;
-  const leftRail = useRailWidth("cad_fea_left_w", 280, 220, 0.7, 1, () =>
-    window.innerWidth - centerMin - (rightOpen ? rightRail.w : 0),
+  const leftRail = useRailWidth(
+    "cad_fea_left_w",
+    280,
+    220,
+    0.7,
+    1,
+    rightOpen,
+    () => window.innerWidth - centerMin - (rightOpen ? rightRail.w : 0),
   );
-  const rightRail = useRailWidth("cad_fea_right_w", 320, 260, 0.7, -1, () =>
-    window.innerWidth - centerMin - (leftOpen ? leftRail.w : 0),
+  const rightRail = useRailWidth(
+    "cad_fea_right_w",
+    320,
+    260,
+    0.7,
+    -1,
+    leftOpen,
+    () => window.innerWidth - centerMin - (leftOpen ? leftRail.w : 0),
   );
   const logRef = useRef<HTMLDivElement>(null);
 
@@ -215,9 +243,11 @@ export default function App() {
   }, [paletteOpen]);
 
   const applyFinal = useCallback(
-    (data: FinalPayload) => {
+    (data: FinalPayload, gen: number) => {
+      if (gen !== sessionGen.current) return; // obsolete session — ignored
       if (data.thread_id) {
-        localStorage.setItem(THREAD_KEY, data.thread_id);
+        // Adopt the server's thread id in memory only — never persisted
+        // across page loads (fresh conversation per load, ADR-017 PR 3).
         setThreadId(data.thread_id);
       }
       if (data.interrupted) {
@@ -236,6 +266,8 @@ export default function App() {
       } else {
         setMessages((m) => [...m, finalToMessage(data, Boolean(data.error))]);
       }
+      const newRuns = extractSessionRuns(data.tool_results, seenRunIds.current, new Date().toISOString());
+      if (newRuns.length > 0) setSessionRuns((prev) => [...prev, ...newRuns]);
       refreshStatus();
       refreshRails();
     },
@@ -246,6 +278,7 @@ export default function App() {
     async (raw: string) => {
       const message = raw.trim();
       if (!message || busy) return;
+      const gen = sessionGen.current;
       setBusy(true);
       setPaletteOpen(false);
       setComposer("");
@@ -260,12 +293,14 @@ export default function App() {
       try {
         const data = await streamChat(message, threadId, setStatus);
         setMessages((m) => m.filter((msg) => msg.id !== statusId));
-        applyFinal(data);
+        applyFinal(data, gen);
       } catch (err) {
-        setMessages((m) => [
-          ...m.filter((msg) => msg.id !== statusId),
-          { id: nextMsgId++, role: "assistant", text: `Request failed: ${err}` },
-        ]);
+        if (gen === sessionGen.current) {
+          setMessages((m) => [
+            ...m.filter((msg) => msg.id !== statusId),
+            { id: nextMsgId++, role: "assistant", text: `Request failed: ${err}` },
+          ]);
+        }
       } finally {
         setBusy(false);
       }
@@ -277,6 +312,7 @@ export default function App() {
     async (approved: boolean) => {
       setBusy(true);
       setInterrupt(null);
+      const gen = sessionGen.current;
       const statusId = nextMsgId++;
       setMessages((m) => [
         ...m,
@@ -289,12 +325,14 @@ export default function App() {
       try {
         const data = await resumeChat(threadId, approved);
         setMessages((m) => m.filter((msg) => msg.id !== statusId));
-        applyFinal(data as FinalPayload);
+        applyFinal(data as FinalPayload, gen);
       } catch (err) {
-        setMessages((m) => [
-          ...m.filter((msg) => msg.id !== statusId),
-          { id: nextMsgId++, role: "assistant", text: `Resume failed: ${err}` },
-        ]);
+        if (gen === sessionGen.current) {
+          setMessages((m) => [
+            ...m.filter((msg) => msg.id !== statusId),
+            { id: nextMsgId++, role: "assistant", text: `Resume failed: ${err}` },
+          ]);
+        }
       } finally {
         setBusy(false);
       }
@@ -303,26 +341,44 @@ export default function App() {
   );
 
   const onPick = useCallback(
-    (item: PromptItem, opts: PickOptions) => {
-      if (opts.send) {
-        send(item.prompt);
-      } else {
-        setPaletteOpen(false);
-        setComposer(item.prompt);
-      }
+    (item: PromptItem, _opts: PickOptions) => {
+      // ADR-017: every selection fills the composer for inspection and
+      // editing — only Send executes. The palette's Enter-to-send shortcut
+      // is retired; opts.send is accepted but ignored.
+      setPaletteOpen(false);
+      setComposer(item.prompt);
     },
-    [send],
+    [],
   );
 
   function newSession() {
-    const id = crypto.randomUUID();
-    localStorage.setItem(THREAD_KEY, id);
-    setThreadId(id);
+    // The user-facing guard is the disabled button (busy); the function
+    // stays callable for the race path — generation increment is what makes
+    // any in-flight response obsolete (ADR-017 PR 3).
+    sessionGen.current += 1;
+    seenRunIds.current = new Set();
+    setThreadId(crypto.randomUUID());
     setMessages([]);
+    setComposer("");
     setInterrupt(null);
+    setSessionRuns([]);
+    setActiveJourney(null);
     refreshStatus();
     refreshRails();
   }
+
+  // Browser leave warning while busy: the native dialog text is the
+  // browser's; we only register the guard. Work continues after leaving —
+  // never claim cancellation (ADR-017 PR 3).
+  useEffect(() => {
+    if (!busy) return;
+    const onLeave = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+      e.returnValue = "";
+    };
+    window.addEventListener("beforeunload", onLeave);
+    return () => window.removeEventListener("beforeunload", onLeave);
+  }, [busy]);
 
   const usage = health?.session_usage?.threads?.[threadId];
   const tokens = usage?.total_tokens ?? 0;
@@ -333,6 +389,7 @@ export default function App() {
         health={health}
         threadId={threadId}
         tokens={tokens}
+        busy={busy}
         leftOpen={leftOpen}
         rightOpen={rightOpen}
         theme={theme}
@@ -352,9 +409,13 @@ export default function App() {
             <div className="absolute inset-0 overflow-y-auto">
               <RailLeft
                 library={library}
-                onPick={(prompt) => send(prompt)}
-                activeFeature={activeFeature}
-                onSelectFeature={setActiveFeature}
+                onPick={(prompt) => {
+                  // Fill the composer — nothing runs until Send.
+                  setPaletteOpen(false);
+                  setComposer(prompt);
+                }}
+                activeJourney={activeJourney}
+                onSelectJourney={setActiveJourney}
               />
             </div>
             <RailHandle rail="left" edge="right" onDrag={leftRail.startDrag} onReset={leftRail.reset} />
@@ -372,11 +433,28 @@ export default function App() {
                   Parametric CAD, meshing and FEA solves.
                 </h2>
                 <p className="mt-3 max-w-[58ch] text-[13px] leading-relaxed text-ink-dim">
-                  Open the prompt palette{" "}
-                  <span className="font-mono text-[11.5px] text-accent">⌘K</span> for the scripted
-                  library, or pick a feature walkthrough in the left rail. FEA answers arrive as
-                  report cards stating method, mesh and what was not verified.
+                  Start with a prompt below, open the library{" "}
+                  <span className="font-mono text-[11.5px] text-accent">⌘K</span>, or pick a guided
+                  journey in the left rail. FEA answers arrive as report cards stating method, mesh
+                  and what was not verified.
                 </p>
+                <div className="mt-5 flex flex-wrap gap-2" data-testid="starters">
+                  {STARTERS.map((s) => {
+                    const prompt = resolveStarterPrompt(s.ref, library);
+                    return (
+                      <button
+                        key={s.ref}
+                        type="button"
+                        disabled={!prompt}
+                        title={prompt ?? "Library offline"}
+                        onClick={() => prompt && setComposer(prompt)}
+                        className="rounded-[2px] border border-line-strong px-2.5 py-1.5 font-mono text-[11px] tracking-[0.06em] text-ink-dim transition-colors duration-150 hover:border-accent hover:text-accent disabled:cursor-not-allowed disabled:opacity-40"
+                      >
+                        {s.label}
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
             ) : (
               <div className="mx-auto max-w-[860px] space-y-5 px-6 py-6">
@@ -414,11 +492,17 @@ export default function App() {
                 library={library}
                 onPick={onPick}
               />
-              <div className="flex items-center justify-between px-1 pt-1.5 font-mono text-[10px] text-ink-faint">
+              {busy && (
+                <div className="px-1 pb-1 font-mono text-[10px] text-caution" data-testid="busy-note">
+                  Agent working — you can leave; the work continues after you do. A reload starts a
+                  fresh conversation.
+                </div>
+              )}
+              <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-0.5 px-1 pt-1.5 font-mono text-[10px] text-ink-faint">
                 <span>enter sends · shift+enter newline</span>
                 <span>
                   {library
-                    ? `${library.categories.reduce((n, c) => n + c.items.length, 0)} library prompts · ${library.features.length} walkthroughs`
+                    ? `${library.categories.reduce((n, c) => n + c.items.length, 0)} library prompts · ${JOURNEYS.length} guided journeys`
                     : "library offline"}
                 </span>
               </div>
@@ -437,6 +521,7 @@ export default function App() {
                 program={program}
                 runs={runs}
                 solver={solver}
+                sessionRuns={sessionRuns}
                 onToggleConfirm={toggleToolConfirm}
               />
             </div>

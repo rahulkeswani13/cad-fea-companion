@@ -5,13 +5,14 @@ export function SectionLabel({
   title,
   right,
 }: {
-  index: string;
+  /** Numbered prefixes are retired from visible navigation (ADR-017). */
+  index?: string;
   title: string;
   right?: ReactNode;
 }) {
   return (
     <div className="section-label hairline-b pb-2">
-      <span className="index">{index}</span>
+      {index != null && <span className="index">{index}</span>}
       <span className="truncate">{title}</span>
       {right != null && <span className="ml-auto normal-case tracking-normal">{right}</span>}
     </div>
@@ -78,6 +79,7 @@ export function Btn({
   title,
   className = "",
   type = "button",
+  testid,
 }: {
   children: ReactNode;
   onClick?: () => void;
@@ -85,7 +87,8 @@ export function Btn({
   variant?: "ghost" | "solid" | "outline";
   title?: string;
   className?: string;
-  type?: "button" | "submit";
+  type?: "submit" | "button";
+  testid?: string;
 }) {
   const base =
     "inline-flex items-center justify-center gap-1.5 rounded-[2px] px-2.5 py-1.5 font-mono text-[11px] tracking-[0.08em] uppercase transition-colors duration-150 disabled:cursor-not-allowed disabled:opacity-40";
@@ -96,7 +99,14 @@ export function Btn({
         ? "border border-line-strong text-ink hover:border-accent hover:text-accent"
         : "text-ink-dim hover:text-ink hover:bg-raised";
   return (
-    <button type={type} onClick={onClick} disabled={disabled} title={title} className={`${base} ${skin} ${className}`}>
+    <button
+      type={type}
+      onClick={onClick}
+      disabled={disabled}
+      title={title}
+      data-testid={testid}
+      className={`${base} ${skin} ${className}`}
+    >
       {children}
     </button>
   );

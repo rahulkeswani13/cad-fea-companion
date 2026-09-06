@@ -1298,3 +1298,247 @@ stored preference before first paint."
 - *Why flip the theme default?* Demos run on projectors; light-on-paper was
   the better default surface and dark graphite is a deliberate mode, not the
   lazy default. It's one boot-script decision plus a state flip.
+
+## F31 — Console honesty pass: origin labels + execution status (ADR-017, PR 1/4)
+
+**Pitch:** The console used to stamp a blanket PASS on successful tool
+results — which conflates "the solver ran" with "the design is safe" — and a
+fallback result could present itself as a live simulation because the
+`fallback: true` flag on the wire was never surfaced. Every result now
+states its origin (Live simulation / Analytical estimate / Saved reference
+result / Fallback result), the card stamp is the *execution outcome* only
+(Completed / Failed), the safety factor carries the engineering verdict via
+threshold colors, and missing numbers render as "—" instead of zero. Raw
+evidence is one click away under Technical details.
+
+**Script (~90 sec):** "Solver honesty has a presentation half. The backend
+already stamps `fallback: true` and a `method` on every solve — the console
+just wasn't showing it. The label precedence reads only wire evidence:
+explicit analytical methods say *Analytical estimate* with an ESTIMATE
+stamp, precomputed sources say *Saved reference result* with REFERENCE, a
+fallback with unclear origin says *Fallback result* with FALLBACK, and a
+CalculiX solve without fallback is the only thing allowed to read *Live
+simulation* — and a fallback flag always overrides a live-sounding label.
+Never equate fallback with analytical: an analytical estimate is a model, a
+fallback is 'we couldn't run what you asked'. The header stamp is now the
+execution outcome — Completed or Failed — because 'PASS' on a report card
+answers the wrong question. The engineering verdict lives where evidence
+lives: the safety factor number, colored by thresholds — under 1 is red,
+under 1.5 amber. Same in run history: no verdict stamps, the SF number *is*
+the verdict, divergence stays as a factual flag. Numeric honesty too: the
+old formatter coerced null to zero — `Number(null)` is `0` in JavaScript —
+so missing deflections looked like measured zeros. Now unavailable is an
+em dash and real zeros survive. Sources stay visible as a compact line; raw
+payloads, retrieval scores and excerpts collapse under Technical details;
+tool names are plain language with raw names preserved there too."
+
+**Tests/evals:**
+- `tests/test_browser_ui.py` PART 4 — deterministic SSE fixtures intercept
+  `/api/chat/stream` and `/api/runs`: method-label precedence (five cases
+  including fallback-over-live), execution status vs verdict, missing
+  values vs legitimate zeros across all displacement variants, threshold
+  colors in history (and no pass/fail stamps), sources visible with
+  Technical details collapsed, friendly names on cards with raw names in
+  the disclosure.
+- **Eval delta: none** — presentation-only change, no tool or agent
+  semantics moved. Documented explicitly per the solver-honesty rule.
+
+**Demo prompts:**
+1. Run "Solve the +500 N footpad load" with FreeCAD unavailable → the card
+   reads **Fallback result** with a FALLBACK stamp and the calibrated-demo
+   note — the origin is undeniable on screen.
+2. With FreeCAD available → **Live simulation**, method `calculix_ccx`,
+   SF colored by threshold.
+3. Ask for a material comparison → rows show **Saved reference result**
+   (REFERENCE) where the base run was precomputed.
+4. Open Technical details on any message → raw tool payload verbatim, raw
+   tool name, retrieval ranks/scores.
+
+**Likely interview questions:**
+- *Why not just add "PASS" when the solve succeeds?* Because success and
+  safety are different axes. A tool can complete successfully on a design
+  with SF 0.4 — stamping PASS there is a lie the interviewer will catch.
+  Execution status (Completed/Failed) and the SF number answer separate
+  questions.
+- *Where do the labels come from?* Only fields already on the wire
+  (`method`, `fallback`) with a documented precedence; the frontend invents
+  nothing. If evidence is missing, no label — the raw string shows as-is.
+- *Does labeling fix provenance?* No — this is presentation. A clearer
+  FALLBACK badge doesn't validate a saved result against changed geometry;
+  backend provenance stays as recorded (per-run `method` + `fallback`).
+
+## F32 — Console demo flow: guided journeys + task-oriented library (ADR-017, PR 2/4)
+
+**Pitch:** The console's left rail sold the architecture, not the product:
+library groups were named after internal taxonomy and every walkthrough was
+an engineering tour (F02, F03, ADR-014…). Now the rail opens with three
+**customer journeys** — UAV arm design iteration, cantilever analysis
+checks, brake pedal material comparison — the library is grouped by what a
+user *wants to do* (Create a part / Run analysis / Compare options / Edit a
+design / Inspect results / Engineering help, plus a collapsed **Try
+validation errors** group), and **every entry point fills the composer;
+only Send executes**. No more misclick-fires-a-solve.
+
+**Script (~90 sec):** "Two demo-safety decisions here. First, selection is
+never execution: picking a library prompt, pressing Enter in the palette,
+or clicking a welcome starter fills the composer for inspection — the only
+thing that runs is Send. The palette used to send on Enter; that shortcut
+is retired because the cost of a wrong send is a FreeCAD solve mid-demo.
+Second, journeys replace feature tours. Journeys are defined in frontend
+configuration and *reference canonical library prompts by id* — the
+executable text stays single-sourced in `data/prompts.json` per ADR-015,
+so a journey can't drift from the library it demos. Each journey shows its
+purpose, prerequisites, and explicit step position — 'step 2 of 5' — with
+Previous/Next and Use prompt. Navigation is manual: the console never
+claims a step completed, because claiming it would require verifying it,
+which is the backend's job, not the UI's. The technical feature tours
+survive in `demo/Features.md` and in the served `features` data — they're
+interview material, not the landing surface."
+
+**Customer journey scripts:**
+
+1. **UAV arm design iteration** (5 steps) — *create solid → solve 120 N →
+   switch to X-truss → re-solve → explain the differences.*
+   Talking points: flagship part family (F26); the re-solve shows variant
+   iteration without touching the accepted revision; the explain step makes
+   the agent compare mass, peak stress, and SF across variants and state
+   what it would not claim without a live solve.
+2. **Cantilever analysis checks** (4 steps) — *create benchmark → solve
+   +100 N → compare against beam theory → mesh sensitivity study.*
+   Talking points: the benchmark exists to be honest about accuracy
+   (F07 expected-vs-actual); the convergence study (F08) shows each step is
+   a real re-solve; final claims cite the asymptotic delta.
+3. **Brake pedal material comparison** (5 steps) — *create → solve +500 N →
+   compare Ti vs Al → change material → re-solve.*
+   Talking points: materials are program parameters with cited properties
+   (F09); the compare step scales from one base solve; the commit step
+   bumps the design-program revision.
+
+**Tests/evals:**
+- `tests/test_console_api.py` — library shape/unique-id checks still pass
+  with the regrouped categories and four new items (`solve-cantilever`,
+  `qa-material-guidance`, `err-solve-empty`, `err-unknown-material`);
+  the `features` array is preserved untouched (wire shape stable).
+- Browser checks — journey navigation (Previous/Next, step position,
+  prerequisites) with Use prompt *filling* the composer; sidebar, palette
+  Enter, and starters all fill without sending (`msg-user` count stays 0);
+  library renders the new task-oriented groups.
+- `eval/cases.json` — `tool_reject_unknown_material` (create with
+  `unobtainium-42` → `bad_params` + correction naming valid ids); the
+  RAG-side refusal (`agent_refuse_unknown_alloy`) already existed.
+
+**Demo prompts:**
+1. Welcome screen → click **Create a UAV arm** → composer fills → inspect →
+   Send.
+2. Open the UAV journey → walk Previous/Next → Use prompt on step 3
+   (X-truss switch) → Send.
+3. Library → **Try validation errors** (collapsed by default) → expand →
+   "Solve before creating a part" → the no-geometry envelope lands with one
+   correction.
+4. ⌘K → type "convergence" → Enter → composer fills, nothing runs.
+
+**Likely interview questions:**
+- *Why fill-instead-of-send everywhere?* Asymmetric cost: filling costs one
+  extra keypress; sending costs a FreeCAD solve you didn't want on a
+  projector. Demo safety is a UI contract, not operator discipline.
+- *Why are journeys in frontend config while prompts stay served?* Journeys
+  are UI orchestration (which step next, prerequisites copy); prompts are
+  executable contracts. Journeys reference prompt ids so the executable
+  text stays single-sourced — ADR-015's rule, applied to journeys.
+- *Why keep the internal feature walkthroughs out of the UI?* They answer
+  "how is it built" — great for engineering interviews, noise for a
+  customer. They live in `demo/Features.md` and the served `features` data;
+  the UI surfaces the customer story.
+
+## F33 — Console session semantics: runs in this session (ADR-017, PR 3/4)
+
+**Pitch:** The console's rails used to read global disk state, so a demo on
+a used machine opened with stale runs and someone else's design program
+presented as if the agent had just produced them. Now every page load
+starts a fresh conversation, the rail shows **Runs in this session** — only
+solves actually observed here — with the persisted audit trail one click
+away under **Recent saved runs**, and the design panel is honestly labeled
+**Saved workspace design (may belong to another session)**.
+
+**Script (~90 sec):** "Session honesty is about answering 'what did the
+agent just do?' — and its twin, 'what was already here?'. Three mechanisms.
+First, fresh-on-load: the stored thread id is never restored, so a reload
+is a new conversation — the server's checkpointed threads stay on disk,
+untouched. Second, the session rail is built only from solve operations
+observed in this session's tool results, in arrival order, deduplicated by
+run id — which matters because a convergence study replays its base run.
+Sub-runs show up, failed mesh attempts show up as failed, and a solve whose
+history write degraded still shows with an explicit *unrecorded* marker —
+we never invent a persisted identity. Historical query results stay in the
+conversation; they never become session runs — the agent *reading* history
+is not the agent *producing* one. Third, in-flight responses carry a
+frontend session generation: reset mid-flight and a stale response is
+dropped instead of landing in your fresh conversation. New session is
+disabled while busy, and the leave warning never claims cancellation — the
+browser owns that dialog; we just register the guard and explain in our own
+UI that work continues after leaving."
+
+**Tests/evals:**
+- Browser tests (deterministic fixtures): clean launch with disk history —
+  session rail empty, saved-runs disclosure populated; reset clears chat,
+  composer, journey progress, and session runs; busy state disables New
+  session and shows the leave note; a forced reset past the disabled guard
+  proves the in-flight response is ignored (no invented messages, no
+  phantom runs); solve without `run_id` renders `unrecorded`; convergence
+  sub-runs deduplicate by `run_id` with failed attempts visible.
+- **Eval delta: none** — frontend state only.
+
+**Demo prompts:**
+1. Load the console with history on disk → session rail says "No solves
+   yet"; expand **Recent saved runs** → the audit trail is there, labeled
+   with its part and run ids.
+2. Run a solve → the row lands in **Runs in this session** with its run id.
+3. Click **New session** → everything clears; the saved disclosure still
+   carries history.
+4. Point at the design panel → "Saved workspace design — may belong to
+   another session."
+
+**Likely interview questions:**
+- *Why not just filter the global history by time?* Time filters guess;
+  observation doesn't. A run belongs to this session when the frontend saw
+  the solve happen — attribution by evidence, not by timestamp heuristics.
+- *What if the SSE drops mid-solve?* The solve is still recorded server-side
+  and shows under Recent saved runs; the session rail only claims what it
+  observed — conservative by design.
+- *Why keep global history at all?* The audit trail is a feature (F06):
+  run history survives restarts and the agent can query it. Session
+  scoping fixes confusion ("what did the agent just do?") without killing
+  proof ("the system remembers everything").
+
+## F34 — Console cleanup: plain-language surface (ADR-017, PR 4/4)
+
+**Pitch:** The numbered section prefixes (01–05) and internal feature ids
+are gone from the console's visible navigation; headings are plain language
+(Saved workspace design, Runs in this session, Recent saved runs, Solver
+status, Guided journeys, Prompt library). The classic console and RAG Lab
+are untouched, and the prompt-library regroup was verified to have no other
+consumers.
+
+**Script (~30 sec):** "Cleanup is part of the honesty story: a customer
+shouldn't need our internal roadmap to read the UI. Ids stay in the data
+files and the test selectors — where they belong. One caveat we state twice
+in the docs on purpose: clearer fallback labels are presentation honesty,
+not re-validation — a saved reference result replayed after the parameters
+changed is still a saved result, so check the design-program revision
+before trusting it."
+
+**Tests/evals:**
+- Full suite green (legacy 45 + console checks); eval unchanged this PR.
+- Verified `companion/static/index.html` and `rag.html` do not consume
+  `/api/prompts` — library regroup affects the React console only.
+
+**Demo prompts:**
+1. Open `/app` → no numbered prefixes, no feature ids anywhere in the rails.
+2. Top bar keeps the compact thread/token readout; open Technical details
+   on any message for the raw evidence.
+
+**Likely interview questions:**
+- *Why keep ids in data but not the UI?* Ids are machine contracts
+  (`data/prompts.json`, tests, ADRs); the visible surface speaks the
+  user's language. Internal identifiers stay greppable without leaking
+  into the demo.

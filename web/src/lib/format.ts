@@ -1,6 +1,9 @@
 import type { ToolResult } from "./types";
 
 export function fmtNum(v: unknown, digits = 2): string | null {
+  // null/"" must not coerce to 0 (Number(null) === 0): a missing value is
+  // unavailable, never zero. Legitimate zeros pass through.
+  if (v == null || v === "") return null;
   const n = Number(v);
   if (!Number.isFinite(n)) return null;
   return n.toFixed(digits);
@@ -11,30 +14,92 @@ export function fmtK(n: unknown): string | null {
   return s == null ? null : Number(s).toLocaleString("en-US");
 }
 
-const STAMP_KEYS = ["max_von_mises_mpa", "expected_vs_actual", "safety_factor_vs_yield", "divergence_flag"];
+export type Tone = "pass" | "caution" | "fail";
 
-/** Semantic stamp for a tool result: solver states own the colors. */
-export function deriveStamp(r: Record<string, unknown>): "pass" | "caution" | "fail" | null {
-  if (r.ok === false) return "fail";
-  const isSolveLike = STAMP_KEYS.some((k) => k in r);
-  if (!isSolveLike) return null;
-  const eva = (r.expected_vs_actual ?? null) as Record<string, unknown> | null;
-  const sf = Number(r.safety_factor_vs_yield ?? (eva?.safety_factor_vs_yield ?? NaN));
-  const diverged = Boolean(r.divergence_flag ?? eva?.divergence_flag);
-  if (Number.isFinite(sf) && sf < 1) return "fail";
-  if (diverged) return "caution";
-  if (Number.isFinite(sf) && sf < 1.5) return "caution";
+/** SF threshold tone shared by report cards and history rows. */
+export function sfTone(sf: unknown): Tone | null {
+  const v = Number(sf);
+  if (!Number.isFinite(v)) return null;
+  if (v < 1) return "fail";
+  if (v < 1.5) return "caution";
   return "pass";
+}
+
+/** Curated plain-language names for the exposed tool registry
+ *  (companion/tools/tool_schemas.py). Unmapped tools fall back to a
+ *  prettified raw name; raw names stay inspectable in Technical details. */
+const TOOL_NAMES: Record<string, string> = {
+  create_brake_pedal: "Create brake pedal",
+  create_uav_arm: "Create UAV arm",
+  create_cantilever: "Create cantilever benchmark",
+  apply_load_and_solve: "FEA solve",
+  get_max_von_mises: "Peak stress lookup",
+  run_convergence_study: "Mesh convergence study",
+  compare_brake_pedal_variants: "Compare pedal variants",
+  compare_materials: "Compare materials",
+  get_design_program: "Read design program",
+  update_design_program: "Update design program",
+  get_lattice_metrics: "Lattice metrics",
+  query_results: "Run history query",
+  open_in_freecad: "Open in FreeCAD",
+};
+
+export function friendlyToolName(name: string): string {
+  const curated = TOOL_NAMES[name];
+  if (curated) return curated;
+  return name.replaceAll("_", " ").replace(/^\w/, (c) => c.toUpperCase());
+}
+
+export type MethodStamp = "estimate" | "reference" | "fallback";
+
+export interface MethodDescriptor {
+  /** Plain-language origin label; null when the wire carries no confident
+   *  evidence (the raw method string is shown as-is instead). */
+  label: string | null;
+  stamp: MethodStamp | null;
+}
+
+/**
+ * Origin of a result, read only from fields the wire already carries
+ * (method / fallback — never invented). Precedence:
+ *   explicit analytical → Analytical estimate
+ *   explicit saved/precomputed source → Saved reference result
+ *   fallback with unclear origin → Fallback result
+ *   CalculiX without fallback → Live simulation
+ * A fallback flag always overrides a live-sounding label (the fallback
+ * branch is checked before the CalculiX branch), and fallback is never
+ * equated with analytical.
+ */
+export function describeMethod(r: Record<string, unknown>): MethodDescriptor {
+  const method = String(r.method ?? "").toLowerCase();
+  const fallback = r.fallback === true;
+  if (method.includes("analytical")) return { label: "Analytical estimate", stamp: "estimate" };
+  if (method.includes("precomputed") || method.includes("saved"))
+    return { label: "Saved reference result", stamp: "reference" };
+  if (fallback) return { label: "Fallback result", stamp: "fallback" };
+  if (method.includes("calculix")) return { label: "Live simulation", stamp: null };
+  return { label: null, stamp: null };
 }
 
 export interface KpiRow {
   key: string;
   label: string;
   value: string;
+  /** Colored value (SF thresholds); unset renders neutral. */
+  tone?: Tone;
+  /** Origin stamp rendered beside the value (ESTIMATE/REFERENCE/FALLBACK). */
+  stamp?: MethodStamp;
 }
 
 function addRow(rows: KpiRow[], key: string, label: string, value: string | null) {
   if (value != null && value !== "") rows.push({ key, label, value });
+}
+
+/** "12.0 MPa", or an explicit "—" when the field is present but
+ *  unavailable. Absent keys are omitted by the caller. */
+function withUnit(v: unknown, digits: number, unit: string): string {
+  const s = fmtNum(v, digits);
+  return s == null ? "—" : `${s} ${unit}`;
 }
 
 /** Compact KPI rows for a tool result (mirrors the legacy console's
@@ -44,22 +109,44 @@ export function kpiRows(r: Record<string, unknown>): KpiRow[] {
   const abs = (v: unknown) => (v == null ? null : Math.abs(Number(v)));
 
   if (r.web_type != null) addRow(rows, "web_type", "variant", String(r.web_type));
-  if (r.mass_kg != null) addRow(rows, "mass", "mass", `${fmtNum(abs(r.mass_kg), 3)} kg`);
-  if (r.relative_density != null) addRow(rows, "rho", "ρ*", fmtNum(r.relative_density, 3));
-  if (r.max_von_mises_mpa != null)
-    addRow(rows, "sigma", "σ max", `${fmtNum(abs(r.max_von_mises_mpa), 2)} MPa`);
+  if ("mass_kg" in r) addRow(rows, "mass", "mass", withUnit(abs(r.mass_kg), 3, "kg"));
+  if ("relative_density" in r) addRow(rows, "rho", "ρ*", withUnit(r.relative_density, 3, ""));
+  if ("max_von_mises_mpa" in r)
+    addRow(rows, "sigma", "σ max", withUnit(abs(r.max_von_mises_mpa), 2, "MPa"));
   if (r.max_vm_location_mm != null) {
     const loc = JSON.stringify(r.max_vm_location_mm);
     if (loc && loc !== "null" && loc.length < 40) addRow(rows, "loc", "σ @", loc);
   }
-  if (r.safety_factor_vs_yield != null)
-    addRow(rows, "sf", "SF yield", fmtNum(abs(r.safety_factor_vs_yield), 2));
-  if (r.pad_deflection_mm != null)
-    addRow(rows, "defl", "δ pad", `${fmtNum(abs(r.pad_deflection_mm), 3)} mm`);
-  if (r.deflection_mm != null)
-    addRow(rows, "defl", "δ tip", `${fmtNum(abs(r.deflection_mm), 3)} mm`);
-  if (r.mesh_max_size_mm != null) addRow(rows, "mesh", "mesh max", `${fmtNum(r.mesh_max_size_mm, 1)} mm`);
-  if (r.method != null) addRow(rows, "method", "method", String(r.method));
+  if ("safety_factor_vs_yield" in r) {
+    const raw = r.safety_factor_vs_yield ?? (r.expected_vs_actual as any)?.safety_factor_vs_yield;
+    rows.push({
+      key: "sf",
+      label: "SF yield",
+      value: fmtNum(raw == null ? null : Math.abs(Number(raw)), 2) ?? "—",
+      tone: sfTone(raw) ?? undefined,
+    });
+  }
+  if ("pad_deflection_mm" in r)
+    addRow(rows, "defl-pad", "δ pad", withUnit(abs(r.pad_deflection_mm), 3, "mm"));
+  if ("tip_deflection_mm" in r)
+    addRow(rows, "defl-tip", "δ tip", withUnit(abs(r.tip_deflection_mm), 3, "mm"));
+  if ("deflection_mm" in r)
+    addRow(rows, "defl", "δ", withUnit(abs(r.deflection_mm), 3, "mm"));
+  if ("mesh_max_size_mm" in r)
+    addRow(rows, "mesh", "mesh max", withUnit(r.mesh_max_size_mm, 1, "mm"));
+
+  // Origin row: rendered whenever the wire carries method/fallback evidence,
+  // even when the raw method string itself is absent (fallback flag alone).
+  const md = describeMethod(r);
+  if ("method" in r || r.fallback === true || md.stamp) {
+    const raw = r.method != null ? String(r.method) : null;
+    rows.push({
+      key: "method",
+      label: "source",
+      value: md.label ?? raw ?? "—",
+      stamp: md.stamp ?? undefined,
+    });
+  }
 
   const eva = r.expected_vs_actual as Record<string, unknown> | null | undefined;
   if (eva && typeof eva === "object") {
@@ -78,7 +165,9 @@ export function kpiRows(r: Record<string, unknown>): KpiRow[] {
   return rows;
 }
 
-/** Honest caveats surfaced on the report card (solver-honesty pattern). */
+/** Honest caveats surfaced on the report card (solver-honesty pattern).
+ *  `note` is included: fallback results carry their honesty caveat there
+ *  (e.g. "Coarse tets under-predict peak strut stress"). */
 export function caveatLines(r: Record<string, unknown>): string[] {
   const out: string[] = [];
   const push = (v: unknown) => {
@@ -87,6 +176,7 @@ export function caveatLines(r: Record<string, unknown>): string[] {
   if (Array.isArray(r.caveats)) r.caveats.forEach(push);
   if (Array.isArray(r.disclaimers)) r.disclaimers.forEach(push);
   if (typeof r.warning === "string") push(r.warning);
+  if (typeof r.note === "string") push(r.note);
   const eva = r.expected_vs_actual as Record<string, unknown> | null | undefined;
   if (eva && typeof eva === "object") {
     if (Array.isArray(eva.caveats)) eva.caveats.forEach(push);
@@ -100,11 +190,15 @@ export function toolSummary(t: ToolResult): string {
   const r = t.result ?? {};
   if (r.ok === false) {
     const err = String(r.error ?? r.warning ?? "failed").replace(/\s+/g, " ");
-    return `${t.name}: failed — ${err.slice(0, 120)}`;
+    return `${friendlyToolName(t.name)}: failed — ${err.slice(0, 120)}`;
   }
   const rows = kpiRows(r);
   const bits = rows
-    .filter((row) => ["sigma", "sf", "mass", "defl", "rho", "web_type", "method"].includes(row.key))
+    .filter((row) =>
+      ["sigma", "sf", "mass", "defl", "defl-pad", "defl-tip", "rho", "web_type", "method"].includes(
+        row.key,
+      ),
+    )
     .map((row) => `${row.label} ${row.value}`);
-  return `${t.name}: ok — ${bits.length ? bits.join(", ") : "ok"}`;
+  return `${friendlyToolName(t.name)}: ok — ${bits.length ? bits.join(", ") : "ok"}`;
 }
