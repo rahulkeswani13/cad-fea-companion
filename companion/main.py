@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import logging
 import uuid
 from pathlib import Path
 from typing import Any
@@ -81,7 +82,11 @@ class ToolRequest(BaseModel):
 def startup() -> None:
     settings = get_settings()
     settings.ensure_dirs()
-    ingest_docs()
+    result = ingest_docs(reuse_if_unchanged=True)
+    if not result["ok"]:
+        logging.getLogger(__name__).error("%s %s", result["error"], result["correction"])
+        if not get_store().chunks:
+            raise RuntimeError(result["error"])
 
 
 @app.get("/api/health")

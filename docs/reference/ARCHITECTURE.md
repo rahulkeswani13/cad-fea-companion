@@ -9,7 +9,7 @@ This guide covers the complete technical architecture, AI engineering patterns, 
 The companion is an **agentic engineering assistant** that orchestrates parametric CAD generation, automated finite element analysis (FEA), and closed-loop structural optimization from natural language.
 
 ### Key Capabilities
-1. **Domain-Specific RAG Grounding**: Local TF-IDF indexing over engineering markdown (`docs/`), grounding LLM responses in verified material data and mechanics formulas.
+1. **Domain-Specific lexical retrieval**: Local TF-IDF + BM25 retrieval over the configured corpus, fused with reciprocal rank fusion (RRF). Retrieved source and rank metadata help ground answers; the retrieval `grounding` label is a diagnostic, not answer verification.
 2. **ReAct Tool Planning**: Autonomous decomposition of user requests into sequential CAD generation, meshing, FEA solving, and trade-study tools.
 3. **Stateful LangGraph Checkpointing**: Multi-turn conversation memory (`thread_id`) preserving CAD geometry, FEA tensor results, and parametric revisions across turns.
 4. **Human-in-the-Loop (HITL)**: Optional interrupt gates before executing mutating CAD/FEA operations.
@@ -85,9 +85,10 @@ flowchart TD
 
 ## 4. AI Engineering Deep Dive: The 9 Core Features
 
-### F01: Grounded RAG Knowledge Retrieval
-- Ingests local technical documentation (`docs/reference/materials.md`, `docs/reference/freecad_fem_notes.md`) at startup.
-- Grounds answers to material allowable questions (e.g. Al 6061-T6 yield strength: 276 MPa, E = 69.0 GPa) with citations.
+### F01: Grounded lexical retrieval
+- Default ingestion selects Markdown/text explicitly declared in `docs/corpus_manifest.json`. Alternate configured corpus roots retain directory ingestion for experiments. The maintained user-facing engineering references live under `docs/reference/`; explicit corpus roots remain available for compatibility and experiments.
+- Runs TF-IDF cosine and BM25 over the same chunks, then fuses their ranks with RRF. Legacy hits retain `source`, `text`, and TF-IDF `score`; additive fields expose methods, ranks, BM25 score and fused rank. The detailed response carries `grounding` (`strong`, `weak`, or `none`).
+- Retrieved material values and mechanics formulas remain source-backed reference facts. Retrieval strength does not certify a design, solve, or material as safe.
 
 ### F02: Compact Outcome Envelope Protocol
 - Tool outputs are a flat-additive envelope: success keeps KPIs plus a `receipt`; failure adds `error`, `error_class`, and one `correction`.

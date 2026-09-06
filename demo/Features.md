@@ -1542,3 +1542,35 @@ before trusting it."
   (`data/prompts.json`, tests, ADRs); the visible surface speaks the
   user's language. Internal identifiers stay greppable without leaking
   into the demo.
+
+
+## ADR-018 · PR 1: Curated evidence and safe indexes
+
+**Pitch:** The assistant retrieves maintained engineering references, while ADRs
+remain in the repository as decision history. A failed index rebuild cannot
+replace the accepted evidence snapshot.
+
+**Script:** Open RAG Lab, inspect the sources and rebuild the index. Explain that
+only manifest-declared references enter default retrieval. Ask about a design
+program revision, a failed-tool correction, and a convergence recommendation.
+The useful current facts formerly found only in ADRs now have maintained
+reference sources. Retrieval labels remain lexical diagnostics in this PR;
+answer-support assessment and semantic comparisons ship in later PRs.
+
+**Tests:** `tests/test_rag.py`, `tests/test_rag_index.py`, and
+`tests/test_rag_chunking.py` cover selection, source identity, table context,
+content drift, startup reuse, failed rebuild preservation and rollback.
+
+**Evals:** `rag_revision_reference`, `rag_repair_reference`, and
+`rag_convergence_reference`; existing source labels migrate to maintained
+references without deleting queries. Corpus and chunking changes deliberately
+re-baseline retrieval; do not compare them as a retriever-only experiment.
+
+**Demo prompts:** “What is the design program revision hash used for?”;
+“What does a failed tool result tell me to do next?”;
+“What mesh size is recommended after a convergence study?”
+
+**Likely interview questions:** Why exclude ADRs? How do you preserve useful
+knowledge? Why hash contents instead of chunk counts? What happens if rebuilding
+fails? Does a strong lexical match prove that an engineering answer is supported?
+Answer: it does not; PR 1 preserves that diagnostic for compatibility only.

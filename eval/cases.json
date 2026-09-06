@@ -928,5 +928,35 @@
   "expect_ok": false,
   "expect_error_class": "bad_params",
   "expect_correction": true
+ },
+ {
+  "id": "rag_revision_reference",
+  "type": "rag",
+  "query": "What is the design program revision hash and what is it used for?",
+  "min_citations": 1,
+  "expect_any": [
+   "params_hash",
+   "revision hash"
+  ]
+ },
+ {
+  "id": "rag_repair_reference",
+  "type": "rag",
+  "query": "What does the outcome envelope add to a failed tool result?",
+  "min_citations": 1,
+  "expect_any": [
+   "error_class",
+   "correction"
+  ]
+ },
+ {
+  "id": "rag_convergence_reference",
+  "type": "rag",
+  "query": "What mesh size is recommended after a convergence study?",
+  "min_citations": 1,
+  "expect_any": [
+   "recommended_mesh",
+   "recommended mesh"
+  ]
  }
 ]
