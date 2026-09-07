@@ -66,6 +66,37 @@ def test_prompts_file_exists_on_disk():
     assert PROMPTS_PATH.exists()
 
 
+def test_rag_neural_profile_exposes_visible_fallback(monkeypatch):
+    monkeypatch.setattr(
+        "companion.rag.neural.retrieve_profile_detail",
+        lambda *args, **kwargs: {
+            "grounding": "strong",
+            "tfidf": [],
+            "bm25": [],
+            "embedding": [],
+            "fused": [{"source": "docs/reference/materials.md", "text": "mesh"}],
+            "retrieval": {
+                "requested_profile": "reranked",
+                "active_profile": "lexical",
+                "available": False,
+                "fallback": True,
+                "reason": "model unavailable",
+            },
+        },
+    )
+    res = client.get("/api/rag/search", params={"q": "mesh", "profile": "reranked"})
+    assert res.status_code == 200
+    body = res.json()
+    assert body["hits"]
+    assert body["retrieval"]["fallback"] is True
+    assert body["retrieval"]["active_profile"] == "lexical"
+
+
+def test_rag_neural_profile_rejects_unknown_profile():
+    res = client.get("/api/rag/search", params={"q": "mesh", "profile": "magic"})
+    assert res.status_code == 422
+
+
 def test_prompts_error_is_compact(monkeypatch):
     def boom() -> dict:
         raise RuntimeError("boom")

@@ -1640,3 +1640,34 @@ an experimental improvement from accepted RAG? Answer: development labels were
 repaired only when the maintained passage independently supported the expected
 claim; the old hidden cases were already observed, so a reviewer creates a fresh
 30-case set after retrieval freezes and manually reviews every final answer.
+
+
+## ADR-019 · PR 3: Local neural retrieval comparison
+
+**Pitch:** Local embeddings recover semantically relevant evidence that lexical
+matching misses, while a cross-encoder improves ordering of the fixed candidate
+union. Exact model commits and latency make the result reproducible.
+
+**Script:** Run `eval/run_rag_retrieval_comparison.py` without model downloads to
+show that unavailable neural profiles are not silently scored as lexical. Then
+inspect `eval/reports/rag_retrieval_comparison.json`: development selection chose
+reranking, and the one-shot held-out result is retained even though it misses the
+0.90 recall target.
+
+**Tests:** `tests/test_rag_neural.py` covers embedding rank metadata,
+cross-encoder ordering, visible lexical fallback, strict unavailability, and bad
+profiles. `tests/test_rag_retrieval_comparison.py` covers the fixed selection
+priority. `tests/test_console_api.py` covers the additive profile response.
+
+**Evals:** `http_rag_neural_availability_contract` keeps model availability and
+fallback visible in key-free CI. The reproducible comparison uses all 70
+development cases, selects once, and then runs all 30 held-out cases once.
+
+**Demo prompts:** `/api/rag/search?q=mesh&detail=1&profile=reranked`;
+`/api/rag/search?q=PA12+nonlinear&detail=1&profile=lexical_embedding`.
+
+**Likely interview questions:** Why RRF before reranking? Why pin Hugging Face
+commits? Why not score lexical fallback as neural? Why choose the slower model?
+Why did held-out miss the target? Answer honestly: reranking improved development
+nDCG without losing recall, but the held-out miss blocks final acceptance and
+must drive future fresh-development work rather than held-out tuning.

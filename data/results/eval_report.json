@@ -408,6 +408,11 @@
       "id": "rag_benchmark_candidate_diagnostics",
       "ok": true,
       "detail": "100 cases; review=approved"
+    },
+    {
+      "id": "http_rag_neural_availability_contract",
+      "ok": true,
+      "detail": "status=200 keys=['bm25', 'embedding', 'fused', 'grounding', 'query', 'retrieval']"
     }
   ],
   "retrieval": {
