@@ -1574,3 +1574,35 @@ re-baseline retrieval; do not compare them as a retriever-only experiment.
 knowledge? Why hash contents instead of chunk counts? What happens if rebuilding
 fails? Does a strong lexical match prove that an engineering answer is supported?
 Answer: it does not; PR 1 preserves that diagnostic for compatibility only.
+
+
+## ADR-018 · PR 2: Evidence benchmark and review checkpoint
+
+**Pitch:** A hit from the right document is insufficient. This benchmark checks
+whether retrieved passages contain the specific evidence a question requires,
+and keeps unanswerable questions visible rather than treating them as passes.
+
+**Script:** Open `eval/reviews/rag_benchmark_review.md`. Show a factual example,
+a comparison requiring multiple facts, and an unsupported request. Explain the
+70/30 development/held-out split and the twenty-case user review before tuning.
+Run the fixed lexical development baseline and inspect missing evidence in
+`eval/reports/rag_lexical_baseline.json`. These are retrieval results; generated
+answer correctness and critical-case acceptance remain pending later PRs.
+
+**Tests:** `tests/test_rag_benchmark.py` verifies wrong-section rejection,
+required-group coverage, rank metrics, duplicate suppression, unanswerable-case
+accounting, source resolution, family isolation and review gating.
+
+**Evals:** `rag_benchmark_fixture_integrity`, `rag_benchmark_review_guard`, and
+`eval/run_rag_benchmark.py`. Ordinary eval reports also carry compact evidence
+metrics and benchmark identity. API usage is zero for this PR.
+
+**Demo prompts:** “What fatigue knockdown should I apply for a printed PA12
+lattice at high humidity?”; “What is the current maximum brake-pedal stress?”;
+“Compare 6061-T6 and 7075-T6 on modulus, density, and yield using the table.”
+
+**Likely interview questions:** Why did 100% document hit@4 not establish answer
+quality? How do evidence alternatives differ from required facts? What prevents
+held-out tuning? What does a null score mean? Who reviewed the labels? Answer
+honestly: AI drafted them from references; the user reviews a 20-case sample,
+not an independent engineering validation of the entire dataset.

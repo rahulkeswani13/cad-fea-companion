@@ -958,5 +958,15 @@
    "recommended_mesh",
    "recommended mesh"
   ]
+ },
+ {
+  "id": "rag_benchmark_fixture_integrity",
+  "type": "benchmark_fixture",
+  "check": "integrity"
+ },
+ {
+  "id": "rag_benchmark_review_guard",
+  "type": "benchmark_fixture",
+  "check": "review_guard"
  }
 ]
