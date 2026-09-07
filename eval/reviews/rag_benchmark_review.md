@@ -1,12 +1,12 @@
 # RAG benchmark review — 20 development examples
 
-**Status: awaiting your review.** These are expected answers, not model outputs.
+**Status: approved after delegated user review.** These are expected answers, not model outputs.
 
 For each example, check whether the expected behavior is useful, the facts and source
 passages support it, and the forbidden claims capture the important limits. Reply
 with case IDs and corrections, or accept all 20. No retrieval tuning has started.
 
-Benchmark content hash: `20bea723c37ed04989a606d89b9deaf735e06fbf5480914c6c5c576ed69442db`
+Benchmark content hash: `742864f5d3e3b83eb5d752c4e05153d9fda281cf06181c3f3305b7d41b811ac1`
 
 ## 1. mat-001 — fact
 
@@ -42,36 +42,40 @@ Critical case: no.
 
 ## 2. mat-004 — fact
 
-**Question:** What values are listed for dry SLS PA12, and what is its key analysis caveat?
+**Question:** What provisional PA12 screening values does the repository use, and what is their key analysis caveat?
 
 **Expected:** answer; evidence supported.
 
 **Required facts / behavior:**
 
-- E is 1.8 GPa
-- density is 1010 kg/m^3
-- yield is 45 MPa
-- scaled PA12 deflection is not verified and a live solve is advised
+- the repository uses provisional screening inputs of E 1.8 GPa, density 1010 kg/m^3, and a 45 MPa yield proxy
+- the values are not tied to one qualified PA12 process, orientation, or conditioning procedure
+- scaled PA12 deflection is not verified and repeating the current linear-static solve is insufficient
 
 **Must not claim:**
 
 - linear scaled PA12 deflection is verified
-- PA12 is suitable without moisture qualification
+- the values are qualified EOS SLS PA 2200 properties
+- 45 MPa is a supplier-qualified PA12 yield allowable
 
 **Expected numbers (reference values only):**
 
 - Young's modulus: 1.8 GPa; tolerance 0.
-- yield: 45 MPa; tolerance 0.
+- screening yield proxy: 45 MPa; tolerance 0.
 
 **Supporting passages:**
 
-- [docs/reference/materials.md](../../docs/reference/materials.md#pa12-nylon-sls-dry-pa12) — mat-004-e1
+- [docs/reference/materials.md](../../docs/reference/materials.md#pa12-nylon-dry-screening-assumptions-pa12) — mat-004-e1
 
-> Young's modulus: 1.8 GPa (MatWeb / EOS PA12 datasheet, dry, room temp)
+> Screening Young's modulus: 1.8 GPa
 
-- [docs/reference/materials.md](../../docs/reference/materials.md#pa12-nylon-sls-dry-pa12) — mat-004-e2
+- [docs/reference/materials.md](../../docs/reference/materials.md#pa12-nylon-dry-screening-assumptions-pa12) — mat-004-e2
 
-> deflections leave the small-strain regime
+> These deliberately provisional inputs support rough comparison only.
+
+- [docs/reference/materials.md](../../docs/reference/materials.md#pa12-nylon-dry-screening-assumptions-pa12) — mat-004-e3
+
+> A repeat of the current linear-static solve does not fix that limitation
 
 Critical case: no.
 
@@ -79,7 +83,7 @@ Critical case: no.
 
 **Question:** Can I treat the material table as as-built AM design allowables?
 
-**Expected:** abstain; evidence insufficient.
+**Expected:** answer; evidence supported.
 
 **Required facts / behavior:**
 
@@ -101,20 +105,22 @@ Critical case: yes.
 
 ## 4. mat-010 — comparison
 
-**Question:** Why is PA12's mass comparison usable while its modulus-scaled deflection needs a live solve?
+**Question:** Why is PA12's mass comparison usable for screening while its modulus-scaled deflection is not verified?
 
 **Expected:** answer; evidence partial.
 
 **Required facts / behavior:**
 
-- scaled comparisons assume linear elasticity
+- screening mass scales from the same geometry by the density ratio
 - PA12's much lower E makes scaled deflection leave the small-strain regime
-- the source explicitly says to run a live solve
+- repeating the current linear-static solve is insufficient
+- verification requires process-, orientation-, and moisture-specific properties with an appropriate nonlinear model or physical testing
 
 **Must not claim:**
 
 - PA12 deflection scaling is verified
 - PA12 stress scaling is a nonlinear material solve
+- any live linear solve verifies large-deflection PA12 behavior
 
 **Expected numbers (reference values only):**
 
@@ -122,13 +128,17 @@ Critical case: yes.
 
 **Supporting passages:**
 
-- [docs/reference/materials.md](../../docs/reference/materials.md#pa12-nylon-sls-dry-pa12) — mat-010-e1
+- [docs/reference/materials.md](../../docs/reference/materials.md#pa12-nylon-dry-screening-assumptions-pa12) — mat-010-e1
 
-> E is ~38x lower than aluminum — **deflections leave the small-strain regime**, so linearly scaled PA12 deflection is NOT VERIFIED; run a live solve.
+> linearly scaled deflection leaves the small-strain regime and is **NOT VERIFIED**
 
 - [docs/reference/materials.md](../../docs/reference/materials.md#summary) — mat-010-e2
 
-> Scaled comparisons assume linear elasticity: stress is taken as E-independent, deflection scales with the modulus ratio.
+> mass for unchanged geometry scales with the density ratio.
+
+- [docs/reference/materials.md](../../docs/reference/materials.md#pa12-nylon-dry-screening-assumptions-pa12) — mat-010-e3
+
+> A repeat of the current linear-static solve does not fix that limitation
 
 Critical case: no.
 
@@ -225,7 +235,7 @@ Critical case: yes.
 
 **Question:** Does a documented analytical check certify the cantilever for production use?
 
-**Expected:** abstain; evidence insufficient.
+**Expected:** answer; evidence supported.
 
 **Required facts / behavior:**
 

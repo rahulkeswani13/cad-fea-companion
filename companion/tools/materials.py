@@ -203,8 +203,10 @@ def scale_result(
         out["deflection_not_verified"] = True
         flags.append(
             "PA12 deflection NOT VERIFIED: at E~1.8 GPa the linearly scaled "
-            "deflection leaves the small-strain assumption — run a live solve "
-            "for a usable polymer deflection"
+            "deflection leaves the small-strain assumption. Repeating the "
+            "current linear-static solve is insufficient; use qualified "
+            "process/condition data with an appropriate nonlinear model or "
+            "physical testing"
         )
     else:
         out["deflection_not_verified"] = False

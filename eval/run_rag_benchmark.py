@@ -39,9 +39,15 @@ def run_baseline(benchmark: dict, split: str = 'development') -> dict:
 
 def review_markdown(benchmark: dict) -> str:
     selected = {c['id']: c for c in benchmark['cases']}
+    approved = benchmark.get('review', {}).get('status') == 'approved'
+    status = (
+        '**Status: approved after delegated user review.** These are expected answers, not model outputs.'
+        if approved else
+        '**Status: awaiting your review.** These are expected answers, not model outputs.'
+    )
     lines = [
         '# RAG benchmark review — 20 development examples', '',
-        '**Status: awaiting your review.** These are expected answers, not model outputs.', '',
+        status, '',
         'For each example, check whether the expected behavior is useful, the facts and source',
         'passages support it, and the forbidden claims capture the important limits. Reply',
         'with case IDs and corrections, or accept all 20. No retrieval tuning has started.',

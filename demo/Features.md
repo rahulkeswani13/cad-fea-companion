@@ -1604,5 +1604,6 @@ lattice at high humidity?”; “What is the current maximum brake-pedal stress?
 **Likely interview questions:** Why did 100% document hit@4 not establish answer
 quality? How do evidence alternatives differ from required facts? What prevents
 held-out tuning? What does a null score mean? Who reviewed the labels? Answer
-honestly: AI drafted them from references; the user reviews a 20-case sample,
-not an independent engineering validation of the entire dataset.
+honestly: AI drafted them from references; the user delegated a 20-case review
+that checked operational claims against code/tests and material claims against
+supplier data. That sample is not independent validation of the entire dataset.

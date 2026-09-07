@@ -144,3 +144,16 @@ def test_history_preserves_benchmark_identity_and_pending_status():
     assert entry['evidence_retrieval']['benchmark_hash'] == 'abc'
     assert entry['evidence_retrieval']['review_status'] == 'pending'
     assert entry['evidence_retrieval']['answer_evaluation'] == 'not_run'
+
+
+def test_review_markdown_reports_approved_status():
+    from eval.run_rag_benchmark import review_markdown
+
+    benchmark = deepcopy(load_benchmark())
+    benchmark['review'] = {
+        'status': 'approved',
+        'benchmark_hash': benchmark_hash(benchmark),
+    }
+    rendered = review_markdown(benchmark)
+    assert 'Status: approved after delegated user review.' in rendered
+    assert 'Status: awaiting your review.' not in rendered

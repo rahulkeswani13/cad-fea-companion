@@ -116,6 +116,9 @@ def test_scale_result_flags_pa12_deflection():
     scaled = mats.scale_result(base, pa, "brake_pedal")
     assert scaled["deflection_not_verified"] is True
     assert any("NOT VERIFIED" in note for note in scaled["scaling_notes"])
+    joined = " ".join(scaled["scaling_notes"])
+    assert "linear-static solve is insufficient" in joined
+    assert "nonlinear model" in joined
 
 
 def test_scale_result_same_material_is_noop():

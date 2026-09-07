@@ -64,7 +64,7 @@
     },
     {
       "id": "pa12",
-      "display_name": "PA12 (nylon, SLS, dry)",
+      "display_name": "PA12 (nylon, dry screening assumptions)",
       "aliases": ["nylon", "pa", "pa12nylon", "slsnylon"],
       "family": "polymer",
       "youngs_modulus_mpa": 1800.0,
@@ -72,11 +72,11 @@
       "density_kg_m3": 1010.0,
       "yield_mpa": 45.0,
       "cost_class": "low",
-      "note": "Laser-sintered polymer: cheapest per part and lightest, but E is ~38x lower than aluminum — deflections leave the small-strain regime, so scaled deflection is NOT VERIFIED. Moisture-dependent properties.",
+      "note": "Provisional dry PA12 screening inputs, not a qualified SLS or MJF material card. E is ~38x lower than aluminum, so scaled deflection is NOT VERIFIED. Use process-, orientation-, and moisture-specific data with an appropriate nonlinear model or physical testing.",
       "sources": {
-        "elasticity": "MatWeb / EOS PA12 datasheet: tensile modulus ~1.8 GPa (dry, RT)",
-        "density": "EOS PA12 datasheet: 1.01 g/cm3",
-        "yield": "EOS/MatWeb PA12: tensile yield ~45 MPa (dry, RT)"
+        "elasticity": "Provisional screening assumption; published PA12 values vary by process, orientation, and conditioning (not a qualified material allowable)",
+        "density": "Provisional screening assumption; printed-part density is process-specific (not a qualified material allowable)",
+        "yield": "Provisional 45 MPa screening proxy; not supplier-qualified yield and not interchangeable with tensile strength"
       }
     },
     {

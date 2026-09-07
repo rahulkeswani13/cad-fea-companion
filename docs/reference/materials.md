@@ -9,7 +9,8 @@ cite them. `tests/test_materials.py` asserts the two stay in sync.
 not as-built additive-manufacturing allowables. Fatigue, temperature
 dependence, moisture uptake (PA12), and build-orientation knockdowns are **not
 verified** anywhere in this repo. Scaled comparisons assume linear elasticity:
-stress is taken as E-independent, deflection scales with the modulus ratio.
+stress is taken as E-independent, deflection scales with the modulus ratio, and
+mass for unchanged geometry scales with the density ratio.
 
 ## Summary
 
@@ -18,7 +19,7 @@ stress is taken as E-independent, deflection scales with the modulus ratio.
 | Al 6061-T6 | `al6061t6` | 69 GPa | 0.33 | 2700 kg/m^3 | 276 MPa | low |
 | Al 7075-T6 | `al7075t6` | 71.7 GPa | 0.33 | 2810 kg/m^3 | 503 MPa | medium |
 | Ti-6Al-4V (Grade 5, annealed) | `ti6al4v` | 113.8 GPa | 0.342 | 4430 kg/m^3 | 880 MPa | high |
-| PA12 (nylon, SLS, dry) | `pa12` | 1.8 GPa | 0.40 | 1010 kg/m^3 | 45 MPa | low |
+| PA12 (nylon, dry screening assumptions) | `pa12` | 1.8 GPa | 0.40 | 1010 kg/m^3 | 45 MPa proxy | low |
 | Steel-Generic | `steel` | 210 GPa | 0.30 | 7900 kg/m^3 | 250 MPa | low |
 
 ## Al 6061-T6 (`al6061t6`)
@@ -46,14 +47,23 @@ stress is taken as E-independent, deflection scales with the modulus ratio.
   the yield. High material + machining cost; the classic AM/lattice material.
   Aliases: `ti`, `ti64`, `titanium`, `grade5`.
 
-## PA12 nylon, SLS, dry (`pa12`)
+## PA12 nylon, dry screening assumptions (`pa12`)
 
-- Young's modulus: 1.8 GPa (MatWeb / EOS PA12 datasheet, dry, room temp)
-- Density: 1010 kg/m^3 (EOS PA12 datasheet)
-- Yield: 45 MPa (EOS / MatWeb PA12, dry)
-- Laser-sintered polymer: cheapest per part and lightest, but E is ~38x lower
-  than aluminum — **deflections leave the small-strain regime**, so linearly
-  scaled PA12 deflection is NOT VERIFIED; run a live solve. Moisture-dependent.
+- Screening Young's modulus: 1.8 GPa. This is within published PA12 ranges but
+  is not tied to one qualified powder, printer, orientation, or conditioning
+  procedure.
+- Screening density: 1010 kg/m^3. Printed-part density is process-specific.
+- Screening yield proxy: 45 MPa. Do not treat this as a supplier-qualified
+  yield allowable or silently substitute tensile strength for yield.
+- These deliberately provisional inputs support rough comparison only. For
+  example, current EOS PA 2200 SLS data reports 1.65 GPa tensile modulus,
+  930 kg/m^3 density, and orientation-dependent tensile strength rather than a
+  45 MPa yield value. At the repo's 1.8 GPa screening modulus, PA12 is ~38x
+  less stiff than aluminum: linearly scaled deflection leaves the small-strain
+  regime and is **NOT VERIFIED**. A repeat of the current linear-static solve
+  does not fix that limitation; use process-, orientation-, and
+  moisture-specific properties with an appropriate nonlinear model or physical
+  testing.
 
 ## Steel-Generic (`steel`)
 

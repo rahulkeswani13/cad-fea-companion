@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "corpus_fingerprint": "98e8beb04ad851ce",
+  "corpus_fingerprint": "63473d5346a78154",
   "review_case_ids": [
     "mat-001",
     "mat-004",
@@ -24,7 +24,8 @@
     "flow-049"
   ],
   "review": {
-    "status": "pending"
+    "status": "approved",
+    "benchmark_hash": "742864f5d3e3b83eb5d752c4e05153d9fda281cf06181c3f3305b7d41b811ac1"
   },
   "cases": [
     {
@@ -2144,7 +2145,7 @@
       "family": "material-table-pa12",
       "split": "development",
       "category": "fact",
-      "query": "What values are listed for dry SLS PA12, and what is its key analysis caveat?",
+      "query": "What provisional PA12 screening values does the repository use, and what is their key analysis caveat?",
       "history": [],
       "expected_action": "answer",
       "expected_support": "supported",
@@ -2154,8 +2155,8 @@
           "alternatives": [
             {
               "source": "docs/reference/materials.md",
-              "section_id": "docs/reference/materials.md::pa12-nylon-sls-dry-pa12",
-              "quote": "Young's modulus: 1.8 GPa (MatWeb / EOS PA12 datasheet, dry, room temp)"
+              "section_id": "docs/reference/materials.md::pa12-nylon-dry-screening-assumptions-pa12",
+              "quote": "Screening Young's modulus: 1.8 GPa"
             }
           ]
         },
@@ -2164,21 +2165,31 @@
           "alternatives": [
             {
               "source": "docs/reference/materials.md",
-              "section_id": "docs/reference/materials.md::pa12-nylon-sls-dry-pa12",
-              "quote": "deflections leave the small-strain regime"
+              "section_id": "docs/reference/materials.md::pa12-nylon-dry-screening-assumptions-pa12",
+              "quote": "These deliberately provisional inputs support rough comparison only."
+            }
+          ]
+        },
+        {
+          "id": "mat-004-e3",
+          "alternatives": [
+            {
+              "source": "docs/reference/materials.md",
+              "section_id": "docs/reference/materials.md::pa12-nylon-dry-screening-assumptions-pa12",
+              "quote": "A repeat of the current linear-static solve does not fix that limitation"
             }
           ]
         }
       ],
       "required_facts": [
-        "E is 1.8 GPa",
-        "density is 1010 kg/m^3",
-        "yield is 45 MPa",
-        "scaled PA12 deflection is not verified and a live solve is advised"
+        "the repository uses provisional screening inputs of E 1.8 GPa, density 1010 kg/m^3, and a 45 MPa yield proxy",
+        "the values are not tied to one qualified PA12 process, orientation, or conditioning procedure",
+        "scaled PA12 deflection is not verified and repeating the current linear-static solve is insufficient"
       ],
       "forbidden_claims": [
         "linear scaled PA12 deflection is verified",
-        "PA12 is suitable without moisture qualification"
+        "the values are qualified EOS SLS PA 2200 properties",
+        "45 MPa is a supplier-qualified PA12 yield allowable"
       ],
       "numeric_expectations": [
         {
@@ -2188,7 +2199,7 @@
           "tolerance": 0
         },
         {
-          "name": "yield",
+          "name": "screening yield proxy",
           "value": 45,
           "unit": "MPa",
           "tolerance": 0
@@ -2372,8 +2383,8 @@
       "category": "paraphrase",
       "query": "Can I treat the material table as as-built AM design allowables?",
       "history": [],
-      "expected_action": "abstain",
-      "expected_support": "insufficient",
+      "expected_action": "answer",
+      "expected_support": "supported",
       "required_evidence": [
         {
           "id": "mat-008-e1",
@@ -2432,7 +2443,7 @@
       "family": "material-pa12-scaling",
       "split": "development",
       "category": "comparison",
-      "query": "Why is PA12's mass comparison usable while its modulus-scaled deflection needs a live solve?",
+      "query": "Why is PA12's mass comparison usable for screening while its modulus-scaled deflection is not verified?",
       "history": [],
       "expected_action": "answer",
       "expected_support": "partial",
@@ -2442,8 +2453,8 @@
           "alternatives": [
             {
               "source": "docs/reference/materials.md",
-              "section_id": "docs/reference/materials.md::pa12-nylon-sls-dry-pa12",
-              "quote": "E is ~38x lower than aluminum \u2014 **deflections leave the small-strain regime**, so linearly scaled PA12 deflection is NOT VERIFIED; run a live solve."
+              "section_id": "docs/reference/materials.md::pa12-nylon-dry-screening-assumptions-pa12",
+              "quote": "linearly scaled deflection leaves the small-strain regime and is **NOT VERIFIED**"
             }
           ]
         },
@@ -2453,19 +2464,31 @@
             {
               "source": "docs/reference/materials.md",
               "section_id": "docs/reference/materials.md::summary",
-              "quote": "Scaled comparisons assume linear elasticity: stress is taken as E-independent, deflection scales with the modulus ratio."
+              "quote": "mass for unchanged geometry scales with the density ratio."
+            }
+          ]
+        },
+        {
+          "id": "mat-010-e3",
+          "alternatives": [
+            {
+              "source": "docs/reference/materials.md",
+              "section_id": "docs/reference/materials.md::pa12-nylon-dry-screening-assumptions-pa12",
+              "quote": "A repeat of the current linear-static solve does not fix that limitation"
             }
           ]
         }
       ],
       "required_facts": [
-        "scaled comparisons assume linear elasticity",
+        "screening mass scales from the same geometry by the density ratio",
         "PA12's much lower E makes scaled deflection leave the small-strain regime",
-        "the source explicitly says to run a live solve"
+        "repeating the current linear-static solve is insufficient",
+        "verification requires process-, orientation-, and moisture-specific properties with an appropriate nonlinear model or physical testing"
       ],
       "forbidden_claims": [
         "PA12 deflection scaling is verified",
-        "PA12 stress scaling is a nonlinear material solve"
+        "PA12 stress scaling is a nonlinear material solve",
+        "any live linear solve verifies large-deflection PA12 behavior"
       ],
       "numeric_expectations": [
         {
@@ -3124,8 +3147,8 @@
       "category": "unsupported",
       "query": "Does a documented analytical check certify the cantilever for production use?",
       "history": [],
-      "expected_action": "abstain",
-      "expected_support": "insufficient",
+      "expected_action": "answer",
+      "expected_support": "supported",
       "required_evidence": [
         {
           "id": "mat-026-e1",
@@ -3647,15 +3670,16 @@
           "alternatives": [
             {
               "source": "docs/reference/materials.md",
-              "section_id": "docs/reference/materials.md::pa12-nylon-sls-dry-pa12",
-              "quote": "linearly scaled PA12 deflection is NOT VERIFIED; run a live solve."
+              "section_id": "docs/reference/materials.md::pa12-nylon-dry-screening-assumptions-pa12",
+              "quote": "linearly scaled deflection leaves the small-strain regime and is **NOT VERIFIED**"
             }
           ]
         }
       ],
       "required_facts": [
         "the scaled PA12 deflection is not verified",
-        "a live solve is required for that displacement claim"
+        "repeating the current linear-static solve is insufficient",
+        "a qualified nonlinear model or physical testing is required for that displacement claim"
       ],
       "forbidden_claims": [
         "the nylon row validates displacement",
