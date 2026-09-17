@@ -66,7 +66,7 @@ def review_markdown(benchmark: dict) -> str:
     selected = {c['id']: c for c in benchmark['cases']}
     approved = benchmark.get('review', {}).get('status') == 'approved'
     status = (
-        '**Status: approved after delegated user review.** These are expected answers, not model outputs.'
+        '**Status: approved after user review.** These are expected answers, not model outputs.'
         if approved else
         '**Status: awaiting your review.** These are expected answers, not model outputs.'
     )

@@ -172,7 +172,7 @@ def test_review_markdown_reports_approved_status():
         'benchmark_hash': benchmark_hash(benchmark),
     }
     rendered = review_markdown(benchmark)
-    assert 'Status: approved after delegated user review.' in rendered
+    assert 'Status: approved after user review.' in rendered
     assert 'Status: awaiting your review.' not in rendered
 
 

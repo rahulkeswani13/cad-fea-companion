@@ -8,7 +8,7 @@ Read `docs/adr/ADR-018-evidence-aware-rag.md` and
 |---|---|---|
 | Corpus/index | [PR #5](https://github.com/rahulkeswani13/cad-fea-companion/pull/5) | Merged to `main`. |
 | Original benchmark | [PR #6](https://github.com/rahulkeswani13/cad-fea-companion/pull/6) | Merged to `main`. |
-| Benchmark repair | `codex/rag-benchmark-repair` | Active; implementation and provisional baseline complete, awaiting 20-case user review. |
+| Benchmark repair | `codex/rag-benchmark-repair` | Complete locally; all 20 review cases accepted by the user on 2026-09-17. |
 | Retrieval | `codex/rag-neural-retrieval` | Existing local implementation at `f784c76`; preserve and improve after benchmark approval. |
 | Answer evidence | `codex/rag-evidence-answers` | Existing local implementation at `7810e50`; preserve and improve after retrieval. |
 | RAG Lab/acceptance | `codex/rag-demo-acceptance` | Existing local implementation at `c2fbf87`; preserve and improve after answer evidence. |
@@ -19,20 +19,18 @@ Immutable recovery names preserve the three local prototypes:
 merge. The active stage branches may be rebased onto the repaired benchmark so
 the existing code is improved instead of rewritten.
 
-## Current checkpoint
+## Completed checkpoint
 
-The user must review the 20 selected development cases in
-`eval/reviews/rag_benchmark_review.md`. The selection contains every changed
-case, every critical development case, and two PA12 continuity cases. Ask for
-either `accept all 20` or case IDs with corrections. Do not tune retrieval or
-run the historical held-out split before that response.
+The user accepted all 20 selected development cases in
+`eval/reviews/rag_benchmark_review.md` on 2026-09-17. The selection contains
+every changed case, every critical development case, and two PA12 continuity
+cases.
 
-On explicit acceptance, and only then, set `review.status` to `approved` and
-`review.benchmark_hash` to the current `benchmark_hash(benchmark)` in
-`eval/rag_benchmark.json`. Changes to labels, corpus, or selected review cases
-invalidate approval by design.
+`eval/rag_benchmark.json` records `review.status = approved` and the matching
+content hash. Changes to labels, corpus, or selected review cases invalidate
+approval by design.
 
-## Repaired provisional baseline
+## Repaired approved baseline
 
 The development audit and its case-by-case classifications are in
 `eval/reviews/rag_benchmark_audit.md`. The fixed lexical configuration reports:
@@ -45,7 +43,7 @@ The development audit and its case-by-case classifications are in
 | Precision | 0.2500 | diagnostic only |
 | nDCG | 0.6825 | diagnostic only |
 
-These measurements are provisional and retrieval-only. The large gap between
+These measurements are retrieval-only. The large gap between
 top-20 and final-four recall identifies ranking as a major problem, while five
 audited cases also contain evidence absent from the lexical top 20. Because the
 repair changed labels and added maintained evidence, the values are a new
@@ -60,8 +58,7 @@ baseline, not a retriever-only improvement over PR #6.
 - Same-source unmatched hits are review leads only and never gain automatic
   relevance credit.
 - No-evidence cases keep null retrieval metrics and never become passing answers.
-- `eval/run_rag_benchmark.py --split heldout` exits before retrieval while
-  review is pending. The old held-out set stays retired even after approval.
+- The old held-out set stays retired after approval; do not invoke its runner.
 - `eval/rag_labels.json` hit@4/MRR remains document-level continuity data, not
   answer correctness.
 

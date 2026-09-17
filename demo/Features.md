@@ -1619,16 +1619,16 @@ guidance. The repair audits those causes separately before more tuning.
 classes: corrected labels, final-ranking misses, and top-20 candidate misses.
 Then compare final-four and candidate-pool columns. Explain that a same-document
 hit still earns no credit unless its exact passage is approved. Open the renewed
-20-case review and note that its status is pending because corpus and label
-changes invalidate the earlier approval.
+20-case review and note that the user accepted it on 2026-09-17 after the corpus
+and label changes invalidated the earlier approval.
 
 **Tests:** `tests/test_rag_benchmark.py` verifies that same-source unjudged hits
 are diagnostics rather than relevance credit, that critical recall is reported,
 and that the top-20 candidate pool is measured independently from final ranking.
 
 **Evals:** `rag_benchmark_fixture_integrity`, `rag_benchmark_review_guard`, and
-`rag_benchmark_candidate_diagnostics`; the generated lexical report is explicitly
-provisional and performs no answer grading or paid API calls.
+`rag_benchmark_candidate_diagnostics`; the generated lexical report performs no
+answer grading or paid API calls.
 
 **Demo prompts:** “Why can candidate recall@20 be high while recall@4 is low?”;
 “Why did changing a label invalidate the old review?”; “Does retrieving another

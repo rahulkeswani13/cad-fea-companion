@@ -1,7 +1,8 @@
 # RAG development benchmark repair audit
 
-**Status:** awaiting review. This audit uses development cases only. The
-original held-out cases were not inspected or rerun.
+**Status:** all 20 selected cases accepted by the user on 2026-09-17. This audit
+uses development cases only. The original held-out cases were not inspected or
+rerun.
 
 The first neural comparison exposed sixteen development cases with missing
 evidence. Each miss was reviewed against the maintained reference text and the
@@ -32,14 +33,13 @@ fingerprint, and baseline. The repaired lexical development run reports:
 | Precision | 0.2500 | diagnostic only |
 | nDCG | 0.6825 | diagnostic only |
 
-These numbers are retrieval-only and provisional. They are not comparable as a
+These numbers are retrieval-only. They are not comparable as a
 retriever improvement against the old baseline because the evidence labels and
-corpus changed. They become the new lexical baseline only after review approval.
+corpus changed. They are the approved repaired lexical baseline.
 
 ## Review gate
 
 `rag_benchmark_review.md` contains every changed case, every critical
-development case, and two PA12 continuity cases (20 total). Tuning remains
-blocked until those cases are explicitly approved and the approval hash is
-recorded. A same-source unmatched-hit diagnostic supplies review leads but never
-awards relevance credit automatically.
+development case, and two PA12 continuity cases (20 total). The user accepted
+all 20 and the matching approval hash is recorded. A same-source unmatched-hit
+diagnostic supplies review leads but never awards relevance credit automatically.

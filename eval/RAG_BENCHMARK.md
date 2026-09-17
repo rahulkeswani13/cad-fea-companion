@@ -1,10 +1,10 @@
 # Evidence benchmark (ADR-018, benchmark-repair stage)
 
-This is a **repaired fixture awaiting user review**, not a claim that generated
+This is a **user-approved repaired fixture**, not a claim that generated
 answers pass. It contains 100 cases: 70 development and 30 historical held-out,
 including 20 critical cases. Twenty selected development examples are rendered
-in `reviews/rag_benchmark_review.md` for review before tuning. The repair audit
-is recorded in `reviews/rag_benchmark_audit.md`.
+in `reviews/rag_benchmark_review.md`; the user accepted all 20 on 2026-09-17.
+The repair audit is recorded in `reviews/rag_benchmark_audit.md`.
 
 ## Run the fixed baseline
 
@@ -59,27 +59,24 @@ metric credit.
 
 ## Review and held-out discipline
 
-Review the 20 examples for useful expected behavior, source support, engineering
-applicability and prohibited conclusions. Reply with case IDs/corrections or
-accept all 20. The review is a sample, not independent validation of all 100.
+The user reviewed and accepted the 20 examples for useful expected behavior,
+source support, engineering applicability and prohibited conclusions on
+2026-09-17. The review is a sample, not independent validation of all 100.
 
-After explicit user acceptance, record `review.status = approved` and
-`review.benchmark_hash = benchmark_hash(benchmark)` in the fixture. This change
-is made only in response to the user's review. Label, corpus, or review-selection
-changes invalidate the approval hash. Never mark approval automatically after
-validation or tests pass.
+`review.status = approved` and `review.benchmark_hash = benchmark_hash(benchmark)`
+record that acceptance. Label, corpus, or review-selection changes invalidate
+the approval hash. Never mark approval automatically after validation or tests
+pass.
 
-Tuning entrypoints must call `require_review`. While pending,
-`--split heldout` exits nonzero. The original held-out cases were already run by
+Tuning entrypoints must call `require_review`. The original held-out cases were already run by
 superseded local experiments and are now historical: do not rerun them, tune to
 them, or use them for a new quality claim. Once retrieval is frozen, an
 independent reviewer creates a fresh 30-case hidden set. All 30 generated answers
 receive manual review.
 
-The initial lexical development baseline is permitted before review because its
-configuration is fixed, and is explicitly provisional. Do not tune retrieval,
-rewrite labels to reward a result, lower acceptance targets, or drop difficult
-questions while reviewing baseline misses.
+The repaired lexical development baseline is now the approved comparison point.
+Do not rewrite labels to reward a result, lower acceptance targets, or drop
+difficult questions while tuning.
 
 ## Quality bars belong to later stages
 

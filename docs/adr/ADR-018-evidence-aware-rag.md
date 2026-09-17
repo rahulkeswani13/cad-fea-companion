@@ -51,6 +51,8 @@ corpus-coverage gap.
 Those changes invalidate the earlier approval hash and lexical baseline. The
 repaired fixture returns to `pending` until the user reviews every changed case,
 every critical development case, and the selected continuity cases (20 total).
+The user accepted all 20 on 2026-09-17; the fixture records the matching content
+hash, and later label or corpus changes invalidate that approval.
 
 Candidate-pool recall at 20 is reported alongside final recall at four so a
 ranking miss can be distinguished from a candidate-retrieval miss. Hits from a

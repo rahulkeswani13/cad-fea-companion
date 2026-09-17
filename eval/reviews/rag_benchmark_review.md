@@ -1,6 +1,6 @@
 # RAG benchmark review — 20 development examples
 
-**Status: awaiting your review.** These are expected answers, not model outputs.
+**Status: approved after user review.** These are expected answers, not model outputs.
 
 For each example, check whether the expected behavior is useful, the facts and source
 passages support it, and the forbidden claims capture the important limits. Reply

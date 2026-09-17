@@ -24,7 +24,8 @@
     "flow-049"
   ],
   "review": {
-    "status": "pending"
+    "status": "approved",
+    "benchmark_hash": "735b6f0a6d9befb2895632b54f6d53c8d0228785dd7d36130f1233485298eb6a"
   },
   "cases": [
     {
