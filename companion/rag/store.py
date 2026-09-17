@@ -6,19 +6,20 @@ rank only — no score normalization across retrievers. The fused hit keeps the
 legacy ``score`` key (TF-IDF cosine) byte-compatible; per-retriever ranks,
 BM25 scores, and the RRF score are additive fields.
 
-Every search also returns a ``grounding`` label (``strong`` | ``weak`` |
-``none``) computed from the fused top hit: the retrieval-side analogue of
-solver honesty. A ``weak`` label means the corpus has no confident match and
-the UI says so instead of dressing up noise.
+Every search also returns the legacy ``grounding`` diagnostic (``strong`` |
+``weak`` | ``none``), computed from the fused top hit. Rank and lexical overlap
+do not establish answer support; evidence assessment is a separate layer.
 """
 
 from __future__ import annotations
 
 import hashlib
 import json
-import re
+import os
+import tempfile
+import threading
 from collections import Counter
-from dataclasses import dataclass
+from dataclasses import asdict
 from pathlib import Path
 from typing import Any
 
@@ -26,17 +27,12 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 
 from companion.config import ROOT, get_settings
+from companion.rag.chunking import Chunk, chunk_text
+from companion.rag.corpus import manifest_entries
 
 # RRF fusion constants (standard k=60 damping) and per-retriever candidate depth.
 _RRF_K = 60
 _CANDIDATES = 10
-
-
-@dataclass
-class Chunk:
-    chunk_id: str
-    source: str
-    text: str
 
 
 def rrf_fuse(
@@ -83,6 +79,7 @@ class LocalTfidfStore:
         self.matrix = None
         self.bm25: Any | None = None
         self._analyzer: Any | None = None
+        self.index_metadata: dict[str, Any] = {}
 
     @property
     def path(self) -> Path:
@@ -93,6 +90,7 @@ class LocalTfidfStore:
         self.matrix = None
         self.bm25 = None
         self._analyzer = None
+        self.index_metadata = {}
 
     def add_chunks(self, chunks: list[Chunk]) -> None:
         self.chunks.extend(chunks)
@@ -108,7 +106,7 @@ class LocalTfidfStore:
         corpus = [self._tokenize(c.text) for c in self.chunks]
         self.bm25 = BM25Okapi(corpus) if corpus else None
 
-    def build(self) -> None:
+    def build(self, persist: bool = True) -> None:
         if not self.chunks:
             self.matrix = None
             self.bm25 = None
@@ -116,27 +114,37 @@ class LocalTfidfStore:
         texts = [c.text for c in self.chunks]
         self.matrix = self.vectorizer.fit_transform(texts)
         self._build_bm25()
-        self.save()
+        if persist:
+            self.save()
 
     def save(self) -> None:
-        payload = {
-            "chunks": [
-                {"chunk_id": c.chunk_id, "source": c.source, "text": c.text}
-                for c in self.chunks
-            ]
-        }
+        payload = json.dumps({
+            "chunks": [asdict(c) for c in self.chunks],
+            "index_metadata": self.index_metadata,
+        }, indent=2)
         self.path.parent.mkdir(parents=True, exist_ok=True)
-        self.path.write_text(json.dumps(payload, indent=2), encoding="utf-8")
+        # The old active file remains intact until the final atomic replace.
+        if self.path.exists():
+            _atomic_write(self.path.with_suffix(".previous.json"), self.path.read_text())
+        _atomic_write(self.path, payload)
 
     def load(self) -> bool:
         if not self.path.exists():
             return False
-        payload = json.loads(self.path.read_text(encoding="utf-8"))
-        self.chunks = [Chunk(**item) for item in payload.get("chunks", [])]
-        if self.chunks:
-            self.matrix = self.vectorizer.fit_transform([c.text for c in self.chunks])
-            self._build_bm25()
-        return bool(self.chunks)
+        try:
+            payload = json.loads(self.path.read_text(encoding="utf-8"))
+            if not isinstance(payload, dict) or not isinstance(payload.get("index_metadata", {}), dict):
+                return False
+            candidate = LocalTfidfStore()
+            candidate.chunks = [Chunk(**item) for item in payload.get("chunks", [])]
+            candidate.index_metadata = payload.get("index_metadata") or {}
+            candidate.build(persist=False)
+            if not candidate.chunks:
+                return False
+        except (OSError, ValueError, TypeError, KeyError):
+            return False
+        self.__dict__.update(candidate.__dict__)
+        return True
 
     def _rankings(self, query: str) -> tuple[dict[int, int], dict[int, int], list[float], list[float]]:
         """Full TF-IDF and BM25 rankings over the corpus.
@@ -180,6 +188,11 @@ class LocalTfidfStore:
             "chunk_id": chunk.chunk_id,
             "source": chunk.source,
             "text": chunk.text,
+            "section_id": chunk.section_id,
+            "heading": chunk.heading,
+            "start_line": chunk.start_line,
+            "end_line": chunk.end_line,
+            "metadata": chunk.metadata,
             # Legacy key: TF-IDF cosine (back-compat for old callers/UI).
             "score": round(float(cos[idx]), 4),
             "methods": methods,
@@ -263,45 +276,35 @@ class LocalTfidfStore:
             ],
             "index_updated_at": updated_at,
             "retrievers": ["tfidf", "bm25"],
+            "index_metadata": self.index_metadata,
         }
 
 
 _STORE: LocalTfidfStore | None = None
+_INDEX_LOCK = threading.RLock()
+CHUNKER_VERSION = "sections-v1"
+
+
+def _atomic_write(path: Path, text: str) -> None:
+    fd, temporary = tempfile.mkstemp(prefix=".rag-", dir=path.parent)
+    try:
+        with os.fdopen(fd, "w", encoding="utf-8") as handle:
+            handle.write(text)
+            handle.flush()
+            os.fsync(handle.fileno())
+        os.replace(temporary, path)
+    finally:
+        if os.path.exists(temporary):
+            os.unlink(temporary)
 
 
 def get_store() -> LocalTfidfStore:
     global _STORE
-    if _STORE is None:
-        _STORE = LocalTfidfStore()
-        _STORE.load()
-    return _STORE
-
-
-def chunk_text(text: str, source: str, max_chars: int = 800) -> list[Chunk]:
-    paragraphs = [p.strip() for p in re.split(r"\n\s*\n", text) if p.strip()]
-    chunks: list[Chunk] = []
-    buf = ""
-    idx = 0
-    for para in paragraphs:
-        if len(buf) + len(para) + 1 <= max_chars:
-            buf = f"{buf}\n\n{para}".strip()
-            continue
-        if buf:
-            chunks.append(Chunk(chunk_id=f"{source}::{idx}", source=source, text=buf))
-            idx += 1
-        if len(para) <= max_chars:
-            buf = para
-        else:
-            for start in range(0, len(para), max_chars):
-                piece = para[start : start + max_chars]
-                chunks.append(
-                    Chunk(chunk_id=f"{source}::{idx}", source=source, text=piece)
-                )
-                idx += 1
-            buf = ""
-    if buf:
-        chunks.append(Chunk(chunk_id=f"{source}::{idx}", source=source, text=buf))
-    return chunks
+    with _INDEX_LOCK:
+        if _STORE is None:
+            _STORE = LocalTfidfStore()
+            _STORE.load()
+        return _STORE
 
 
 def _resolve_corpus_dirs(
@@ -326,6 +329,8 @@ def collect_corpus_files(
     Pure selection logic — no store, no disk side effects — so the fail-closed
     allowlist property (ADR-014) is testable without touching global state.
     """
+    if corpus_dirs is None and get_settings().rag_corpus_dirs == ["docs/reference"]:
+        return [(ROOT / item["path"], item["path"]) for item in manifest_entries()]
     resolved = _resolve_corpus_dirs(corpus_dirs)
     out: list[tuple[Path, str]] = []
     for root_dir in resolved:
@@ -337,51 +342,95 @@ def collect_corpus_files(
             except ValueError:
                 source = str(path)
             out.append((path, source))
-    return out
+    return sorted(set(out), key=lambda item: item[1])
 
 
-def ingest_docs(corpus_dirs: list[str] | list[Path] | None = None) -> dict[str, Any]:
-    """Ingest only the declared corpus dirs (ADR-014 allowlist, fails closed).
+def ingest_docs(
+    corpus_dirs: list[str] | list[Path] | None = None,
+    *,
+    reuse_if_unchanged: bool = False,
+) -> dict[str, Any]:
+    """Build a candidate before publishing it; failures retain the accepted index."""
+    global _STORE
+    with _INDEX_LOCK:
+        try:
+            files = collect_corpus_files(corpus_dirs)
+            curated = corpus_dirs is None and get_settings().rag_corpus_dirs == ["docs/reference"]
+            metadata = {m["path"]: m for m in manifest_entries()} if curated else {}
+            candidate = LocalTfidfStore()
+            documents = []
+            for path, source in files:
+                text = path.read_text(encoding="utf-8")
+                chunks = chunk_text(text, source=source)
+                for chunk in chunks:
+                    chunk.metadata.update(metadata.get(source, {}))
+                candidate.add_chunks(chunks)
+                documents.append({
+                    "path": source, "chunks": len(chunks),
+                    "content_sha256": hashlib.sha256(text.encode()).hexdigest(),
+                    "metadata": metadata.get(source, {}),
+                })
+            if not candidate.chunks:
+                raise ValueError("Corpus has no indexable documents")
+            fingerprint = corpus_fingerprint(documents)
+            declared = [str(d) for d in (corpus_dirs if corpus_dirs is not None else get_settings().rag_corpus_dirs)]
+            report = {
+                "ok": True, "documents": documents,
+                "total_chunks": len(candidate.chunks), "corpus_dirs": declared,
+                "fingerprint": fingerprint,
+            }
+            current = get_store()
+            if reuse_if_unchanged and current.chunks and current.index_metadata.get("fingerprint") == fingerprint:
+                return {**report, "reused": True}
+            candidate.index_metadata = {
+                "fingerprint": fingerprint, "chunker": CHUNKER_VERSION,
+                "max_chars": 800, "retrieval": "tfidf-bm25-rrf-v1",
+                "documents": documents, "corpus_dirs": declared,
+            }
+            candidate.build(persist=False)
+            # Validate the candidate before touching either accepted snapshot.
+            if candidate.matrix is None or candidate.matrix.shape[0] != len(candidate.chunks):
+                raise ValueError("Candidate index failed validation")
+            candidate.save()
+            _STORE = candidate
+            return {**report, "reused": False}
+        except Exception as exc:  # noqa: BLE001 — rebuild boundary preserves accepted index
+            return {
+                "ok": False, "error": "RAG index rebuild failed; accepted index retained.",
+                "correction": "Check the corpus manifest and readable reference files, then rebuild.",
+                "error_class": "rag_ingest_failed", "reason": type(exc).__name__,
+            }
 
-    Files outside the declared corpus dirs — plans, notes, roadmap docs — are
-    never ingested: new content defaults to excluded, and getting in is a
-    deliberate act. Sources are repo-root-relative for paths under ROOT;
-    out-of-tree dirs (tests) keep their absolute path as the source.
-    """
-    files = collect_corpus_files(corpus_dirs)
-    store = get_store()
-    store.clear()
-    ingested = []
-    for path, source in files:
-        chunks = chunk_text(path.read_text(encoding="utf-8"), source=source)
-        store.add_chunks(chunks)
-        ingested.append({"path": source, "chunks": len(chunks)})
-    store.build()
-    # Report the declared form (portable, e.g. "docs/reference"), not the
-    # resolved absolute paths — eval reports are committed artifacts.
-    declared = [
-        str(d)
-        for d in (corpus_dirs if corpus_dirs is not None else get_settings().rag_corpus_dirs)
-    ]
-    return {
-        "ok": True,
-        "documents": ingested,
-        "total_chunks": len(store.chunks),
-        "corpus_dirs": declared,
-    }
+
+def rollback_index() -> dict[str, Any]:
+    """Restore the preceding validated snapshot (local administrative operation)."""
+    global _STORE
+    with _INDEX_LOCK:
+        current = get_store()
+        previous = current.path.with_suffix(".previous.json")
+        try:
+            payload = json.loads(previous.read_text(encoding="utf-8"))
+            candidate = LocalTfidfStore()
+            candidate.chunks = [Chunk(**item) for item in payload["chunks"]]
+            candidate.index_metadata = payload.get("index_metadata") or {}
+            if not candidate.chunks:
+                raise ValueError("Empty previous index")
+            candidate.build(persist=False)
+            candidate.save()
+            _STORE = candidate
+            return {"ok": True, "fingerprint": candidate.index_metadata.get("fingerprint")}
+        except (OSError, ValueError, TypeError, KeyError):
+            return {"ok": False, "error": "No valid previous RAG index is available.",
+                    "correction": "Rebuild from reviewed reference documents.", "error_class": "rag_rollback_failed"}
 
 
 def corpus_fingerprint(documents: list[dict[str, Any]]) -> str:
-    """Stable digest of the ingested corpus (sorted path + chunk counts).
-
-    The corpus is part of the eval fixture: retrieval metrics and RAG cases
-    mean something different when it changes, so the fingerprint rides in the
-    eval report and the history delta flags any drift (ADR-014).
-    """
-    payload = json.dumps(
-        sorted((str(d.get("path")), int(d.get("chunks") or 0)) for d in documents),
-        separators=(",", ":"),
-    )
+    """Digest actual content and metadata, while accepting legacy inventory rows."""
+    payload = json.dumps({
+        "documents": sorted(documents, key=lambda d: str(d.get("path"))),
+        "chunker": CHUNKER_VERSION, "max_chars": 800,
+        "retrieval": "tfidf-bm25-rrf-v1",
+    }, sort_keys=True, separators=(",", ":"))
     return hashlib.sha256(payload.encode("utf-8")).hexdigest()[:16]
 
 

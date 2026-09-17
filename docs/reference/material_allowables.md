@@ -20,7 +20,7 @@ These are **approximate teaching values**, not design allowables for production 
 
 - If max von Mises is **under 50 MPa**, it is comfortably below mild-steel yield (~250 MPa) for the cantilever demo.
 - The default cantilever demo with `100 N` on `100x20x5 mm` reaches about **120 MPa**, which is still below 250 MPa yield but **above 50 MPa**.
-- Engine-mount demo (Al 6061-T6, ~276 MPa yield): target **safety factor ≥ 1.5** on max von Mises for the 20000 N pad-load compare step.
+- Material recommendations use a **safety factor ≥ 1.5** against the active program material's yield value when the comparison tool reports a candidate.
 - Always state assumptions (geometry, load direction, material grade) when comparing stress to a limit.
 
 ## Units

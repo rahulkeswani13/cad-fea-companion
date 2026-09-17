@@ -1,0 +1,85 @@
+{
+  "version": 1,
+  "documents": [
+    {
+      "path": "docs/reference/ARCHITECTURE.md",
+      "topic": "product architecture",
+      "authority": "repository implementation and maintained reference",
+      "reviewed": "2026-09-06",
+      "version": "ADR-018 PR1",
+      "applicability": "Current implementation; descriptive, not a validation report"
+    },
+    {
+      "path": "docs/reference/materials.md",
+      "topic": "material properties",
+      "authority": "data/materials.json and cited references",
+      "reviewed": "2026-09-06",
+      "version": "ADR-018 PR1",
+      "applicability": "Bulk room-temperature reference values; no fatigue or as-built AM allowables"
+    },
+    {
+      "path": "docs/reference/material_allowables.md",
+      "topic": "teaching material values",
+      "authority": "repository implementation and maintained reference",
+      "reviewed": "2026-09-06",
+      "version": "ADR-018 PR1",
+      "applicability": "Approximate teaching values; not production design allowables"
+    },
+    {
+      "path": "docs/reference/freecad_fem_notes.md",
+      "topic": "analytical and FEA methods",
+      "authority": "repository implementation and maintained reference",
+      "reviewed": "2026-09-06",
+      "version": "ADR-018 PR1",
+      "applicability": "Supported linear static examples; assumptions and verification limits apply"
+    },
+    {
+      "path": "docs/reference/brake_pedal_lattice.md",
+      "topic": "brake pedal workflow",
+      "authority": "repository implementation and maintained reference",
+      "reviewed": "2026-09-06",
+      "version": "ADR-018 PR1",
+      "applicability": "Supported demonstration geometry and load cases only"
+    },
+    {
+      "path": "docs/reference/uav_arm_lattice.md",
+      "topic": "UAV arm workflow",
+      "authority": "repository implementation and maintained reference",
+      "reviewed": "2026-09-06",
+      "version": "ADR-018 PR1",
+      "applicability": "Supported demonstration geometry; no certification or fatigue-life claim"
+    },
+    {
+      "path": "docs/reference/tool_reference.md",
+      "topic": "tool usage",
+      "authority": "repository implementation and maintained reference",
+      "reviewed": "2026-09-06",
+      "version": "ADR-018 PR1",
+      "applicability": "Current public tools; current results must be obtained from tools"
+    },
+    {
+      "path": "docs/reference/design_programs.md",
+      "topic": "design programs and revisions",
+      "authority": "repository implementation and maintained reference",
+      "reviewed": "2026-09-06",
+      "version": "ADR-018 PR1",
+      "applicability": "Current implementation behavior; generated geometry is derived"
+    },
+    {
+      "path": "docs/reference/repair_loop.md",
+      "topic": "tool failures and recovery",
+      "authority": "repository implementation and maintained reference",
+      "reviewed": "2026-09-06",
+      "version": "ADR-018 PR1",
+      "applicability": "Supported error corrections; recovery does not verify engineering validity"
+    },
+    {
+      "path": "docs/reference/verification.md",
+      "topic": "verification and mesh convergence",
+      "authority": "repository implementation and maintained reference",
+      "reviewed": "2026-09-06",
+      "version": "ADR-018 PR1",
+      "applicability": "Static analysis and convergence scope; no certification or fatigue validation"
+    }
+  ]
+}
