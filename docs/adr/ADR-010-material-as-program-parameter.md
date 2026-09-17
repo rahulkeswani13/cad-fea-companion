@@ -47,9 +47,13 @@ SF against Al yield. Embedding RAG (F15) is scheduled *after* F09, so
    of guessing. Ranking: lightest mass at SF ≥ 1.5, mirroring
    `compare_brake_pedal_variants`.
 4. **PA12 policy: include, flag, don't fabricate.** The PA12 row appears in
-   comparisons (mass/SF are usable), but its scaled deflection carries
+   comparisons as provisional screening inputs; its 45 MPa value is a yield
+   proxy, not a supplier-qualified allowable. Mass scaling is useful only as a
+   screening comparison. Scaled deflection carries
    `deflection_not_verified: true` — at E ≈ 1.8 GPa linear scaling leaves
-   the small-strain regime; the correction says to run a live solve.
+   the small-strain regime. Repeating the current linear-static solve is not a
+   verification; use process/condition-specific data with an appropriate
+   nonlinear model or physical testing.
 5. **Solver honesty stays in band.** Yield = room-temperature Rp0.2
    handbook values. Not-verified notes cover fatigue, temperature,
    moisture uptake (PA12), and as-built AM lattice allowables — no

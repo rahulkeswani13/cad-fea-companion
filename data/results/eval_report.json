@@ -1,8 +1,8 @@
 {
-  "passed": 72,
+  "passed": 74,
   "failed": 0,
   "skipped": 5,
-  "total": 77,
+  "total": 79,
   "rows": [
     {
       "id": "adv_solve_without_geometry",
@@ -202,7 +202,7 @@
     {
       "id": "f04_get_program_after_create",
       "ok": true,
-      "detail": "{\"ok\": true, \"part\": \"brake_pedal\", \"rev\": 209, \"params_hash\": \"4e8a711c19b3\", \"params\": {\"web_type\": \"xtruss\", \"cell_size_mm\": 15.0, \"strut_radius_mm\": 2.5, \"material\": \"al6061t6\""
+      "detail": "{\"ok\": true, \"part\": \"brake_pedal\", \"rev\": 226, \"params_hash\": \"4e8a711c19b3\", \"params\": {\"web_type\": \"xtruss\", \"cell_size_mm\": 15.0, \"strut_radius_mm\": 2.5, \"material\": \"al6061t6\""
     },
     {
       "id": "f04_update_cell_size",
@@ -212,12 +212,12 @@
     {
       "id": "f04_update_dry_run",
       "ok": true,
-      "detail": "{\"ok\": true, \"changed\": true, \"dry_run\": true, \"part\": \"brake_pedal\", \"current\": {\"rev\": 210, \"params_hash\": \"447503639393\"}, \"proposed\": {\"params\": {\"web_type\": \"xtruss\", \"cell_si"
+      "detail": "{\"ok\": true, \"changed\": true, \"dry_run\": true, \"part\": \"brake_pedal\", \"current\": {\"rev\": 227, \"params_hash\": \"447503639393\"}, \"proposed\": {\"params\": {\"web_type\": \"xtruss\", \"cell_si"
     },
     {
       "id": "f04_update_noop",
       "ok": true,
-      "detail": "{\"ok\": true, \"changed\": false, \"part\": \"brake_pedal\", \"rev\": 210, \"params_hash\": \"447503639393\", \"params\": {\"web_type\": \"xtruss\", \"cell_size_mm\": 12.0, \"strut_radius_mm\": 2.5, \"mat"
+      "detail": "{\"ok\": true, \"changed\": false, \"part\": \"brake_pedal\", \"rev\": 227, \"params_hash\": \"447503639393\", \"params\": {\"web_type\": \"xtruss\", \"cell_size_mm\": 12.0, \"strut_radius_mm\": 2.5, \"mat"
     },
     {
       "id": "f04_update_out_of_range",
@@ -232,7 +232,7 @@
     {
       "id": "f06_query_results_latest",
       "ok": true,
-      "detail": "{\"ok\": true, \"part\": \"brake_pedal\", \"latest\": {\"run_id\": \"20260906T200335_8c3bc0\", \"ts\": \"2026-09-06T20:03:35+00:00\", \"part\": \"brake_pedal\", \"web_type\": \"xtruss\", \"cell_size_mm\": 1"
+      "detail": "{\"ok\": true, \"part\": \"brake_pedal\", \"latest\": {\"run_id\": \"20260906T205859_3fba70\", \"ts\": \"2026-09-06T20:58:59+00:00\", \"part\": \"brake_pedal\", \"web_type\": \"xtruss\", \"cell_size_mm\": 1"
     },
     {
       "id": "f06_query_results_bad_run_id",
@@ -272,12 +272,12 @@
     {
       "id": "f09_compare_materials",
       "ok": true,
-      "detail": "{\"ok\": true, \"part\": \"brake_pedal\", \"sf_threshold\": 1.5, \"base\": {\"source\": \"run_history\", \"run_id\": \"20260906T200335_8c3bc0\", \"method\": \"calculix_ccx\", \"mesh_max_size_mm\": 5.0, \"f"
+      "detail": "{\"ok\": true, \"part\": \"brake_pedal\", \"sf_threshold\": 1.5, \"base\": {\"source\": \"run_history\", \"run_id\": \"20260906T205859_3fba70\", \"method\": \"calculix_ccx\", \"mesh_max_size_mm\": 5.0, \"f"
     },
     {
       "id": "f09_set_material_7075_dry_run",
       "ok": true,
-      "detail": "{\"ok\": true, \"changed\": true, \"dry_run\": true, \"part\": \"brake_pedal\", \"current\": {\"rev\": 211, \"params_hash\": \"7f150b9b3923\"}, \"proposed\": {\"params\": {\"web_type\": \"fcc\", \"cell_size_"
+      "detail": "{\"ok\": true, \"changed\": true, \"dry_run\": true, \"part\": \"brake_pedal\", \"current\": {\"rev\": 228, \"params_hash\": \"7f150b9b3923\"}, \"proposed\": {\"params\": {\"web_type\": \"fcc\", \"cell_size_"
     },
     {
       "id": "f09_unknown_material_rejected",
@@ -297,7 +297,7 @@
     {
       "id": "f26_update_uav_arm_cell_size",
       "ok": true,
-      "detail": "{\"ok\": true, \"changed\": false, \"part\": \"uav_arm\", \"rev\": 35, \"params_hash\": \"b7370e994dda\", \"params\": {\"web_type\": \"xtruss\", \"arm_length_mm\": 180.0, \"cell_size_mm\": 12.0, \"strut_ra"
+      "detail": "{\"ok\": true, \"changed\": false, \"part\": \"uav_arm\", \"rev\": 39, \"params_hash\": \"b7370e994dda\", \"params\": {\"web_type\": \"xtruss\", \"arm_length_mm\": 180.0, \"cell_size_mm\": 12.0, \"strut_ra"
     },
     {
       "id": "f26_solve_uav_arm_honesty",
@@ -393,6 +393,16 @@
       "id": "rag_convergence_reference",
       "ok": true,
       "detail": "hits=4"
+    },
+    {
+      "id": "rag_benchmark_fixture_integrity",
+      "ok": true,
+      "detail": "100 cases; review=pending"
+    },
+    {
+      "id": "rag_benchmark_review_guard",
+      "ok": true,
+      "detail": "100 cases; review=pending"
     }
   ],
   "retrieval": {
@@ -714,6 +724,66 @@
         "reciprocal_rank": 1.0
       }
     ]
+  },
+  "evidence_retrieval": {
+    "schema_version": 1,
+    "benchmark_hash": "20bea723c37ed04989a606d89b9deaf735e06fbf5480914c6c5c576ed69442db",
+    "corpus_fingerprint": "98e8beb04ad851ce",
+    "review_status": "pending",
+    "provisional": true,
+    "split": "development",
+    "profile": "lexical",
+    "query_mode": "latest_message_only",
+    "configuration": {
+      "tfidf_max_features": 4096,
+      "candidates_per_retriever": 10,
+      "rrf_k": 60,
+      "final_k": 4
+    },
+    "answer_evaluation": "not_run",
+    "acceptance": "pending_generated_answer_evaluation_and_critical_review",
+    "queries": 70,
+    "k": 4,
+    "scored_queries": 66,
+    "unscored_no_evidence": 4,
+    "evidence_recall_at_k": 0.7576,
+    "answerable_evidence_recall_at_k": 0.7667,
+    "precision_at_k": 0.2235,
+    "ndcg_at_k": 0.6453,
+    "by_category": {
+      "adversarial": {
+        "queries": 4,
+        "evidence_recall_at_k": 1.0
+      },
+      "ambiguity": {
+        "queries": 4,
+        "evidence_recall_at_k": 0.0
+      },
+      "comparison": {
+        "queries": 11,
+        "evidence_recall_at_k": 0.7727
+      },
+      "conflict": {
+        "queries": 3,
+        "evidence_recall_at_k": 1.0
+      },
+      "fact": {
+        "queries": 33,
+        "evidence_recall_at_k": 0.7424
+      },
+      "followup": {
+        "queries": 5,
+        "evidence_recall_at_k": 0.9
+      },
+      "paraphrase": {
+        "queries": 5,
+        "evidence_recall_at_k": 0.5
+      },
+      "unsupported": {
+        "queries": 5,
+        "evidence_recall_at_k": 0.75
+      }
+    }
   },
   "corpus": {
     "fingerprint": "98e8beb04ad851ce",

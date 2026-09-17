@@ -35,6 +35,11 @@ documents and checked against code and authoritative material data.
   examples before tuning; 70 development / 30 held-out cases measure retrieval,
   answer correctness, citation support and abstention separately. Critical
   unsupported claims block completion; skipped free-quota evals are not passes.
+- The 2026-09-06 benchmark review corrected two evidence-backed negative answers
+  from `abstain/insufficient` to `answer/supported`. It also replaced false
+  supplier-specific PA12 provenance with explicitly provisional screening
+  assumptions and states that repeating the current linear-static solve cannot
+  verify large-deflection polymer behavior.
 
 ## Delivery
 

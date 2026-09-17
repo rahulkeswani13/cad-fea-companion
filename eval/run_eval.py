@@ -29,6 +29,8 @@ from eval import history
 from eval import judge
 from eval import retrieval_metrics
 from eval import trajectory
+from eval.benchmark import load_benchmark, require_review
+from eval.run_rag_benchmark import run_baseline
 
 
 def _headless_open_gui(*args, **kwargs) -> dict:
@@ -66,6 +68,9 @@ def main() -> int:
     cases_path = ROOT / "eval" / "cases.json"
     cases = json.loads(cases_path.read_text(encoding="utf-8"))
     ingest = ingest_docs()
+    if not ingest["ok"]:
+        print(ingest["error"], ingest["correction"])
+        return 1
 
     passed = 0
     failed = 0
@@ -95,6 +100,19 @@ def main() -> int:
                     blob, case.get("expect_any", [])
                 )
                 detail = f"hits={len(hits)}"
+            elif case["type"] == "benchmark_fixture":
+                benchmark = load_benchmark()
+                if case.get("check") == "review_guard":
+                    # Simulate an unreviewed fixture even after eventual approval.
+                    pending = {**benchmark, "review": {"status": "pending"}}
+                    try:
+                        require_review(pending)
+                        ok = False
+                    except ValueError:
+                        ok = True
+                else:
+                    ok = len(benchmark["cases"]) == 100
+                detail = f"100 cases; review={benchmark['review']['status']}"
             elif case["type"] == "tool":
                 result = call_tool(case["tool"], case.get("args") or {})
                 ok = bool(result.get("ok")) == bool(case.get("expect_ok", True))
@@ -227,6 +245,12 @@ def main() -> int:
         f"\nRetrieval: hit@{retrieval['k']}={retrieval['hit_rate_at_4']:.0%}, "
         f"MRR={retrieval['mrr']:.3f} over {retrieval['queries']} labeled queries"
     )
+    benchmark = load_benchmark()
+    evidence_report = run_baseline(benchmark)
+    print(f"Evidence retrieval (development, {evidence_report['review_status']} review): "
+          f"recall@4={evidence_report['evidence_recall_at_k']}, "
+          f"precision@4={evidence_report['precision_at_k']}, "
+          f"nDCG@4={evidence_report['ndcg_at_k']}; answers NOT evaluated")
     tokens = {
         "input_tokens": sum((v.get("usage") or {}).get("input_tokens", 0) for v in judge_rows),
         "output_tokens": sum((v.get("usage") or {}).get("output_tokens", 0) for v in judge_rows),
@@ -238,6 +262,7 @@ def main() -> int:
         "total": len(cases),
         "rows": rows,
         "retrieval": retrieval,
+        "evidence_retrieval": {key: value for key, value in evidence_report.items() if key != "per_query"},
         "corpus": {
             "fingerprint": corpus_fingerprint(ingest["documents"]),
             "documents": len(ingest["documents"]),

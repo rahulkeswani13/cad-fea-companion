@@ -41,6 +41,13 @@ def summarize_for_history(summary: dict[str, Any]) -> dict[str, Any]:
         "judge_failed": int(judge.get("judge_failed") or 0),
         # ADR-014: corpus identity rides with each run so drift is visible.
         "corpus_fingerprint": (summary.get("corpus") or {}).get("fingerprint"),
+        # Keep benchmark identity beside its metrics; pending review is explicit.
+        "evidence_retrieval": {
+            key: (summary.get("evidence_retrieval") or {}).get(key)
+            for key in ("benchmark_hash", "review_status", "split", "profile",
+                        "evidence_recall_at_k", "precision_at_k", "ndcg_at_k",
+                        "answer_evaluation")
+        },
     }
 
 
