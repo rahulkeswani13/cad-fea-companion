@@ -1,9 +1,10 @@
-# Evidence benchmark (ADR-018, PR 2)
+# Evidence benchmark (ADR-018, benchmark-repair stage)
 
-This is a **draft fixture awaiting user review**, not a claim that generated
-answers pass. It contains 100 cases: 70 development and 30 held-out, including
-20 critical cases. Twenty selected development examples are rendered in
-`reviews/rag_benchmark_review.md` for review before tuning.
+This is a **repaired fixture awaiting user review**, not a claim that generated
+answers pass. It contains 100 cases: 70 development and 30 historical held-out,
+including 20 critical cases. Twenty selected development examples are rendered
+in `reviews/rag_benchmark_review.md` for review before tuning. The repair audit
+is recorded in `reviews/rag_benchmark_audit.md`.
 
 ## Run the fixed baseline
 
@@ -50,6 +51,12 @@ accept a wrong section from the right document.
 Every report includes corpus and benchmark hashes, split, review status,
 configuration and the explicit `answer_evaluation: not_run` marker.
 
+The standalone report also measures the lexical top-20 candidate pool. This
+separates evidence that was found but ranked below the final four from evidence
+that lexical candidate retrieval missed entirely. `unjudged_same_source` lists
+wrong or unlabelled passages from a labelled document for review; it never adds
+metric credit.
+
 ## Review and held-out discipline
 
 Review the 20 examples for useful expected behavior, source support, engineering
@@ -62,21 +69,26 @@ is made only in response to the user's review. Label, corpus, or review-selectio
 changes invalidate the approval hash. Never mark approval automatically after
 validation or tests pass.
 
-Tuning entrypoints must call `require_review`. The held-out runner also calls
-it before retrieving any query. While pending, `--split heldout` exits nonzero.
-After review, held-out evaluation must follow development selection; do not use
-held-out results to select a winner. Any cases used to repair a held-out failure
-become development evidence; fresh held-out cases are required for a new claim.
+Tuning entrypoints must call `require_review`. While pending,
+`--split heldout` exits nonzero. The original held-out cases were already run by
+superseded local experiments and are now historical: do not rerun them, tune to
+them, or use them for a new quality claim. Once retrieval is frozen, an
+independent reviewer creates a fresh 30-case hidden set. All 30 generated answers
+receive manual review.
 
 The initial lexical development baseline is permitted before review because its
 configuration is fixed, and is explicitly provisional. Do not tune retrieval,
 rewrite labels to reward a result, lower acceptance targets, or drop difficult
 questions while reviewing baseline misses.
 
-## Final acceptance belongs to later PRs
+## Quality bars belong to later stages
 
-All critical checks and answer reviews must pass; targets are >=90% answerable
-required-evidence recall, >=90% correct answer/clarify/abstain behavior, and >=95%
-supported factual claims in reviewed held-out answers, with no unsupported
-critical numeric claim. Report actual counts and limitations. Free-quota skips
-are pending, not passing. See the approved plan for the complete delivery scope.
+An experimental retriever must improve answerable recall@4 by at least five
+percentage points over this repaired lexical baseline on the fresh hidden set,
+increase nDCG, avoid a critical-recall regression, and keep median retrieval
+below 500 ms.
+
+Final acceptance requires 100% critical recall@4, >=90% answerable recall@4,
+>=90% correct answer/clarify/refuse behavior, >=95% supported factual claims,
+zero unsupported critical numerical claims, and median retrieval below 500 ms.
+Report actual counts and limitations. Missing reviews are pending, not passing.

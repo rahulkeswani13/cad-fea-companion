@@ -968,5 +968,10 @@
   "id": "rag_benchmark_review_guard",
   "type": "benchmark_fixture",
   "check": "review_guard"
+ },
+ {
+  "id": "rag_benchmark_candidate_diagnostics",
+  "type": "benchmark_fixture",
+  "check": "candidate_pool"
  }
 ]

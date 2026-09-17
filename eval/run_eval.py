@@ -110,6 +110,14 @@ def main() -> int:
                         ok = False
                     except ValueError:
                         ok = True
+                elif case.get("check") == "candidate_pool":
+                    candidate = run_baseline(benchmark)["candidate_pool"]
+                    ok = (
+                        candidate["k"] == 20
+                        and len(candidate["per_query"]) == 70
+                        and candidate["evidence_recall_at_k"] is not None
+                        and candidate["critical_evidence_recall_at_k"] is not None
+                    )
                 else:
                     ok = len(benchmark["cases"]) == 100
                 detail = f"100 cases; review={benchmark['review']['status']}"

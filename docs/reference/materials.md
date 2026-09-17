@@ -73,6 +73,15 @@ mass for unchanged geometry scales with the density ratio.
 - FreeCAD's generic steel card — the pre-F09 default for the cantilever, kept
   as that part's default for backward compatibility.
 
+## Choosing a material
+
+The table exposes competing stiffness, density, yield, and cost properties for
+screening; it does not identify one universally best material. A useful choice
+requires the part geometry, load case, stiffness or mass objective,
+manufacturing process, environment, and applicable verified allowables. When
+those inputs are missing, ask for them instead of turning a table ranking into
+an engineering recommendation.
+
 ## Using materials
 
 - Ask "compare Ti vs Al" -> the `compare_materials` tool scales the best

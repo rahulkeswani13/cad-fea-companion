@@ -1,9 +1,9 @@
 {
   "schema_version": 1,
-  "benchmark_hash": "742864f5d3e3b83eb5d752c4e05153d9fda281cf06181c3f3305b7d41b811ac1",
-  "corpus_fingerprint": "63473d5346a78154",
-  "review_status": "approved",
-  "provisional": false,
+  "benchmark_hash": "735b6f0a6d9befb2895632b54f6d53c8d0228785dd7d36130f1233485298eb6a",
+  "corpus_fingerprint": "34517bc613faa567",
+  "review_status": "pending",
+  "provisional": true,
   "split": "development",
   "profile": "lexical",
   "query_mode": "latest_message_only",
@@ -13,16 +13,389 @@
     "rrf_k": 60,
     "final_k": 4
   },
+  "candidate_pool": {
+    "k": 20,
+    "evidence_recall_at_k": 0.947,
+    "answerable_evidence_recall_at_k": 0.9435,
+    "critical_evidence_recall_at_k": 0.9091,
+    "per_query": [
+      {
+        "id": "flow-001",
+        "evidence_recall": 1.0,
+        "missing_evidence": []
+      },
+      {
+        "id": "flow-002",
+        "evidence_recall": 1.0,
+        "missing_evidence": []
+      },
+      {
+        "id": "flow-003",
+        "evidence_recall": 1.0,
+        "missing_evidence": []
+      },
+      {
+        "id": "flow-004",
+        "evidence_recall": 1.0,
+        "missing_evidence": []
+      },
+      {
+        "id": "flow-007",
+        "evidence_recall": null,
+        "missing_evidence": []
+      },
+      {
+        "id": "flow-008",
+        "evidence_recall": null,
+        "missing_evidence": []
+      },
+      {
+        "id": "flow-009",
+        "evidence_recall": 1.0,
+        "missing_evidence": []
+      },
+      {
+        "id": "flow-010",
+        "evidence_recall": 0.5,
+        "missing_evidence": [
+          "pedal-thickness"
+        ]
+      },
+      {
+        "id": "flow-011",
+        "evidence_recall": 1.0,
+        "missing_evidence": []
+      },
+      {
+        "id": "flow-013",
+        "evidence_recall": 1.0,
+        "missing_evidence": []
+      },
+      {
+        "id": "flow-014",
+        "evidence_recall": null,
+        "missing_evidence": []
+      },
+      {
+        "id": "flow-016",
+        "evidence_recall": 1.0,
+        "missing_evidence": []
+      },
+      {
+        "id": "flow-018",
+        "evidence_recall": 1.0,
+        "missing_evidence": []
+      },
+      {
+        "id": "flow-019",
+        "evidence_recall": 1.0,
+        "missing_evidence": []
+      },
+      {
+        "id": "flow-020",
+        "evidence_recall": 1.0,
+        "missing_evidence": []
+      },
+      {
+        "id": "flow-021",
+        "evidence_recall": 1.0,
+        "missing_evidence": []
+      },
+      {
+        "id": "flow-022",
+        "evidence_recall": 1.0,
+        "missing_evidence": []
+      },
+      {
+        "id": "flow-023",
+        "evidence_recall": 1.0,
+        "missing_evidence": []
+      },
+      {
+        "id": "flow-024",
+        "evidence_recall": 1.0,
+        "missing_evidence": []
+      },
+      {
+        "id": "flow-025",
+        "evidence_recall": 1.0,
+        "missing_evidence": []
+      },
+      {
+        "id": "flow-027",
+        "evidence_recall": 1.0,
+        "missing_evidence": []
+      },
+      {
+        "id": "flow-028",
+        "evidence_recall": 1.0,
+        "missing_evidence": []
+      },
+      {
+        "id": "flow-029",
+        "evidence_recall": 1.0,
+        "missing_evidence": []
+      },
+      {
+        "id": "flow-030",
+        "evidence_recall": 1.0,
+        "missing_evidence": []
+      },
+      {
+        "id": "flow-031",
+        "evidence_recall": 1.0,
+        "missing_evidence": []
+      },
+      {
+        "id": "flow-033",
+        "evidence_recall": 1.0,
+        "missing_evidence": []
+      },
+      {
+        "id": "flow-035",
+        "evidence_recall": 1.0,
+        "missing_evidence": []
+      },
+      {
+        "id": "flow-036",
+        "evidence_recall": 1.0,
+        "missing_evidence": []
+      },
+      {
+        "id": "flow-037",
+        "evidence_recall": 1.0,
+        "missing_evidence": []
+      },
+      {
+        "id": "flow-038",
+        "evidence_recall": null,
+        "missing_evidence": []
+      },
+      {
+        "id": "flow-039",
+        "evidence_recall": 1.0,
+        "missing_evidence": []
+      },
+      {
+        "id": "flow-040",
+        "evidence_recall": 1.0,
+        "missing_evidence": []
+      },
+      {
+        "id": "flow-041",
+        "evidence_recall": 1.0,
+        "missing_evidence": []
+      },
+      {
+        "id": "flow-046",
+        "evidence_recall": 1.0,
+        "missing_evidence": []
+      },
+      {
+        "id": "flow-049",
+        "evidence_recall": 1.0,
+        "missing_evidence": []
+      },
+      {
+        "id": "mat-001",
+        "evidence_recall": 1.0,
+        "missing_evidence": []
+      },
+      {
+        "id": "mat-002",
+        "evidence_recall": 1.0,
+        "missing_evidence": []
+      },
+      {
+        "id": "mat-003",
+        "evidence_recall": 1.0,
+        "missing_evidence": []
+      },
+      {
+        "id": "mat-004",
+        "evidence_recall": 1.0,
+        "missing_evidence": []
+      },
+      {
+        "id": "mat-005",
+        "evidence_recall": 1.0,
+        "missing_evidence": []
+      },
+      {
+        "id": "mat-006",
+        "evidence_recall": 1.0,
+        "missing_evidence": []
+      },
+      {
+        "id": "mat-007",
+        "evidence_recall": 1.0,
+        "missing_evidence": []
+      },
+      {
+        "id": "mat-008",
+        "evidence_recall": 1.0,
+        "missing_evidence": []
+      },
+      {
+        "id": "mat-009",
+        "evidence_recall": 1.0,
+        "missing_evidence": []
+      },
+      {
+        "id": "mat-010",
+        "evidence_recall": 1.0,
+        "missing_evidence": []
+      },
+      {
+        "id": "mat-011",
+        "evidence_recall": 1.0,
+        "missing_evidence": []
+      },
+      {
+        "id": "mat-012",
+        "evidence_recall": 1.0,
+        "missing_evidence": []
+      },
+      {
+        "id": "mat-013",
+        "evidence_recall": 1.0,
+        "missing_evidence": []
+      },
+      {
+        "id": "mat-014",
+        "evidence_recall": 1.0,
+        "missing_evidence": []
+      },
+      {
+        "id": "mat-015",
+        "evidence_recall": 1.0,
+        "missing_evidence": []
+      },
+      {
+        "id": "mat-016",
+        "evidence_recall": 0.0,
+        "missing_evidence": [
+          "mat-016-e1",
+          "mat-016-e2",
+          "mat-016-e3"
+        ]
+      },
+      {
+        "id": "mat-017",
+        "evidence_recall": 0.5,
+        "missing_evidence": [
+          "mat-017-e2"
+        ]
+      },
+      {
+        "id": "mat-018",
+        "evidence_recall": 1.0,
+        "missing_evidence": []
+      },
+      {
+        "id": "mat-019",
+        "evidence_recall": 1.0,
+        "missing_evidence": []
+      },
+      {
+        "id": "mat-020",
+        "evidence_recall": 1.0,
+        "missing_evidence": []
+      },
+      {
+        "id": "mat-021",
+        "evidence_recall": 1.0,
+        "missing_evidence": []
+      },
+      {
+        "id": "mat-022",
+        "evidence_recall": 0.5,
+        "missing_evidence": [
+          "mat-022-e2"
+        ]
+      },
+      {
+        "id": "mat-023",
+        "evidence_recall": 1.0,
+        "missing_evidence": []
+      },
+      {
+        "id": "mat-024",
+        "evidence_recall": 1.0,
+        "missing_evidence": []
+      },
+      {
+        "id": "mat-025",
+        "evidence_recall": 1.0,
+        "missing_evidence": []
+      },
+      {
+        "id": "mat-026",
+        "evidence_recall": 0.0,
+        "missing_evidence": [
+          "mat-026-e1"
+        ]
+      },
+      {
+        "id": "mat-027",
+        "evidence_recall": 1.0,
+        "missing_evidence": []
+      },
+      {
+        "id": "mat-028",
+        "evidence_recall": 1.0,
+        "missing_evidence": []
+      },
+      {
+        "id": "mat-029",
+        "evidence_recall": 1.0,
+        "missing_evidence": []
+      },
+      {
+        "id": "mat-030",
+        "evidence_recall": 1.0,
+        "missing_evidence": []
+      },
+      {
+        "id": "mat-031",
+        "evidence_recall": 1.0,
+        "missing_evidence": []
+      },
+      {
+        "id": "mat-032",
+        "evidence_recall": 1.0,
+        "missing_evidence": []
+      },
+      {
+        "id": "mat-033",
+        "evidence_recall": 1.0,
+        "missing_evidence": []
+      },
+      {
+        "id": "mat-034",
+        "evidence_recall": 1.0,
+        "missing_evidence": []
+      },
+      {
+        "id": "mat-035",
+        "evidence_recall": 1.0,
+        "missing_evidence": []
+      }
+    ]
+  },
   "answer_evaluation": "not_run",
   "acceptance": "pending_generated_answer_evaluation_and_critical_review",
   "queries": 70,
   "k": 4,
   "scored_queries": 66,
   "unscored_no_evidence": 4,
-  "evidence_recall_at_k": 0.7348,
-  "answerable_evidence_recall_at_k": 0.7177,
-  "precision_at_k": 0.2197,
-  "ndcg_at_k": 0.6317,
+  "evidence_recall_at_k": 0.8333,
+  "answerable_evidence_recall_at_k": 0.8226,
+  "critical_evidence_recall_at_k": 0.7273,
+  "precision_at_k": 0.25,
+  "ndcg_at_k": 0.6825,
+  "queries_with_unjudged_same_source": 44,
+  "unjudged_same_source_hits": 68,
   "by_category": {
     "adversarial": {
       "queries": 4,
@@ -30,11 +403,11 @@
     },
     "ambiguity": {
       "queries": 4,
-      "evidence_recall_at_k": 0.0
+      "evidence_recall_at_k": 1.0
     },
     "comparison": {
       "queries": 11,
-      "evidence_recall_at_k": 0.7273
+      "evidence_recall_at_k": 0.8182
     },
     "conflict": {
       "queries": 3,
@@ -42,7 +415,7 @@
     },
     "fact": {
       "queries": 33,
-      "evidence_recall_at_k": 0.7121
+      "evidence_recall_at_k": 0.8182
     },
     "followup": {
       "queries": 5,
@@ -50,7 +423,7 @@
     },
     "paraphrase": {
       "queries": 5,
-      "evidence_recall_at_k": 0.5
+      "evidence_recall_at_k": 0.7
     },
     "unsupported": {
       "queries": 5,
@@ -93,6 +466,7 @@
           "chunk_id": "docs/reference/ARCHITECTURE.md::3-flagship-geometry-families::bac024f25985"
         }
       ],
+      "unjudged_same_source": [],
       "answer_evaluation": "not_run"
     },
     {
@@ -131,6 +505,13 @@
           "chunk_id": "docs/reference/ARCHITECTURE.md::3-flagship-geometry-families::bac024f25985"
         }
       ],
+      "unjudged_same_source": [
+        {
+          "source": "docs/reference/uav_arm_lattice.md",
+          "section_id": "docs/reference/uav_arm_lattice.md::uav-arm-f26-geometry-design-space-and-load-case",
+          "chunk_id": "docs/reference/uav_arm_lattice.md::uav-arm-f26-geometry-design-space-and-load-case::07d1e0c4a96c"
+        }
+      ],
       "answer_evaluation": "not_run"
     },
     {
@@ -166,6 +547,13 @@
           "source": "docs/reference/tool_reference.md",
           "section_id": "docs/reference/tool_reference.md::geometry-authoring",
           "chunk_id": "docs/reference/tool_reference.md::geometry-authoring::3f743acc777d"
+        }
+      ],
+      "unjudged_same_source": [
+        {
+          "source": "docs/reference/uav_arm_lattice.md",
+          "section_id": "docs/reference/uav_arm_lattice.md::uav-arm-f26-geometry-design-space-and-load-case",
+          "chunk_id": "docs/reference/uav_arm_lattice.md::uav-arm-f26-geometry-design-space-and-load-case::07d1e0c4a96c"
         }
       ],
       "answer_evaluation": "not_run"
@@ -206,6 +594,13 @@
           "chunk_id": "docs/reference/ARCHITECTURE.md::f26-flagship-quadcopter-uav-arm::70ac928a7000"
         }
       ],
+      "unjudged_same_source": [
+        {
+          "source": "docs/reference/uav_arm_lattice.md",
+          "section_id": "docs/reference/uav_arm_lattice.md::uav-arm-f26-geometry-design-space-and-load-case",
+          "chunk_id": "docs/reference/uav_arm_lattice.md::uav-arm-f26-geometry-design-space-and-load-case::07d1e0c4a96c"
+        }
+      ],
       "answer_evaluation": "not_run"
     },
     {
@@ -241,6 +636,7 @@
           "chunk_id": "docs/reference/tool_reference.md::geometry-authoring::3f743acc777d"
         }
       ],
+      "unjudged_same_source": [],
       "answer_evaluation": "not_run"
     },
     {
@@ -276,6 +672,7 @@
           "chunk_id": "docs/reference/uav_arm_lattice.md::anatomy-mm-arm-along-x-thrust-load-along-z::1e82a8da667f"
         }
       ],
+      "unjudged_same_source": [],
       "answer_evaluation": "not_run"
     },
     {
@@ -312,6 +709,13 @@
           "source": "docs/reference/uav_arm_lattice.md",
           "section_id": "docs/reference/uav_arm_lattice.md::design-vs-non-design",
           "chunk_id": "docs/reference/uav_arm_lattice.md::design-vs-non-design::0d0d78a73a11"
+        }
+      ],
+      "unjudged_same_source": [
+        {
+          "source": "docs/reference/brake_pedal_lattice.md",
+          "section_id": "docs/reference/brake_pedal_lattice.md::brake-pedal-lattice-fea-notes",
+          "chunk_id": "docs/reference/brake_pedal_lattice.md::brake-pedal-lattice-fea-notes::be1fc9419046"
         }
       ],
       "answer_evaluation": "not_run"
@@ -352,6 +756,7 @@
           "chunk_id": "docs/reference/ARCHITECTURE.md::3-flagship-geometry-families::bac024f25985"
         }
       ],
+      "unjudged_same_source": [],
       "answer_evaluation": "not_run"
     },
     {
@@ -391,6 +796,7 @@
           "chunk_id": "docs/reference/freecad_fem_notes.md::recommended-pedal-load-case::de0866ed799c"
         }
       ],
+      "unjudged_same_source": [],
       "answer_evaluation": "not_run"
     },
     {
@@ -399,13 +805,13 @@
       "critical": false,
       "expected_action": "answer",
       "expected_support": "supported",
-      "evidence_recall": 0.0,
-      "precision": 0.0,
-      "ndcg": 0.0,
-      "found_evidence": [],
-      "missing_evidence": [
+      "evidence_recall": 1.0,
+      "precision": 0.25,
+      "ndcg": 0.43067655807339306,
+      "found_evidence": [
         "pedal-compare-tool"
       ],
+      "missing_evidence": [],
       "retrieved": [
         {
           "source": "docs/reference/freecad_fem_notes.md",
@@ -423,9 +829,16 @@
           "chunk_id": "docs/reference/brake_pedal_lattice.md::brake-pedal-lattice-fea-notes::be1fc9419046"
         },
         {
-          "source": "docs/reference/freecad_fem_notes.md",
-          "section_id": "docs/reference/freecad_fem_notes.md::workflow-tools-in-this-companion",
-          "chunk_id": "docs/reference/freecad_fem_notes.md::workflow-tools-in-this-companion::8cd90daf5995"
+          "source": "docs/reference/brake_pedal_lattice.md",
+          "section_id": "docs/reference/brake_pedal_lattice.md::tools",
+          "chunk_id": "docs/reference/brake_pedal_lattice.md::tools::e496eeb54d35"
+        }
+      ],
+      "unjudged_same_source": [
+        {
+          "source": "docs/reference/brake_pedal_lattice.md",
+          "section_id": "docs/reference/brake_pedal_lattice.md::brake-pedal-lattice-fea-notes",
+          "chunk_id": "docs/reference/brake_pedal_lattice.md::brake-pedal-lattice-fea-notes::be1fc9419046"
         }
       ],
       "answer_evaluation": "not_run"
@@ -463,6 +876,7 @@
           "chunk_id": "docs/reference/verification.md::mesh-convergence::4cd7edd2a135"
         }
       ],
+      "unjudged_same_source": [],
       "answer_evaluation": "not_run"
     },
     {
@@ -498,6 +912,18 @@
           "source": "docs/reference/ARCHITECTURE.md",
           "section_id": "docs/reference/ARCHITECTURE.md::5-walkthrough-full-aerospace-uav-arm-lifecycle",
           "chunk_id": "docs/reference/ARCHITECTURE.md::5-walkthrough-full-aerospace-uav-arm-lifecycle::cb5af9a55ca5"
+        }
+      ],
+      "unjudged_same_source": [
+        {
+          "source": "docs/reference/design_programs.md",
+          "section_id": "docs/reference/design_programs.md::what-is-editable",
+          "chunk_id": "docs/reference/design_programs.md::what-is-editable::9cde72e0ecaf"
+        },
+        {
+          "source": "docs/reference/design_programs.md",
+          "section_id": "docs/reference/design_programs.md::what-is-editable",
+          "chunk_id": "docs/reference/design_programs.md::what-is-editable::988762af47c2"
         }
       ],
       "answer_evaluation": "not_run"
@@ -537,6 +963,7 @@
           "chunk_id": "docs/reference/tool_reference.md::simulation-analysis::84a4b2751c09"
         }
       ],
+      "unjudged_same_source": [],
       "answer_evaluation": "not_run"
     },
     {
@@ -568,6 +995,13 @@
           "section_id": "docs/reference/design_programs.md::revision-identity",
           "chunk_id": "docs/reference/design_programs.md::revision-identity::4828a6b6590b"
         },
+        {
+          "source": "docs/reference/design_programs.md",
+          "section_id": "docs/reference/design_programs.md::design-programs-and-revisions",
+          "chunk_id": "docs/reference/design_programs.md::design-programs-and-revisions::b8c255031915"
+        }
+      ],
+      "unjudged_same_source": [
         {
           "source": "docs/reference/design_programs.md",
           "section_id": "docs/reference/design_programs.md::design-programs-and-revisions",
@@ -606,9 +1040,16 @@
           "chunk_id": "docs/reference/repair_loop.md::current-failure-classes::a49a01639f1e"
         },
         {
-          "source": "docs/reference/repair_loop.md",
-          "section_id": "docs/reference/repair_loop.md::current-failure-classes",
-          "chunk_id": "docs/reference/repair_loop.md::current-failure-classes::d9c3f09d338e"
+          "source": "docs/reference/ARCHITECTURE.md",
+          "section_id": "docs/reference/ARCHITECTURE.md::f01-grounded-lexical-retrieval",
+          "chunk_id": "docs/reference/ARCHITECTURE.md::f01-grounded-lexical-retrieval::922fa3f617ef"
+        }
+      ],
+      "unjudged_same_source": [
+        {
+          "source": "docs/reference/design_programs.md",
+          "section_id": "docs/reference/design_programs.md::design-programs-and-revisions",
+          "chunk_id": "docs/reference/design_programs.md::design-programs-and-revisions::b8c255031915"
         }
       ],
       "answer_evaluation": "not_run"
@@ -649,6 +1090,7 @@
           "chunk_id": "docs/reference/tool_reference.md::geometry-authoring::368390e05cc8"
         }
       ],
+      "unjudged_same_source": [],
       "answer_evaluation": "not_run"
     },
     {
@@ -684,6 +1126,13 @@
           "source": "docs/reference/ARCHITECTURE.md",
           "section_id": "docs/reference/ARCHITECTURE.md::turn-4-geometric-scaling",
           "chunk_id": "docs/reference/ARCHITECTURE.md::turn-4-geometric-scaling::6007fbcf26fa"
+        }
+      ],
+      "unjudged_same_source": [
+        {
+          "source": "docs/reference/design_programs.md",
+          "section_id": "docs/reference/design_programs.md::what-is-editable",
+          "chunk_id": "docs/reference/design_programs.md::what-is-editable::988762af47c2"
         }
       ],
       "answer_evaluation": "not_run"
@@ -723,6 +1172,7 @@
           "chunk_id": "docs/reference/freecad_fem_notes.md::recommended-pedal-load-case::de0866ed799c"
         }
       ],
+      "unjudged_same_source": [],
       "answer_evaluation": "not_run"
     },
     {
@@ -760,6 +1210,13 @@
           "chunk_id": "docs/reference/tool_reference.md::geometry-authoring::368390e05cc8"
         }
       ],
+      "unjudged_same_source": [
+        {
+          "source": "docs/reference/design_programs.md",
+          "section_id": "docs/reference/design_programs.md::design-programs-and-revisions",
+          "chunk_id": "docs/reference/design_programs.md::design-programs-and-revisions::b8c255031915"
+        }
+      ],
       "answer_evaluation": "not_run"
     },
     {
@@ -786,6 +1243,18 @@
           "section_id": "docs/reference/tool_reference.md::geometry-authoring",
           "chunk_id": "docs/reference/tool_reference.md::geometry-authoring::368390e05cc8"
         },
+        {
+          "source": "docs/reference/design_programs.md",
+          "section_id": "docs/reference/design_programs.md::revision-identity",
+          "chunk_id": "docs/reference/design_programs.md::revision-identity::43aa3a70c098"
+        },
+        {
+          "source": "docs/reference/design_programs.md",
+          "section_id": "docs/reference/design_programs.md::what-is-editable",
+          "chunk_id": "docs/reference/design_programs.md::what-is-editable::988762af47c2"
+        }
+      ],
+      "unjudged_same_source": [
         {
           "source": "docs/reference/design_programs.md",
           "section_id": "docs/reference/design_programs.md::revision-identity",
@@ -834,6 +1303,13 @@
           "chunk_id": "docs/reference/repair_loop.md::current-failure-classes::a49a01639f1e"
         }
       ],
+      "unjudged_same_source": [
+        {
+          "source": "docs/reference/design_programs.md",
+          "section_id": "docs/reference/design_programs.md::revision-identity",
+          "chunk_id": "docs/reference/design_programs.md::revision-identity::4828a6b6590b"
+        }
+      ],
       "answer_evaluation": "not_run"
     },
     {
@@ -871,6 +1347,7 @@
           "chunk_id": "docs/reference/ARCHITECTURE.md::1-system-overview-ai-engineering-vision::d897cbc1a535"
         }
       ],
+      "unjudged_same_source": [],
       "answer_evaluation": "not_run"
     },
     {
@@ -909,6 +1386,7 @@
           "chunk_id": "docs/reference/ARCHITECTURE.md::1-system-overview-ai-engineering-vision::d897cbc1a535"
         }
       ],
+      "unjudged_same_source": [],
       "answer_evaluation": "not_run"
     },
     {
@@ -936,14 +1414,21 @@
           "chunk_id": "docs/reference/tool_reference.md::companion-tool-reference::9653fab79594"
         },
         {
-          "source": "docs/reference/repair_loop.md",
-          "section_id": "docs/reference/repair_loop.md::current-failure-classes",
-          "chunk_id": "docs/reference/repair_loop.md::current-failure-classes::a49a01639f1e"
-        },
-        {
           "source": "docs/reference/ARCHITECTURE.md",
           "section_id": "docs/reference/ARCHITECTURE.md::turn-1-solid-baseline-creation-fea-solve",
           "chunk_id": "docs/reference/ARCHITECTURE.md::turn-1-solid-baseline-creation-fea-solve::f6b8da4f8bdd"
+        },
+        {
+          "source": "docs/reference/repair_loop.md",
+          "section_id": "docs/reference/repair_loop.md::current-failure-classes",
+          "chunk_id": "docs/reference/repair_loop.md::current-failure-classes::a49a01639f1e"
+        }
+      ],
+      "unjudged_same_source": [
+        {
+          "source": "docs/reference/tool_reference.md",
+          "section_id": "docs/reference/tool_reference.md::companion-tool-reference",
+          "chunk_id": "docs/reference/tool_reference.md::companion-tool-reference::9653fab79594"
         }
       ],
       "answer_evaluation": "not_run"
@@ -974,16 +1459,17 @@
           "chunk_id": "docs/reference/ARCHITECTURE.md::f01-grounded-lexical-retrieval::922fa3f617ef"
         },
         {
-          "source": "docs/reference/repair_loop.md",
-          "section_id": "docs/reference/repair_loop.md::current-failure-classes",
-          "chunk_id": "docs/reference/repair_loop.md::current-failure-classes::a49a01639f1e"
-        },
-        {
           "source": "docs/reference/ARCHITECTURE.md",
           "section_id": "docs/reference/ARCHITECTURE.md::turn-3-guardrail-floor-rejection-preflight-safety",
           "chunk_id": "docs/reference/ARCHITECTURE.md::turn-3-guardrail-floor-rejection-preflight-safety::517d80ee7473"
+        },
+        {
+          "source": "docs/reference/repair_loop.md",
+          "section_id": "docs/reference/repair_loop.md::current-failure-classes",
+          "chunk_id": "docs/reference/repair_loop.md::current-failure-classes::a49a01639f1e"
         }
       ],
+      "unjudged_same_source": [],
       "answer_evaluation": "not_run"
     },
     {
@@ -1021,6 +1507,7 @@
           "chunk_id": "docs/reference/repair_loop.md::current-failure-classes::e9d01e3324b3"
         }
       ],
+      "unjudged_same_source": [],
       "answer_evaluation": "not_run"
     },
     {
@@ -1052,6 +1539,13 @@
           "section_id": "docs/reference/ARCHITECTURE.md::key-capabilities",
           "chunk_id": "docs/reference/ARCHITECTURE.md::key-capabilities::bd8201ce3c7b"
         },
+        {
+          "source": "docs/reference/repair_loop.md",
+          "section_id": "docs/reference/repair_loop.md::current-failure-classes",
+          "chunk_id": "docs/reference/repair_loop.md::current-failure-classes::97cea9737916"
+        }
+      ],
+      "unjudged_same_source": [
         {
           "source": "docs/reference/repair_loop.md",
           "section_id": "docs/reference/repair_loop.md::current-failure-classes",
@@ -1095,6 +1589,7 @@
           "chunk_id": "docs/reference/freecad_fem_notes.md::gui-visibility-camera::fe8cc827595f"
         }
       ],
+      "unjudged_same_source": [],
       "answer_evaluation": "not_run"
     },
     {
@@ -1118,6 +1613,23 @@
           "section_id": "docs/reference/ARCHITECTURE.md::turn-1-solid-baseline-creation-fea-solve",
           "chunk_id": "docs/reference/ARCHITECTURE.md::turn-1-solid-baseline-creation-fea-solve::f6b8da4f8bdd"
         },
+        {
+          "source": "docs/reference/ARCHITECTURE.md",
+          "section_id": "docs/reference/ARCHITECTURE.md::turn-4-geometric-scaling",
+          "chunk_id": "docs/reference/ARCHITECTURE.md::turn-4-geometric-scaling::6007fbcf26fa"
+        },
+        {
+          "source": "docs/reference/ARCHITECTURE.md",
+          "section_id": "docs/reference/ARCHITECTURE.md::3-flagship-geometry-families",
+          "chunk_id": "docs/reference/ARCHITECTURE.md::3-flagship-geometry-families::bac024f25985"
+        },
+        {
+          "source": "docs/reference/uav_arm_lattice.md",
+          "section_id": "docs/reference/uav_arm_lattice.md::uav-arm-f26-geometry-design-space-and-load-case",
+          "chunk_id": "docs/reference/uav_arm_lattice.md::uav-arm-f26-geometry-design-space-and-load-case::07d1e0c4a96c"
+        }
+      ],
+      "unjudged_same_source": [
         {
           "source": "docs/reference/ARCHITECTURE.md",
           "section_id": "docs/reference/ARCHITECTURE.md::turn-4-geometric-scaling",
@@ -1169,6 +1681,7 @@
           "chunk_id": "docs/reference/ARCHITECTURE.md::f01-grounded-lexical-retrieval::922fa3f617ef"
         }
       ],
+      "unjudged_same_source": [],
       "answer_evaluation": "not_run"
     },
     {
@@ -1194,6 +1707,23 @@
           "source": "docs/reference/repair_loop.md",
           "section_id": "docs/reference/repair_loop.md::current-failure-classes",
           "chunk_id": "docs/reference/repair_loop.md::current-failure-classes::e9d01e3324b3"
+        },
+        {
+          "source": "docs/reference/repair_loop.md",
+          "section_id": "docs/reference/repair_loop.md::current-failure-classes",
+          "chunk_id": "docs/reference/repair_loop.md::current-failure-classes::97cea9737916"
+        },
+        {
+          "source": "docs/reference/repair_loop.md",
+          "section_id": "docs/reference/repair_loop.md::current-failure-classes",
+          "chunk_id": "docs/reference/repair_loop.md::current-failure-classes::d9c3f09d338e"
+        }
+      ],
+      "unjudged_same_source": [
+        {
+          "source": "docs/reference/repair_loop.md",
+          "section_id": "docs/reference/repair_loop.md::failure-repair-guidance",
+          "chunk_id": "docs/reference/repair_loop.md::failure-repair-guidance::c77f789a85d5"
         },
         {
           "source": "docs/reference/repair_loop.md",
@@ -1243,6 +1773,18 @@
           "chunk_id": "docs/reference/repair_loop.md::current-failure-classes::d9c3f09d338e"
         }
       ],
+      "unjudged_same_source": [
+        {
+          "source": "docs/reference/repair_loop.md",
+          "section_id": "docs/reference/repair_loop.md::current-failure-classes",
+          "chunk_id": "docs/reference/repair_loop.md::current-failure-classes::a49a01639f1e"
+        },
+        {
+          "source": "docs/reference/repair_loop.md",
+          "section_id": "docs/reference/repair_loop.md::current-failure-classes",
+          "chunk_id": "docs/reference/repair_loop.md::current-failure-classes::d9c3f09d338e"
+        }
+      ],
       "answer_evaluation": "not_run"
     },
     {
@@ -1280,6 +1822,13 @@
           "chunk_id": "docs/reference/materials.md::using-materials::c998a141fd8f"
         }
       ],
+      "unjudged_same_source": [
+        {
+          "source": "docs/reference/repair_loop.md",
+          "section_id": "docs/reference/repair_loop.md::failure-repair-guidance",
+          "chunk_id": "docs/reference/repair_loop.md::failure-repair-guidance::c77f789a85d5"
+        }
+      ],
       "answer_evaluation": "not_run"
     },
     {
@@ -1307,14 +1856,21 @@
           "chunk_id": "docs/reference/ARCHITECTURE.md::2-multi-layer-ai-solver-architecture::3ab6c6e83d34"
         },
         {
-          "source": "docs/reference/design_programs.md",
-          "section_id": "docs/reference/design_programs.md::revision-identity",
-          "chunk_id": "docs/reference/design_programs.md::revision-identity::43aa3a70c098"
-        },
-        {
           "source": "docs/reference/tool_reference.md",
           "section_id": "docs/reference/tool_reference.md::geometry-authoring",
           "chunk_id": "docs/reference/tool_reference.md::geometry-authoring::368390e05cc8"
+        },
+        {
+          "source": "docs/reference/design_programs.md",
+          "section_id": "docs/reference/design_programs.md::revision-identity",
+          "chunk_id": "docs/reference/design_programs.md::revision-identity::43aa3a70c098"
+        }
+      ],
+      "unjudged_same_source": [
+        {
+          "source": "docs/reference/ARCHITECTURE.md",
+          "section_id": "docs/reference/ARCHITECTURE.md::2-multi-layer-ai-solver-architecture",
+          "chunk_id": "docs/reference/ARCHITECTURE.md::2-multi-layer-ai-solver-architecture::3ab6c6e83d34"
         }
       ],
       "answer_evaluation": "not_run"
@@ -1355,6 +1911,18 @@
           "chunk_id": "docs/reference/ARCHITECTURE.md::key-capabilities::45151450f446"
         }
       ],
+      "unjudged_same_source": [
+        {
+          "source": "docs/reference/repair_loop.md",
+          "section_id": "docs/reference/repair_loop.md::current-failure-classes",
+          "chunk_id": "docs/reference/repair_loop.md::current-failure-classes::97cea9737916"
+        },
+        {
+          "source": "docs/reference/ARCHITECTURE.md",
+          "section_id": "docs/reference/ARCHITECTURE.md::1-system-overview-ai-engineering-vision",
+          "chunk_id": "docs/reference/ARCHITECTURE.md::1-system-overview-ai-engineering-vision::d897cbc1a535"
+        }
+      ],
       "answer_evaluation": "not_run"
     },
     {
@@ -1392,6 +1960,23 @@
           "chunk_id": "docs/reference/materials.md::material-properties-table-f09::0574cc554f02"
         }
       ],
+      "unjudged_same_source": [
+        {
+          "source": "docs/reference/materials.md",
+          "section_id": "docs/reference/materials.md::al-6061-t6-al6061t6",
+          "chunk_id": "docs/reference/materials.md::al-6061-t6-al6061t6::e103fd7b20d3"
+        },
+        {
+          "source": "docs/reference/materials.md",
+          "section_id": "docs/reference/materials.md::al-7075-t6-al7075t6",
+          "chunk_id": "docs/reference/materials.md::al-7075-t6-al7075t6::5d7a16533be4"
+        },
+        {
+          "source": "docs/reference/materials.md",
+          "section_id": "docs/reference/materials.md::material-properties-table-f09",
+          "chunk_id": "docs/reference/materials.md::material-properties-table-f09::0574cc554f02"
+        }
+      ],
       "answer_evaluation": "not_run"
     },
     {
@@ -1400,13 +1985,13 @@
       "critical": false,
       "expected_action": "answer",
       "expected_support": "supported",
-      "evidence_recall": 0.0,
-      "precision": 0.0,
-      "ndcg": 0.0,
-      "found_evidence": [],
-      "missing_evidence": [
+      "evidence_recall": 1.0,
+      "precision": 0.25,
+      "ndcg": 0.6131471927654584,
+      "found_evidence": [
         "mat-002-e1"
       ],
+      "missing_evidence": [],
       "retrieved": [
         {
           "source": "docs/reference/materials.md",
@@ -1427,6 +2012,13 @@
           "source": "docs/reference/material_allowables.md",
           "section_id": "docs/reference/material_allowables.md::aluminum-6061-t6-approx",
           "chunk_id": "docs/reference/material_allowables.md::aluminum-6061-t6-approx::c4d39cc9e251"
+        }
+      ],
+      "unjudged_same_source": [
+        {
+          "source": "docs/reference/materials.md",
+          "section_id": "docs/reference/materials.md::al-6061-t6-al6061t6",
+          "chunk_id": "docs/reference/materials.md::al-6061-t6-al6061t6::e103fd7b20d3"
         }
       ],
       "answer_evaluation": "not_run"
@@ -1466,6 +2058,18 @@
           "chunk_id": "docs/reference/materials.md::material-properties-table-f09::a0bd100ffe42"
         }
       ],
+      "unjudged_same_source": [
+        {
+          "source": "docs/reference/materials.md",
+          "section_id": "docs/reference/materials.md::ti-6al-4v-grade-5-annealed-ti6al4v",
+          "chunk_id": "docs/reference/materials.md::ti-6al-4v-grade-5-annealed-ti6al4v::12329b07dd6c"
+        },
+        {
+          "source": "docs/reference/materials.md",
+          "section_id": "docs/reference/materials.md::material-properties-table-f09",
+          "chunk_id": "docs/reference/materials.md::material-properties-table-f09::a0bd100ffe42"
+        }
+      ],
       "answer_evaluation": "not_run"
     },
     {
@@ -1490,6 +2094,11 @@
           "chunk_id": "docs/reference/materials.md::pa12-nylon-dry-screening-assumptions-pa12::89b35a014f08"
         },
         {
+          "source": "docs/reference/materials.md",
+          "section_id": "docs/reference/materials.md::choosing-a-material",
+          "chunk_id": "docs/reference/materials.md::choosing-a-material::918e616ef91d"
+        },
+        {
           "source": "docs/reference/ARCHITECTURE.md",
           "section_id": "docs/reference/ARCHITECTURE.md::key-capabilities",
           "chunk_id": "docs/reference/ARCHITECTURE.md::key-capabilities::6b2f1e51c0e3"
@@ -1498,11 +2107,18 @@
           "source": "docs/reference/materials.md",
           "section_id": "docs/reference/materials.md::summary",
           "chunk_id": "docs/reference/materials.md::summary::ebf0c227b5bf"
+        }
+      ],
+      "unjudged_same_source": [
+        {
+          "source": "docs/reference/materials.md",
+          "section_id": "docs/reference/materials.md::choosing-a-material",
+          "chunk_id": "docs/reference/materials.md::choosing-a-material::918e616ef91d"
         },
         {
-          "source": "docs/reference/ARCHITECTURE.md",
-          "section_id": "docs/reference/ARCHITECTURE.md::6-testing-quality-gates",
-          "chunk_id": "docs/reference/ARCHITECTURE.md::6-testing-quality-gates::3bdd74c31241"
+          "source": "docs/reference/materials.md",
+          "section_id": "docs/reference/materials.md::summary",
+          "chunk_id": "docs/reference/materials.md::summary::ebf0c227b5bf"
         }
       ],
       "answer_evaluation": "not_run"
@@ -1543,6 +2159,7 @@
           "chunk_id": "docs/reference/verification.md::solve-methods::f8f5e46a6640"
         }
       ],
+      "unjudged_same_source": [],
       "answer_evaluation": "not_run"
     },
     {
@@ -1551,14 +2168,14 @@
       "critical": false,
       "expected_action": "answer",
       "expected_support": "supported",
-      "evidence_recall": 0.0,
-      "precision": 0.0,
-      "ndcg": 0.0,
-      "found_evidence": [],
-      "missing_evidence": [
+      "evidence_recall": 1.0,
+      "precision": 0.5,
+      "ndcg": 0.7653606369886217,
+      "found_evidence": [
         "mat-006-e1",
         "mat-006-e2"
       ],
+      "missing_evidence": [],
       "retrieved": [
         {
           "source": "docs/reference/materials.md",
@@ -1581,6 +2198,7 @@
           "chunk_id": "docs/reference/ARCHITECTURE.md::f09-multi-criteria-material-reasoning-engine::21e7b8cde89e"
         }
       ],
+      "unjudged_same_source": [],
       "answer_evaluation": "not_run"
     },
     {
@@ -1619,6 +2237,13 @@
           "chunk_id": "docs/reference/materials.md::al-6061-t6-al6061t6::e103fd7b20d3"
         }
       ],
+      "unjudged_same_source": [
+        {
+          "source": "docs/reference/materials.md",
+          "section_id": "docs/reference/materials.md::al-6061-t6-al6061t6",
+          "chunk_id": "docs/reference/materials.md::al-6061-t6-al6061t6::e103fd7b20d3"
+        }
+      ],
       "answer_evaluation": "not_run"
     },
     {
@@ -1627,18 +2252,18 @@
       "critical": true,
       "expected_action": "answer",
       "expected_support": "supported",
-      "evidence_recall": 0.0,
-      "precision": 0.0,
-      "ndcg": 0.0,
-      "found_evidence": [],
-      "missing_evidence": [
+      "evidence_recall": 1.0,
+      "precision": 0.5,
+      "ndcg": 0.5706417189553201,
+      "found_evidence": [
         "mat-008-e1"
       ],
+      "missing_evidence": [],
       "retrieved": [
         {
           "source": "docs/reference/materials.md",
-          "section_id": "docs/reference/materials.md::material-properties-table-f09",
-          "chunk_id": "docs/reference/materials.md::material-properties-table-f09::a0bd100ffe42"
+          "section_id": "docs/reference/materials.md::choosing-a-material",
+          "chunk_id": "docs/reference/materials.md::choosing-a-material::918e616ef91d"
         },
         {
           "source": "docs/reference/material_allowables.md",
@@ -1648,12 +2273,19 @@
         {
           "source": "docs/reference/materials.md",
           "section_id": "docs/reference/materials.md::material-properties-table-f09",
-          "chunk_id": "docs/reference/materials.md::material-properties-table-f09::0574cc554f02"
+          "chunk_id": "docs/reference/materials.md::material-properties-table-f09::a0bd100ffe42"
         },
         {
           "source": "docs/reference/materials.md",
-          "section_id": "docs/reference/materials.md::using-materials",
-          "chunk_id": "docs/reference/materials.md::using-materials::c998a141fd8f"
+          "section_id": "docs/reference/materials.md::material-properties-table-f09",
+          "chunk_id": "docs/reference/materials.md::material-properties-table-f09::0574cc554f02"
+        }
+      ],
+      "unjudged_same_source": [
+        {
+          "source": "docs/reference/materials.md",
+          "section_id": "docs/reference/materials.md::choosing-a-material",
+          "chunk_id": "docs/reference/materials.md::choosing-a-material::918e616ef91d"
         }
       ],
       "answer_evaluation": "not_run"
@@ -1664,13 +2296,13 @@
       "critical": false,
       "expected_action": "answer",
       "expected_support": "supported",
-      "evidence_recall": 0.0,
-      "precision": 0.0,
-      "ndcg": 0.0,
-      "found_evidence": [],
-      "missing_evidence": [
+      "evidence_recall": 1.0,
+      "precision": 0.25,
+      "ndcg": 0.3065735963827292,
+      "found_evidence": [
         "mat-009-e1"
       ],
+      "missing_evidence": [],
       "retrieved": [
         {
           "source": "docs/reference/brake_pedal_lattice.md",
@@ -1693,6 +2325,7 @@
           "chunk_id": "docs/reference/freecad_fem_notes.md::cantilever-demo-setup-secondary-regression::04fcb9c6aeaf"
         }
       ],
+      "unjudged_same_source": [],
       "answer_evaluation": "not_run"
     },
     {
@@ -1703,7 +2336,7 @@
       "expected_support": "partial",
       "evidence_recall": 1.0,
       "precision": 0.5,
-      "ndcg": 0.9197207891481876,
+      "ndcg": 0.8772153153380493,
       "found_evidence": [
         "mat-010-e1",
         "mat-010-e2",
@@ -1718,6 +2351,11 @@
         },
         {
           "source": "docs/reference/materials.md",
+          "section_id": "docs/reference/materials.md::choosing-a-material",
+          "chunk_id": "docs/reference/materials.md::choosing-a-material::918e616ef91d"
+        },
+        {
+          "source": "docs/reference/materials.md",
           "section_id": "docs/reference/materials.md::material-properties-table-f09",
           "chunk_id": "docs/reference/materials.md::material-properties-table-f09::a0bd100ffe42"
         },
@@ -1725,11 +2363,18 @@
           "source": "docs/reference/materials.md",
           "section_id": "docs/reference/materials.md::summary",
           "chunk_id": "docs/reference/materials.md::summary::ebf0c227b5bf"
+        }
+      ],
+      "unjudged_same_source": [
+        {
+          "source": "docs/reference/materials.md",
+          "section_id": "docs/reference/materials.md::choosing-a-material",
+          "chunk_id": "docs/reference/materials.md::choosing-a-material::918e616ef91d"
         },
         {
           "source": "docs/reference/materials.md",
-          "section_id": "docs/reference/materials.md::using-materials",
-          "chunk_id": "docs/reference/materials.md::using-materials::c998a141fd8f"
+          "section_id": "docs/reference/materials.md::material-properties-table-f09",
+          "chunk_id": "docs/reference/materials.md::material-properties-table-f09::a0bd100ffe42"
         }
       ],
       "answer_evaluation": "not_run"
@@ -1740,15 +2385,14 @@
       "critical": false,
       "expected_action": "answer",
       "expected_support": "supported",
-      "evidence_recall": 0.5,
+      "evidence_recall": 1.0,
       "precision": 0.25,
       "ndcg": 0.38685280723454163,
       "found_evidence": [
-        "mat-011-e1"
-      ],
-      "missing_evidence": [
+        "mat-011-e1",
         "mat-011-e2"
       ],
+      "missing_evidence": [],
       "retrieved": [
         {
           "source": "docs/reference/material_allowables.md",
@@ -1769,6 +2413,13 @@
           "source": "docs/reference/materials.md",
           "section_id": "docs/reference/materials.md::summary",
           "chunk_id": "docs/reference/materials.md::summary::ebf0c227b5bf"
+        }
+      ],
+      "unjudged_same_source": [
+        {
+          "source": "docs/reference/material_allowables.md",
+          "section_id": "docs/reference/material_allowables.md::safety-framing-for-chat-answers",
+          "chunk_id": "docs/reference/material_allowables.md::safety-framing-for-chat-answers::c23dea699c7b"
         }
       ],
       "answer_evaluation": "not_run"
@@ -1801,6 +2452,23 @@
           "source": "docs/reference/materials.md",
           "section_id": "docs/reference/materials.md::summary",
           "chunk_id": "docs/reference/materials.md::summary::ebf0c227b5bf"
+        },
+        {
+          "source": "docs/reference/materials.md",
+          "section_id": "docs/reference/materials.md::al-7075-t6-al7075t6",
+          "chunk_id": "docs/reference/materials.md::al-7075-t6-al7075t6::5d7a16533be4"
+        }
+      ],
+      "unjudged_same_source": [
+        {
+          "source": "docs/reference/materials.md",
+          "section_id": "docs/reference/materials.md::pa12-nylon-dry-screening-assumptions-pa12",
+          "chunk_id": "docs/reference/materials.md::pa12-nylon-dry-screening-assumptions-pa12::89b35a014f08"
+        },
+        {
+          "source": "docs/reference/materials.md",
+          "section_id": "docs/reference/materials.md::ti-6al-4v-grade-5-annealed-ti6al4v",
+          "chunk_id": "docs/reference/materials.md::ti-6al-4v-grade-5-annealed-ti6al4v::12329b07dd6c"
         },
         {
           "source": "docs/reference/materials.md",
@@ -1845,6 +2513,7 @@
           "chunk_id": "docs/reference/ARCHITECTURE.md::key-capabilities::45151450f446"
         }
       ],
+      "unjudged_same_source": [],
       "answer_evaluation": "not_run"
     },
     {
@@ -1853,18 +2522,24 @@
       "critical": false,
       "expected_action": "clarify",
       "expected_support": "partial",
-      "evidence_recall": 0.0,
-      "precision": 0.0,
-      "ndcg": 0.0,
-      "found_evidence": [],
-      "missing_evidence": [
-        "mat-014-e1"
+      "evidence_recall": 1.0,
+      "precision": 0.25,
+      "ndcg": 0.6309297535714575,
+      "found_evidence": [
+        "mat-014-e1",
+        "mat-014-e2"
       ],
+      "missing_evidence": [],
       "retrieved": [
         {
           "source": "docs/reference/materials.md",
           "section_id": "docs/reference/materials.md::using-materials",
           "chunk_id": "docs/reference/materials.md::using-materials::c998a141fd8f"
+        },
+        {
+          "source": "docs/reference/materials.md",
+          "section_id": "docs/reference/materials.md::choosing-a-material",
+          "chunk_id": "docs/reference/materials.md::choosing-a-material::918e616ef91d"
         },
         {
           "source": "docs/reference/materials.md",
@@ -1875,11 +2550,18 @@
           "source": "docs/reference/design_programs.md",
           "section_id": "docs/reference/design_programs.md::what-is-editable",
           "chunk_id": "docs/reference/design_programs.md::what-is-editable::ba47475b3aab"
+        }
+      ],
+      "unjudged_same_source": [
+        {
+          "source": "docs/reference/materials.md",
+          "section_id": "docs/reference/materials.md::using-materials",
+          "chunk_id": "docs/reference/materials.md::using-materials::c998a141fd8f"
         },
         {
-          "source": "docs/reference/tool_reference.md",
-          "section_id": "docs/reference/tool_reference.md::simulation-analysis",
-          "chunk_id": "docs/reference/tool_reference.md::simulation-analysis::84a4b2751c09"
+          "source": "docs/reference/materials.md",
+          "section_id": "docs/reference/materials.md::ti-6al-4v-grade-5-annealed-ti6al4v",
+          "chunk_id": "docs/reference/materials.md::ti-6al-4v-grade-5-annealed-ti6al4v::12329b07dd6c"
         }
       ],
       "answer_evaluation": "not_run"
@@ -1917,6 +2599,13 @@
           "source": "docs/reference/brake_pedal_lattice.md",
           "section_id": "docs/reference/brake_pedal_lattice.md::kpis",
           "chunk_id": "docs/reference/brake_pedal_lattice.md::kpis::1e438c152be6"
+        }
+      ],
+      "unjudged_same_source": [
+        {
+          "source": "docs/reference/material_allowables.md",
+          "section_id": "docs/reference/material_allowables.md::material-allowables-cheat-sheet-demo-values",
+          "chunk_id": "docs/reference/material_allowables.md::material-allowables-cheat-sheet-demo-values::257a6d2e51fc"
         }
       ],
       "answer_evaluation": "not_run"
@@ -1958,6 +2647,13 @@
           "chunk_id": "docs/reference/ARCHITECTURE.md::3-flagship-geometry-families::bac024f25985"
         }
       ],
+      "unjudged_same_source": [
+        {
+          "source": "docs/reference/freecad_fem_notes.md",
+          "section_id": "docs/reference/freecad_fem_notes.md::cantilever-demo-setup-secondary-regression",
+          "chunk_id": "docs/reference/freecad_fem_notes.md::cantilever-demo-setup-secondary-regression::04fcb9c6aeaf"
+        }
+      ],
       "answer_evaluation": "not_run"
     },
     {
@@ -1997,6 +2693,13 @@
           "chunk_id": "docs/reference/verification.md::mesh-convergence::4cd7edd2a135"
         }
       ],
+      "unjudged_same_source": [
+        {
+          "source": "docs/reference/freecad_fem_notes.md",
+          "section_id": "docs/reference/freecad_fem_notes.md::analytical-check-euler-bernoulli",
+          "chunk_id": "docs/reference/freecad_fem_notes.md::analytical-check-euler-bernoulli::d8a6106b1492"
+        }
+      ],
       "answer_evaluation": "not_run"
     },
     {
@@ -2028,6 +2731,13 @@
           "section_id": "docs/reference/verification.md::solve-methods",
           "chunk_id": "docs/reference/verification.md::solve-methods::fa0ab3a8d486"
         },
+        {
+          "source": "docs/reference/freecad_fem_notes.md",
+          "section_id": "docs/reference/freecad_fem_notes.md::qt-incompatible-processor-neon-crc32",
+          "chunk_id": "docs/reference/freecad_fem_notes.md::qt-incompatible-processor-neon-crc32::d64d77430e2a"
+        }
+      ],
+      "unjudged_same_source": [
         {
           "source": "docs/reference/freecad_fem_notes.md",
           "section_id": "docs/reference/freecad_fem_notes.md::qt-incompatible-processor-neon-crc32",
@@ -2073,6 +2783,18 @@
           "chunk_id": "docs/reference/freecad_fem_notes.md::analytical-check-euler-bernoulli::d8a6106b1492"
         }
       ],
+      "unjudged_same_source": [
+        {
+          "source": "docs/reference/freecad_fem_notes.md",
+          "section_id": "docs/reference/freecad_fem_notes.md::recommended-cantilever-geometry",
+          "chunk_id": "docs/reference/freecad_fem_notes.md::recommended-cantilever-geometry::09051835619a"
+        },
+        {
+          "source": "docs/reference/freecad_fem_notes.md",
+          "section_id": "docs/reference/freecad_fem_notes.md::cantilever-demo-setup-secondary-regression",
+          "chunk_id": "docs/reference/freecad_fem_notes.md::cantilever-demo-setup-secondary-regression::04fcb9c6aeaf"
+        }
+      ],
       "answer_evaluation": "not_run"
     },
     {
@@ -2099,6 +2821,18 @@
           "section_id": "docs/reference/uav_arm_lattice.md::load-case-f26-demo",
           "chunk_id": "docs/reference/uav_arm_lattice.md::load-case-f26-demo::bc19413d8c9d"
         },
+        {
+          "source": "docs/reference/freecad_fem_notes.md",
+          "section_id": "docs/reference/freecad_fem_notes.md::recommended-cantilever-geometry",
+          "chunk_id": "docs/reference/freecad_fem_notes.md::recommended-cantilever-geometry::09051835619a"
+        },
+        {
+          "source": "docs/reference/freecad_fem_notes.md",
+          "section_id": "docs/reference/freecad_fem_notes.md::cantilever-demo-setup-secondary-regression",
+          "chunk_id": "docs/reference/freecad_fem_notes.md::cantilever-demo-setup-secondary-regression::04fcb9c6aeaf"
+        }
+      ],
+      "unjudged_same_source": [
         {
           "source": "docs/reference/freecad_fem_notes.md",
           "section_id": "docs/reference/freecad_fem_notes.md::recommended-cantilever-geometry",
@@ -2149,6 +2883,7 @@
           "chunk_id": "docs/reference/tool_reference.md::simulation-analysis::84a4b2751c09"
         }
       ],
+      "unjudged_same_source": [],
       "answer_evaluation": "not_run"
     },
     {
@@ -2188,6 +2923,7 @@
           "chunk_id": "docs/reference/ARCHITECTURE.md::3-flagship-geometry-families::bac024f25985"
         }
       ],
+      "unjudged_same_source": [],
       "answer_evaluation": "not_run"
     },
     {
@@ -2225,6 +2961,7 @@
           "chunk_id": "docs/reference/freecad_fem_notes.md::analytical-check-euler-bernoulli::d8a6106b1492"
         }
       ],
+      "unjudged_same_source": [],
       "answer_evaluation": "not_run"
     },
     {
@@ -2260,6 +2997,13 @@
           "source": "docs/reference/design_programs.md",
           "section_id": "docs/reference/design_programs.md::revision-identity",
           "chunk_id": "docs/reference/design_programs.md::revision-identity::43aa3a70c098"
+        }
+      ],
+      "unjudged_same_source": [
+        {
+          "source": "docs/reference/verification.md",
+          "section_id": "docs/reference/verification.md::mesh-convergence",
+          "chunk_id": "docs/reference/verification.md::mesh-convergence::4cd7edd2a135"
         }
       ],
       "answer_evaluation": "not_run"
@@ -2299,6 +3043,7 @@
           "chunk_id": "docs/reference/tool_reference.md::simulation-analysis::84a4b2751c09"
         }
       ],
+      "unjudged_same_source": [],
       "answer_evaluation": "not_run"
     },
     {
@@ -2316,14 +3061,14 @@
       ],
       "retrieved": [
         {
-          "source": "docs/reference/ARCHITECTURE.md",
-          "section_id": "docs/reference/ARCHITECTURE.md::f01-grounded-lexical-retrieval",
-          "chunk_id": "docs/reference/ARCHITECTURE.md::f01-grounded-lexical-retrieval::922fa3f617ef"
-        },
-        {
           "source": "docs/reference/freecad_fem_notes.md",
           "section_id": "docs/reference/freecad_fem_notes.md::analytical-check-euler-bernoulli",
           "chunk_id": "docs/reference/freecad_fem_notes.md::analytical-check-euler-bernoulli::d8a6106b1492"
+        },
+        {
+          "source": "docs/reference/ARCHITECTURE.md",
+          "section_id": "docs/reference/ARCHITECTURE.md::f01-grounded-lexical-retrieval",
+          "chunk_id": "docs/reference/ARCHITECTURE.md::f01-grounded-lexical-retrieval::922fa3f617ef"
         },
         {
           "source": "docs/reference/material_allowables.md",
@@ -2336,6 +3081,7 @@
           "chunk_id": "docs/reference/material_allowables.md::safety-framing-for-chat-answers::c23dea699c7b"
         }
       ],
+      "unjudged_same_source": [],
       "answer_evaluation": "not_run"
     },
     {
@@ -2363,14 +3109,26 @@
           "chunk_id": "docs/reference/verification.md::mesh-convergence::cd1d45f307fd"
         },
         {
+          "source": "docs/reference/verification.md",
+          "section_id": "docs/reference/verification.md::solve-methods",
+          "chunk_id": "docs/reference/verification.md::solve-methods::f8f5e46a6640"
+        },
+        {
           "source": "docs/reference/tool_reference.md",
           "section_id": "docs/reference/tool_reference.md::simulation-analysis",
           "chunk_id": "docs/reference/tool_reference.md::simulation-analysis::84a4b2751c09"
+        }
+      ],
+      "unjudged_same_source": [
+        {
+          "source": "docs/reference/verification.md",
+          "section_id": "docs/reference/verification.md::mesh-convergence",
+          "chunk_id": "docs/reference/verification.md::mesh-convergence::cd1d45f307fd"
         },
         {
-          "source": "docs/reference/ARCHITECTURE.md",
-          "section_id": "docs/reference/ARCHITECTURE.md::f08-automated-mesh-convergence-studies",
-          "chunk_id": "docs/reference/ARCHITECTURE.md::f08-automated-mesh-convergence-studies::ea39135875cc"
+          "source": "docs/reference/verification.md",
+          "section_id": "docs/reference/verification.md::solve-methods",
+          "chunk_id": "docs/reference/verification.md::solve-methods::f8f5e46a6640"
         }
       ],
       "answer_evaluation": "not_run"
@@ -2403,6 +3161,18 @@
           "source": "docs/reference/tool_reference.md",
           "section_id": "docs/reference/tool_reference.md::simulation-analysis",
           "chunk_id": "docs/reference/tool_reference.md::simulation-analysis::84a4b2751c09"
+        },
+        {
+          "source": "docs/reference/verification.md",
+          "section_id": "docs/reference/verification.md::mesh-convergence",
+          "chunk_id": "docs/reference/verification.md::mesh-convergence::cd1d45f307fd"
+        }
+      ],
+      "unjudged_same_source": [
+        {
+          "source": "docs/reference/verification.md",
+          "section_id": "docs/reference/verification.md::solve-methods",
+          "chunk_id": "docs/reference/verification.md::solve-methods::fa0ab3a8d486"
         },
         {
           "source": "docs/reference/verification.md",
@@ -2447,6 +3217,18 @@
           "chunk_id": "docs/reference/verification.md::solve-methods::f8f5e46a6640"
         }
       ],
+      "unjudged_same_source": [
+        {
+          "source": "docs/reference/verification.md",
+          "section_id": "docs/reference/verification.md::mesh-convergence",
+          "chunk_id": "docs/reference/verification.md::mesh-convergence::cd1d45f307fd"
+        },
+        {
+          "source": "docs/reference/verification.md",
+          "section_id": "docs/reference/verification.md::solve-methods",
+          "chunk_id": "docs/reference/verification.md::solve-methods::f8f5e46a6640"
+        }
+      ],
       "answer_evaluation": "not_run"
     },
     {
@@ -2457,7 +3239,7 @@
       "expected_support": "supported",
       "evidence_recall": 1.0,
       "precision": 0.5,
-      "ndcg": 0.9197207891481876,
+      "ndcg": 1.0,
       "found_evidence": [
         "mat-030-e1",
         "mat-030-e2"
@@ -2470,14 +3252,14 @@
           "chunk_id": "docs/reference/verification.md::mesh-convergence::4cd7edd2a135"
         },
         {
-          "source": "docs/reference/tool_reference.md",
-          "section_id": "docs/reference/tool_reference.md::simulation-analysis",
-          "chunk_id": "docs/reference/tool_reference.md::simulation-analysis::84a4b2751c09"
-        },
-        {
           "source": "docs/reference/verification.md",
           "section_id": "docs/reference/verification.md::mesh-convergence",
           "chunk_id": "docs/reference/verification.md::mesh-convergence::cd1d45f307fd"
+        },
+        {
+          "source": "docs/reference/tool_reference.md",
+          "section_id": "docs/reference/tool_reference.md::simulation-analysis",
+          "chunk_id": "docs/reference/tool_reference.md::simulation-analysis::84a4b2751c09"
         },
         {
           "source": "docs/reference/uav_arm_lattice.md",
@@ -2485,6 +3267,7 @@
           "chunk_id": "docs/reference/uav_arm_lattice.md::design-vs-non-design::c015e806325d"
         }
       ],
+      "unjudged_same_source": [],
       "answer_evaluation": "not_run"
     },
     {
@@ -2511,6 +3294,18 @@
           "section_id": "docs/reference/repair_loop.md::current-failure-classes",
           "chunk_id": "docs/reference/repair_loop.md::current-failure-classes::2db186990d6c"
         },
+        {
+          "source": "docs/reference/verification.md",
+          "section_id": "docs/reference/verification.md::mesh-convergence",
+          "chunk_id": "docs/reference/verification.md::mesh-convergence::4cd7edd2a135"
+        },
+        {
+          "source": "docs/reference/verification.md",
+          "section_id": "docs/reference/verification.md::solve-methods",
+          "chunk_id": "docs/reference/verification.md::solve-methods::f8f5e46a6640"
+        }
+      ],
+      "unjudged_same_source": [
         {
           "source": "docs/reference/verification.md",
           "section_id": "docs/reference/verification.md::mesh-convergence",
@@ -2559,6 +3354,7 @@
           "chunk_id": "docs/reference/ARCHITECTURE.md::f04-transactional-parametric-design-programs::00edabdd04a8"
         }
       ],
+      "unjudged_same_source": [],
       "answer_evaluation": "not_run"
     },
     {
@@ -2586,14 +3382,26 @@
           "chunk_id": "docs/reference/verification.md::stored-evidence::1dc54a656655"
         },
         {
-          "source": "docs/reference/verification.md",
-          "section_id": "docs/reference/verification.md::verification-and-evidence-limits",
-          "chunk_id": "docs/reference/verification.md::verification-and-evidence-limits::31a78e58d43d"
-        },
-        {
           "source": "docs/reference/ARCHITECTURE.md",
           "section_id": "docs/reference/ARCHITECTURE.md::2-multi-layer-ai-solver-architecture",
           "chunk_id": "docs/reference/ARCHITECTURE.md::2-multi-layer-ai-solver-architecture::248ef8fc4cd7"
+        },
+        {
+          "source": "docs/reference/verification.md",
+          "section_id": "docs/reference/verification.md::verification-and-evidence-limits",
+          "chunk_id": "docs/reference/verification.md::verification-and-evidence-limits::31a78e58d43d"
+        }
+      ],
+      "unjudged_same_source": [
+        {
+          "source": "docs/reference/verification.md",
+          "section_id": "docs/reference/verification.md::mesh-convergence",
+          "chunk_id": "docs/reference/verification.md::mesh-convergence::cd1d45f307fd"
+        },
+        {
+          "source": "docs/reference/verification.md",
+          "section_id": "docs/reference/verification.md::verification-and-evidence-limits",
+          "chunk_id": "docs/reference/verification.md::verification-and-evidence-limits::31a78e58d43d"
         }
       ],
       "answer_evaluation": "not_run"
@@ -2633,6 +3441,18 @@
           "chunk_id": "docs/reference/repair_loop.md::current-failure-classes::2db186990d6c"
         }
       ],
+      "unjudged_same_source": [
+        {
+          "source": "docs/reference/verification.md",
+          "section_id": "docs/reference/verification.md::verification-and-evidence-limits",
+          "chunk_id": "docs/reference/verification.md::verification-and-evidence-limits::31a78e58d43d"
+        },
+        {
+          "source": "docs/reference/verification.md",
+          "section_id": "docs/reference/verification.md::solve-methods",
+          "chunk_id": "docs/reference/verification.md::solve-methods::fa0ab3a8d486"
+        }
+      ],
       "answer_evaluation": "not_run"
     },
     {
@@ -2668,6 +3488,13 @@
           "source": "docs/reference/repair_loop.md",
           "section_id": "docs/reference/repair_loop.md::current-failure-classes",
           "chunk_id": "docs/reference/repair_loop.md::current-failure-classes::2db186990d6c"
+        }
+      ],
+      "unjudged_same_source": [
+        {
+          "source": "docs/reference/verification.md",
+          "section_id": "docs/reference/verification.md::solve-methods",
+          "chunk_id": "docs/reference/verification.md::solve-methods::fa0ab3a8d486"
         }
       ],
       "answer_evaluation": "not_run"

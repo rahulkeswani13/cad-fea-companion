@@ -1,31 +1,30 @@
 {
   "schema_version": 1,
-  "corpus_fingerprint": "63473d5346a78154",
+  "corpus_fingerprint": "34517bc613faa567",
   "review_case_ids": [
-    "mat-001",
+    "mat-002",
     "mat-004",
     "mat-008",
+    "mat-006",
+    "mat-009",
     "mat-010",
+    "mat-011",
     "mat-012",
+    "mat-014",
     "mat-019",
     "mat-021",
     "mat-026",
     "mat-030",
-    "mat-034",
-    "flow-003",
+    "mat-031",
     "flow-004",
     "flow-007",
     "flow-014",
     "flow-018",
-    "flow-021",
-    "flow-027",
     "flow-037",
-    "flow-040",
     "flow-049"
   ],
   "review": {
-    "status": "approved",
-    "benchmark_hash": "742864f5d3e3b83eb5d752c4e05153d9fda281cf06181c3f3305b7d41b811ac1"
+    "status": "pending"
   },
   "cases": [
     {
@@ -2056,6 +2055,11 @@
               "source": "docs/reference/materials.md",
               "section_id": "docs/reference/materials.md::summary",
               "quote": "| Al 7075-T6 | `al7075t6` | 71.7 GPa | 0.33 | 2810 kg/m^3 | 503 MPa | medium |"
+            },
+            {
+              "source": "docs/reference/materials.md",
+              "section_id": "docs/reference/materials.md::al-7075-t6-al7075t6",
+              "quote": "- Young's modulus: 71.7 GPa (MatWeb: Aluminum Al 7075-T6, room temperature)\n- Density: 2810 kg/m^3 (MatWeb: Aluminum Al 7075-T6)\n- Yield: 503 MPa (MatWeb / MMPDS: 7075-T6 Rp0.2)"
             }
           ]
         }
@@ -2281,6 +2285,11 @@
               "source": "docs/reference/materials.md",
               "section_id": "docs/reference/materials.md::summary",
               "quote": "| Al 6061-T6 | `al6061t6` | 69 GPa | 0.33 | 2700 kg/m^3 | 276 MPa | low |"
+            },
+            {
+              "source": "docs/reference/materials.md",
+              "section_id": "docs/reference/materials.md::al-6061-t6-al6061t6",
+              "quote": "- Young's modulus: 69 GPa (MatWeb: Aluminum Al 6061-T6, room temperature)\n- Density: 2700 kg/m^3 (MatWeb: Aluminum Al 6061-T6)\n- Yield: 276 MPa (MatWeb / MMPDS: 6061-T6 Rp0.2)"
             }
           ]
         },
@@ -2291,6 +2300,11 @@
               "source": "docs/reference/materials.md",
               "section_id": "docs/reference/materials.md::summary",
               "quote": "| Al 7075-T6 | `al7075t6` | 71.7 GPa | 0.33 | 2810 kg/m^3 | 503 MPa | medium |"
+            },
+            {
+              "source": "docs/reference/materials.md",
+              "section_id": "docs/reference/materials.md::al-7075-t6-al7075t6",
+              "quote": "- Young's modulus: 71.7 GPa (MatWeb: Aluminum Al 7075-T6, room temperature)\n- Density: 2810 kg/m^3 (MatWeb: Aluminum Al 7075-T6)\n- Yield: 503 MPa (MatWeb / MMPDS: 7075-T6 Rp0.2)"
             }
           ]
         }
@@ -2391,7 +2405,7 @@
           "alternatives": [
             {
               "source": "docs/reference/materials.md",
-              "section_id": "docs/reference/materials.md::summary",
+              "section_id": "docs/reference/materials.md::material-properties-table-f09",
               "quote": "not as-built additive-manufacturing allowables"
             }
           ]
@@ -2425,6 +2439,11 @@
               "source": "docs/reference/materials.md",
               "section_id": "docs/reference/materials.md::al-6061-t6-al6061t6",
               "quote": "Default material for the brake pedal in this repo."
+            },
+            {
+              "source": "docs/reference/tool_reference.md",
+              "section_id": "docs/reference/tool_reference.md::geometry-authoring",
+              "quote": "Optional `material`\n  (default Al 6061-T6; see `docs/reference/materials.md`)."
             }
           ]
         }
@@ -2527,6 +2546,11 @@
               "source": "docs/reference/material_allowables.md",
               "section_id": "docs/reference/material_allowables.md::material-allowables-cheat-sheet-demo-values",
               "quote": "These are **approximate teaching values**, not design allowables for production parts."
+            },
+            {
+              "source": "docs/reference/material_allowables.md",
+              "section_id": "docs/reference/material_allowables.md::mild-structural-steel-approx",
+              "quote": "These are **approximate teaching values**, not design allowables for production parts."
             }
           ]
         }
@@ -2627,8 +2651,18 @@
           "alternatives": [
             {
               "source": "docs/reference/materials.md",
-              "section_id": "docs/reference/materials.md::summary",
-              "quote": "| Material | id | E | nu | Density | Yield (Rp0.2) | Cost class |"
+              "section_id": "docs/reference/materials.md::choosing-a-material",
+              "quote": "The table exposes competing stiffness, density, yield, and cost properties for screening"
+            }
+          ]
+        },
+        {
+          "id": "mat-014-e2",
+          "alternatives": [
+            {
+              "source": "docs/reference/materials.md",
+              "section_id": "docs/reference/materials.md::choosing-a-material",
+              "quote": "A useful choice requires the part geometry, load case, stiffness or mass objective, manufacturing process, environment, and applicable verified allowables."
             }
           ]
         }
@@ -2856,6 +2890,11 @@
               "source": "docs/reference/freecad_fem_notes.md",
               "section_id": "docs/reference/freecad_fem_notes.md::analytical-check-euler-bernoulli",
               "quote": "`sigma_max = 6 * 100 * 100 / (20 * 5^2) = 120 MPa`"
+            },
+            {
+              "source": "docs/reference/verification.md",
+              "section_id": "docs/reference/verification.md::solve-methods",
+              "quote": "For the default\n`100 × 20 × 5 mm` beam at `100 N`, the analytical maximum bending stress is\n`120 MPa`."
             }
           ]
         },

@@ -13,8 +13,8 @@
       "path": "docs/reference/materials.md",
       "topic": "material properties",
       "authority": "data/materials.json and cited references",
-      "reviewed": "2026-09-06",
-      "version": "ADR-018 PR1",
+      "reviewed": "2026-09-17",
+      "version": "ADR-018 benchmark repair",
       "applicability": "Bulk room-temperature reference values; no fatigue or as-built AM allowables"
     },
     {
