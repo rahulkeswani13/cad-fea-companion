@@ -17,9 +17,9 @@ These counts measure different layers — never use them interchangeably:
 | :--- | :--- | :--- |
 | 22 | Demo prompt cards in the interactive catalog | `demo/demo_catalog.html` |
 | 20 | Console library prompts + 10 feature walkthroughs (versioned data) | `data/prompts.json` via `GET /api/prompts` |
-| 50 | Browser UI checks (36 isolated single-shot + 9 multi-turn journeys + 5 console) against a mocked LLM | `tests/test_browser_ui.py` |
-| 72 | Behavior eval cases (44 tool / 15 agent / 8 RAG / 5 HTTP — 18 of them adversarial attacks) | `eval/cases.json` via `eval/run_eval.py` |
-| 262 | Unit + integration tests (excludes the browser suite) | `pytest tests/` |
+| 63 | Browser UI checks against a mocked LLM | `tests/test_browser_ui.py` |
+| 81 | Behavior eval cases (45 tool / 15 agent / 11 RAG / 7 HTTP / 3 benchmark-fixture — 18 adversarial) | `eval/cases.json` via `eval/run_eval.py` |
+| 323 | Unit + integration tests (excludes the browser suite) | `pytest tests/` |
 
 The headline number for interviews is the **eval count** — behavior checks
 that gate every push via CI. The 5 agent-level adversarial cases
@@ -1651,8 +1651,8 @@ union. Exact model commits and latency make the result reproducible.
 **Script:** Run `eval/run_rag_retrieval_comparison.py` without model downloads to
 show that unavailable neural profiles are not silently scored as lexical. Then
 inspect `eval/reports/rag_retrieval_comparison.json`: development selection chose
-reranking, and the one-shot held-out result is retained even though it misses the
-0.90 recall target.
+reranking, and the fresh hidden-v2 independent result is retained even though it
+misses the 0.90 recall target.
 
 **Tests:** `tests/test_rag_neural.py` covers embedding rank metadata,
 cross-encoder ordering, visible lexical fallback, strict unavailability, and bad
@@ -1661,13 +1661,14 @@ priority. `tests/test_console_api.py` covers the additive profile response.
 
 **Evals:** `http_rag_neural_availability_contract` keeps model availability and
 fallback visible in key-free CI. The reproducible comparison uses all 70
-development cases, selects once, and then runs all 30 held-out cases once.
+development cases, selects once, and then evaluates all 30 fresh hidden-v2 cases
+once after the retriever is frozen.
 
 **Demo prompts:** `/api/rag/search?q=mesh&detail=1&profile=reranked`;
 `/api/rag/search?q=PA12+nonlinear&detail=1&profile=lexical_embedding`.
 
 **Likely interview questions:** Why RRF before reranking? Why pin Hugging Face
 commits? Why not score lexical fallback as neural? Why choose the slower model?
-Why did held-out miss the target? Answer honestly: reranking improved development
-nDCG without losing recall, but the held-out miss blocks final acceptance and
-must drive future fresh-development work rather than held-out tuning.
+Why did hidden-v2 miss the target? Answer honestly: reranking improved development
+nDCG without losing recall, but the independent miss blocks final acceptance and
+must drive future fresh-development work rather than hidden-set tuning.
