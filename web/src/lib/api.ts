@@ -57,6 +57,9 @@ export interface ResumeResponse {
   thread_id?: string;
   citations?: FinalPayload["citations"];
   grounding?: FinalPayload["grounding"];
+  retrieval?: FinalPayload["retrieval"];
+  retrieval_query?: FinalPayload["retrieval_query"];
+  answer_evidence?: FinalPayload["answer_evidence"];
   tool_results?: FinalPayload["tool_results"];
   interrupted?: boolean;
   interrupt?: unknown;

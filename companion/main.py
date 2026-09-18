@@ -8,7 +8,7 @@ import uuid
 from pathlib import Path
 from typing import Any, Literal
 
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
@@ -194,6 +194,109 @@ def rag_search(
 @app.get("/api/rag/stats")
 def rag_stats() -> dict[str, Any]:
     return get_store().stats()
+
+
+@app.get("/api/rag/development-cases")
+def rag_development_cases() -> dict[str, Any]:
+    """Expose approved development prompts; hidden cases never cross the API."""
+    from eval.benchmark import load_benchmark, require_review
+
+    benchmark = load_benchmark()
+    require_review(benchmark)
+    cases = [
+        {
+            "id": case["id"],
+            "query": case["query"],
+            "category": case["category"],
+            "critical": case["critical"],
+            "expected_action": case["expected_action"],
+            "expected_support": case["expected_support"],
+            "required_evidence_ids": [
+                group["id"] for group in case["required_evidence"]
+            ],
+        }
+        for case in benchmark["cases"]
+        if case["split"] == "development"
+    ]
+    return {
+        "split": "development",
+        "review_status": benchmark["review"]["status"],
+        "cases": cases,
+    }
+
+
+@app.get("/api/rag/development-case")
+def rag_development_case(
+    case_id: str,
+    profile: Literal["lexical", "lexical_embedding", "reranked"] = "reranked",
+) -> dict[str, Any]:
+    """Evaluate one approved development case without exposing hidden labels."""
+    from companion.rag.neural import retrieve_profile_detail
+    from eval.benchmark import (
+        evaluate_evidence,
+        load_benchmark,
+        matched_evidence_group_ids,
+        require_review,
+        resolve_relevance,
+    )
+
+    benchmark = load_benchmark()
+    require_review(benchmark)
+    case = next(
+        (
+            item for item in benchmark["cases"]
+            if item["id"] == case_id and item["split"] == "development"
+        ),
+        None,
+    )
+    if case is None:
+        raise HTTPException(status_code=404, detail="Development case not found")
+    detail = retrieve_profile_detail(case["query"], profile=profile, k=4)
+    hits = detail.get("fused") or []
+    scored = evaluate_evidence(
+        resolve_relevance([case], get_store().chunks),
+        lambda query, k: hits[:k],
+        k=4,
+    )["per_query"][0]
+    return {
+        "case": {
+            "id": case["id"],
+            "query": case["query"],
+            "category": case["category"],
+            "critical": case["critical"],
+            "expected_action": case["expected_action"],
+            "expected_support": case["expected_support"],
+        },
+        "profile": profile,
+        "found_evidence": scored["found_evidence"],
+        "missing_evidence": scored["missing_evidence"],
+        "evidence_recall": scored["evidence_recall"],
+        "precision": scored["precision"],
+        "ndcg": scored["ndcg"],
+        "hits": [
+            {**hit, "matched_evidence_ids": matched_evidence_group_ids(case, hit)}
+            for hit in hits
+        ],
+        "retrieval": detail.get("retrieval") or {},
+    }
+
+
+@app.get("/api/rag/acceptance-report")
+@app.get("/api/rag/comparison-report")
+def rag_acceptance_report() -> dict[str, Any]:
+    """Return aggregate acceptance evidence; hidden case details stay local."""
+    report_path = (
+        Path(__file__).resolve().parents[1]
+        / "eval" / "reports" / "rag_acceptance_summary.json"
+    )
+    try:
+        report = json.loads(report_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        return {
+            "ok": False,
+            "error": f"Acceptance report unavailable: {type(exc).__name__}",
+        }
+    return {"ok": True, **report}
 
 
 @app.post("/api/results/load_precomputed")

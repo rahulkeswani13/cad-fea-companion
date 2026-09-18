@@ -474,9 +474,18 @@
     }
 
     function groundingBadge(label) {
-      if (label === "strong") return `<span class="g-badge g-strong">● grounded</span>`;
-      if (label === "weak") return `<span class="g-badge g-weak">⚠ weak grounding — no strong corpus match</span>`;
+      if (label === "strong") return `<span class="g-badge g-strong">● retrieval match</span>`;
+      if (label === "weak") return `<span class="g-badge g-weak">⚠ weak retrieval match</span>`;
       if (label === "none") return `<span class="g-badge g-none">● no retrieval match</span>`;
+      return "";
+    }
+
+    function answerEvidenceBadge(evidence) {
+      const status = evidence?.status;
+      if (status === "supported") return `<span class="g-badge g-strong">● claims structurally supported</span>`;
+      if (status === "partially_supported") return `<span class="g-badge g-weak">⚠ partial support</span>`;
+      if (status === "insufficient") return `<span class="g-badge g-weak">⚠ insufficient evidence</span>`;
+      if (status === "check_unavailable") return `<span class="g-badge g-weak">⚠ evidence check unavailable</span>`;
       return "";
     }
 
@@ -495,6 +504,8 @@
 
     function showAssistantResult(data) {
       let meta = "";
+      meta += groundingBadge(data.grounding);
+      meta += answerEvidenceBadge(data.answer_evidence);
       if (data.tool_results?.length) {
         const lines = data.tool_results.slice(0, 6).map(summarizeTool).map(escapeHtml);
         meta += `<div class="tools">${lines.join("\n")}</div>`;
@@ -507,9 +518,39 @@
         const items = unique.map((s) => `<li>${escapeHtml(s)}</li>`).join("");
         const rows = data.citations.map(hitRow).join("");
         const label = data.grounding || "strong";
-        meta += `${groundingBadge(label)}` +
-          `<details><summary>Retrieval inspector (${data.citations.length} hits · ${label})</summary>` +
+        meta += `<details><summary>Retrieval inspector (${data.citations.length} hits · ${label})</summary>` +
           `<ul class="cite-list">${items}</ul>${rows}</details>`;
+      }
+      if (data.retrieval || data.answer_evidence) {
+        const retrieval = data.retrieval || {};
+        const profile = `${escapeHtml(retrieval.requested_profile || "unknown")} → ${escapeHtml(retrieval.active_profile || "unknown")}${retrieval.fallback ? " fallback" : ""}`;
+        const claims = (data.answer_evidence?.claims || []).map((claim) => {
+          const spans = Array.isArray(claim.evidence_spans) ? claim.evidence_spans : [];
+          const spanIds = [...new Set([
+            ...(Array.isArray(claim.evidence_span_ids) ? claim.evidence_span_ids : []),
+            ...spans.map((span) => span?.span_id).filter(Boolean),
+          ])];
+          const spanIdRow = spanIds.length
+            ? `<div data-testid="claim-span-ids" class="claim-span-ids">spans · ${escapeHtml(spanIds.join(", "))}</div>`
+            : "";
+          const spanRows = spans.map((span) =>
+            `<div data-testid="evidence-span" class="evidence-span">` +
+            `<span>${escapeHtml(span?.span_id || "span")}</span>` +
+            `${span?.source ? ` · ${escapeHtml(span.source)}` : ""}` +
+            `${span?.kind ? ` · ${escapeHtml(span.kind)}` : ""}` +
+            `${span?.provenance_method ? ` · ${escapeHtml(span.provenance_method)}` : ""}` +
+            `${span?.text ? ` · ${escapeHtml(span.text)}` : ""}` +
+            `</div>`
+          ).join("");
+          const legacyQuotes = (Array.isArray(claim.supporting_quotes) ? claim.supporting_quotes : [])
+            .map((quote) => `<div class="legacy-quote">legacy quote · ${escapeHtml(quote?.evidence_id || "unknown")} · ${escapeHtml(quote?.quote || "")}</div>`)
+            .join("");
+          return `<li data-testid="claim-evidence">` +
+            `${claim.structurally_supported === false ? "removed" : "kept"} · ${escapeHtml(claim.text || "")} · ${escapeHtml((claim.evidence_ids || []).join(", "))}` +
+            `${spanIdRow}${spanRows}${legacyQuotes}</li>`;
+        }).join("");
+        const gaps = (data.answer_evidence?.gaps || []).map((gap) => `<li>gap · ${escapeHtml(gap)}</li>`).join("");
+        meta += `<details data-testid="answer-evidence-details"><summary>Answer evidence and retrieval profile</summary><div>${profile}</div><div>semantic ${escapeHtml(data.answer_evidence?.semantic_check || "not reported")}</div><ul>${claims}${gaps}</ul></details>`;
       }
       addMsg("assistant", data.answer || data.error || "No answer", meta || undefined);
     }

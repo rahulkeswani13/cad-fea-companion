@@ -17,9 +17,9 @@ These counts measure different layers — never use them interchangeably:
 | :--- | :--- | :--- |
 | 22 | Demo prompt cards in the interactive catalog | `demo/demo_catalog.html` |
 | 20 | Console library prompts + 10 feature walkthroughs (versioned data) | `data/prompts.json` via `GET /api/prompts` |
-| 63 | Browser UI checks against a mocked LLM | `tests/test_browser_ui.py` |
-| 81 | Behavior eval cases (45 tool / 15 agent / 11 RAG / 7 HTTP / 3 benchmark-fixture — 18 adversarial) | `eval/cases.json` via `eval/run_eval.py` |
-| 323 | Unit + integration tests (excludes the browser suite) | `pytest tests/` |
+| 66 | Browser UI checks against a mocked LLM, including both chat consoles and RAG Lab | `tests/test_browser_ui.py` |
+| 89 | Behavior eval cases (45 tool / 15 agent / 11 RAG / 9 HTTP / 3 benchmark / 5 evidence / 1 rewrite — 18 adversarial) | `eval/cases.json` via `eval/run_eval.py` |
+| 366 | Unit + integration tests (excludes the browser suite) | `pytest tests/` |
 
 The headline number for interviews is the **eval count** — behavior checks
 that gate every push via CI. The 5 agent-level adversarial cases
@@ -1650,25 +1650,129 @@ union. Exact model commits and latency make the result reproducible.
 
 **Script:** Run `eval/run_rag_retrieval_comparison.py` without model downloads to
 show that unavailable neural profiles are not silently scored as lexical. Then
-inspect `eval/reports/rag_retrieval_comparison.json`: development selection chose
-reranking, and the fresh hidden-v2 independent result is retained even though it
-misses the 0.90 recall target.
+inspect `eval/reports/rag_retrieval_comparison.json`: both neural profiles clear
+the development gate and reranking wins with 100% critical recall. Show the
+reported rewrite rules for a cantilever or PA12 query. The historical held-out
+set is marked retired and was not run. Finally inspect the immutable independent
+report `eval/reports/rag_hidden_v2_retrieval.json`: reranking improves
+answerable recall from 0.65 to 0.80 and passes the experimental gate, but its
+0.775 critical recall and 0.80 answerable recall miss the final retrieval bar.
 
 **Tests:** `tests/test_rag_neural.py` covers embedding rank metadata,
 cross-encoder ordering, visible lexical fallback, strict unavailability, and bad
 profiles. `tests/test_rag_retrieval_comparison.py` covers the fixed selection
-priority. `tests/test_console_api.py` covers the additive profile response.
+priority. `tests/test_rag_hidden_v2.py` validates the independent fixture,
+fingerprint freeze, one-call scoring, gate checks, and overwrite refusal.
+`tests/test_console_api.py` covers the additive profile response.
 
 **Evals:** `http_rag_neural_availability_contract` keeps model availability and
-fallback visible in key-free CI. The reproducible comparison uses all 70
-development cases, selects once, and then evaluates all 30 fresh hidden-v2 cases
-once after the retriever is frozen.
+fallback visible in key-free CI; `rag_query_rewrite_contract` checks expansion
+without loading a model. The reproducible comparison uses all 70 development
+cases and refuses the historical held-out split. The frozen retriever was run
+once on 30 independently authored hidden-v2 cases; that report is not a tuning
+set and must not be regenerated.
 
 **Demo prompts:** `/api/rag/search?q=mesh&detail=1&profile=reranked`;
 `/api/rag/search?q=PA12+nonlinear&detail=1&profile=lexical_embedding`.
 
 **Likely interview questions:** Why RRF before reranking? Why pin Hugging Face
 commits? Why not score lexical fallback as neural? Why choose the slower model?
-Why did hidden-v2 miss the target? Answer honestly: reranking improved development
-nDCG without losing recall, but the independent miss blocks final acceptance and
-must drive future fresh-development work rather than hidden-set tuning.
+Why did held-out miss the target? Answer honestly: reranking improved development
+nDCG and reached 100% critical development recall, but this is tuned development
+evidence, not independent proof. The earlier held-out run is contaminated and
+retired. The fresh independent run passed the experimental improvement gate but
+failed the final retrieval bar. Any retrieval change now requires another freeze
+and another independently authored hidden evaluation; PR 4 must treat missing
+evidence as a partial answer or refusal rather than hiding the miss.
+
+
+## ADR-020 · PR 4: Bounded answer evidence checks
+
+**Pitch:** Retrieved passages become named evidence rather than an implicit
+claim that the answer is true. The answer envelope distinguishes bounded
+structural provenance from pending semantic and engineering review.
+
+**Script:** Ask a standalone material question, then “What about titanium?” in
+the same thread. Inspect `retrieval_query` for the bounded prior turn,
+`retrieval` for the active or fallback profile, `D1`–`D4` citations, and
+`answer_evidence` for claims, readable span IDs, canonical source text, gaps,
+and repair status. Demonstrate that formatting differences no longer reject a
+valid legacy quote, while an unsupported number or unknown span is removed and
+only the failed claim is repaired.
+
+**Tests:** `tests/test_rag_evidence.py` covers follow-up resolution, evidence
+identity, prose/table/tool spans, normalized legacy quotes, exact numeric
+provenance, failed-tool rejection, user-premise rejection, partial-answer
+preservation, plain-response status, and the one-repair bound.
+`tests/test_rag_answer_evaluation.py` covers frozen-report reuse, drift
+rejection, complete-input cache identity, batch limits, and honest pending
+semantic/manual grades.
+
+**Evals:** `rag_answer_span_contract`, `rag_answer_normalized_legacy_quote`,
+`rag_answer_partial_repair_preserves_supported`, the legacy exact-quote case,
+and `rag_answer_unsupported_number_removed` run key-free. The answer runner consumes
+the saved hidden-v2 retrieval report rather than rerunning retrieval, processes
+at most ten uncached examples, and refuses calls until free eligibility is
+confirmed.
+
+**Demo prompts:** “According to the docs, what is the Al 6061-T6 yield value?”;
+then “What about titanium?”; “Is the current result verified for fatigue life?”
+
+**Likely interview questions:** Does a resolved source span prove entailment? Why
+retain legacy quotes and a plain answer when checking is unavailable? What may
+`Q1` support? Why only one claim-preserving repair? Answer honestly: the
+deterministic layer proves bounded provenance, not semantic truth. The separate
+judge is advisory; only an all-30 human review can provide independent sign-off,
+while a delegated AI review can document failure.
+
+**Final result:** All 30 answers were generated. The advisory judge measured
+40% semantic accuracy and 47.22% supported factual claims, with zero critical
+numeric violations. The delegated all-case review measured 40% correct behavior
+and 43.9% supported factual claims. The exact-quote contract produced 35
+quote-related gaps and is too brittle as the sole support check. PR 4 is
+implemented but did not meet its answer-quality targets. The later deterministic
+span amendment fixes that structural brittleness without rerunning the exposed
+hidden set or changing the **Not accepted** result.
+
+
+## ADR-021 · PR 5: Split-safe RAG Lab and aggregate acceptance
+
+**Pitch:** The demo can explain why reranking won during development without
+turning the independent benchmark into tuning data. One fail-closed aggregate
+report controls the acceptance label.
+
+**Script:** Open RAG Lab. Point first to **Not accepted**, then compare the
+development/reranked row (1.00 critical recall and 0.9919 answerable recall)
+with the independent/reranked row (0.775 and 0.80). Explain that development
+cases are deliberately inspectable: select one, switch profiles, and show its
+found/missing evidence and top passages. Then point to the restriction notice:
+hidden queries, labels, and per-case results are never served. Open a supported
+chat answer and distinguish the retrieval-match badge from the separate answer-
+evidence badge; expand Technical details to show fallback, claim evidence,
+canonical spans, gaps, and pending semantic review.
+
+**Tests:** `tests/test_rag_acceptance_report.py` proves fail-closed aggregation,
+the full acceptance conjunction, hidden-detail exclusion, and exact
+reproducibility of the committed summary. `tests/test_console_api.py` proves
+the catalog is development-only and hidden IDs return 404. Browser tests cover
+the RAG Lab boundary and both chat consoles' distinct retrieval/support labels.
+
+**Evals:** `http_rag_development_case_catalog` and
+`http_rag_aggregate_acceptance_report` run without a model key. The aggregate
+report consumes frozen artifacts; it does not rerun hidden retrieval.
+
+**Demo prompts:** In RAG Lab, inspect development case `mat-008` across lexical,
+embedding, and reranked profiles. In chat, ask “What is the teaching yield value
+for generic steel?” and expand Technical details.
+
+**Likely interview questions:** Why not show hidden misses? Can answer quality
+rescue failed retrieval acceptance? Why is semantic judging separate? What does
+Not accepted mean? Answer: hidden detail would contaminate the independent set;
+all gates are conjunctive; exact provenance is not entailment; and the current
+system is a useful experiment but has not met the final independent bar.
+
+**Final result:** **Not accepted.** Independent retrieval missed its final bar,
+and answer quality missed the 90% behavior and 95% factual-support targets. The
+user delegated the all-30 review to Codex; it is recorded as
+`delegated_ai_complete`, not independent human approval, and cannot turn a failed
+evaluation into acceptance.

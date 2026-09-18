@@ -454,14 +454,14 @@
     },
     {
       "id": "F15a",
-      "title": "Hybrid retrieval + RAG Lab",
-      "blurb": "BM25 + TF-IDF hybrid retrieval with grounding labels and an inspection lab.",
+      "title": "Evidence-aware retrieval + RAG Lab",
+      "blurb": "Lexical and local neural retrieval with separate answer-evidence checks and fail-closed acceptance.",
       "steps": [
         {
           "title": "Ask a grounded materials question.",
           "prompt": "What yield strength should I assume for aluminum 6061-T6?",
           "talking_points": [
-            "Answers cite the corpus source."
+            "Retrieval match and answer evidence are separate labels."
           ],
           "freecad": false,
           "cost": "instant"
@@ -470,7 +470,7 @@
           "title": "Ask something outside the corpus.",
           "prompt": "What is the tensile strength of unobtainium?",
           "talking_points": [
-            "No-match grounding refuses to invent numbers."
+            "Missing support produces an explicit gap, clarification, or refusal."
           ],
           "freecad": false,
           "cost": "instant"
@@ -479,7 +479,7 @@
           "title": "Open the RAG Lab to inspect retrieval.",
           "prompt": "Open the RAG Lab.",
           "talking_points": [
-            "The lab shows rank fusion end to end."
+            "The lab separates inspectable development evidence from aggregate-only independent results."
           ],
           "freecad": false,
           "cost": "instant"

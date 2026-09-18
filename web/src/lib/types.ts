@@ -38,11 +38,58 @@ export interface PromptLibrary {
 }
 
 export interface Citation {
+  evidence_id?: string;
+  chunk_id?: string;
   source?: string;
+  section_id?: string;
   text?: string;
   tfidf_rank?: number;
   bm25_rank?: number;
   score?: number;
+}
+
+export interface RetrievalStatus {
+  requested_profile?: string;
+  active_profile?: string;
+  fallback?: boolean;
+  reason?: string;
+  timing_ms?: number;
+  query_rewrite?: { applied?: boolean; rules?: string[]; effective_query?: string | null };
+}
+
+/** A deterministic, citeable slice resolved from one answer evidence item. */
+export interface AnswerEvidenceSpan {
+  span_id?: string;
+  evidence_id?: string;
+  source?: string;
+  text?: string;
+  kind?: string;
+  provenance_method?: string;
+}
+
+export interface AnswerClaim {
+  text?: string;
+  evidence_ids?: string[];
+  /** Span IDs requested by the model; retained even when a span cannot resolve. */
+  evidence_span_ids?: string[];
+  /** Canonical spans resolved by the bounded evidence check. */
+  evidence_spans?: AnswerEvidenceSpan[];
+  /** Legacy exact-quote contract; kept for older clients and responses. */
+  supporting_quotes?: { evidence_id?: string; quote?: string }[];
+  structurally_supported?: boolean;
+  entailment_checked?: boolean;
+  issues?: string[];
+}
+
+export interface AnswerEvidence {
+  status?: "supported" | "partially_supported" | "insufficient" | "check_unavailable";
+  action?: "answer" | "clarify" | "refuse" | "abstain";
+  checked?: boolean;
+  structural_check?: string;
+  semantic_check?: string;
+  repair_attempted?: boolean;
+  claims?: AnswerClaim[];
+  gaps?: string[];
 }
 
 export interface ToolResult {
@@ -57,6 +104,14 @@ export interface FinalPayload {
   thread_id?: string;
   citations?: Citation[];
   grounding?: "strong" | "weak" | "none";
+  retrieval?: RetrievalStatus;
+  retrieval_query?: {
+    query?: string;
+    followup_resolved?: boolean;
+    previous_user_question?: string | null;
+    cad_context_used?: boolean;
+  };
+  answer_evidence?: AnswerEvidence;
   tool_results?: ToolResult[];
   interrupted?: boolean;
   interrupt?: unknown;
@@ -128,6 +183,9 @@ export interface ChatMessage {
   toolResults?: ToolResult[];
   citations?: Citation[];
   grounding?: FinalPayload["grounding"];
+  retrieval?: FinalPayload["retrieval"];
+  retrievalQuery?: FinalPayload["retrieval_query"];
+  answerEvidence?: FinalPayload["answer_evidence"];
   stamp?: "pass" | "caution" | "fail";
 }
 

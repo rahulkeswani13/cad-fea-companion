@@ -197,6 +197,24 @@
     td.path { font-family: "IBM Plex Mono", ui-monospace, monospace; color: #b9c7bd; word-break: break-all; }
     .toolbar { display: flex; align-items: center; gap: 0.75rem; margin-top: 0.8rem; flex-wrap: wrap; }
     .muted { color: var(--muted); font-size: 0.78rem; }
+    .status { display: inline-block; border: 1px solid var(--border); border-radius: 999px; padding: 0.18rem 0.55rem; font-size: 0.72rem; font-weight: 700; text-transform: uppercase; }
+    .status.pass { border-color: #2f6b56; color: #8fd6b8; }
+    .status.fail { border-color: #6b2f2f; color: #e08a8a; }
+    .status.pending { border-color: #6b5a2f; color: #e0c27a; }
+    .acceptance-grid { display: grid; grid-template-columns: minmax(0, 2fr) minmax(14rem, 1fr); gap: 1rem; }
+    .restricted { border-left: 3px solid var(--accent-2); background: #221f18; padding: 0.65rem 0.8rem; color: #d8c7a3; font-size: 0.8rem; line-height: 1.45; }
+    .controls { display: flex; gap: 0.55rem; align-items: end; flex-wrap: wrap; }
+    .controls label { display: grid; gap: 0.25rem; color: var(--muted); font-size: 0.72rem; }
+    select { border: 1px solid var(--border); border-radius: 8px; background: #121a22; color: var(--ink); padding: 0.55rem; min-width: 12rem; }
+    .case-copy { margin: 0.8rem 0; border-left: 3px solid var(--accent); padding: 0.55rem 0.75rem; line-height: 1.45; }
+    .chips { display: flex; gap: 0.35rem; flex-wrap: wrap; margin: 0.6rem 0; }
+    .chip { border: 1px solid var(--border); border-radius: 4px; padding: 0.2rem 0.4rem; font-size: 0.7rem; }
+    .chip.found { border-color: #2f6b56; color: #8fd6b8; }
+    .chip.missing { border-color: #6b2f2f; color: #e08a8a; }
+    details.evidence { border: 1px solid var(--border); background: #121a22; margin-top: 0.45rem; }
+    details.evidence summary { padding: 0.55rem; cursor: pointer; }
+    details.evidence pre { white-space: pre-wrap; padding: 0 0.7rem 0.7rem; color: #b9c7bd; font: 0.73rem/1.45 "IBM Plex Mono", monospace; }
+    @media (max-width: 720px) { .acceptance-grid { grid-template-columns: 1fr; } }
   </style>
 </head>
 <body>
@@ -204,11 +222,40 @@
     <h1>RAG Lab</h1>
     <p>
       Hybrid retrieval internals: TF-IDF cosine vs BM25, fused with Reciprocal Rank
-      Fusion (k=60), plus the grounding-confidence label the chat uses.
+      Fusion (k=60). Retrieval-match diagnostics stay separate from answer evidence.
       <a class="back" href="/">← Back to chat</a>
     </p>
   </header>
   <main>
+    <section aria-labelledby="acceptance-heading">
+      <h2 id="acceptance-heading">Acceptance status <span id="acceptance-status" class="status pending" role="status">Loading</span></h2>
+      <p class="desc">Development selection and independent hidden evidence are shown separately. A better retriever is not automatically an accepted RAG system.</p>
+      <div class="acceptance-grid">
+        <div>
+          <table>
+            <thead><tr><th>set / profile</th><th>critical recall@4</th><th>answerable recall@4</th><th>nDCG@4</th><th>median</th></tr></thead>
+            <tbody id="comparison-body"><tr><td colspan="5" class="muted">Loading report…</td></tr></tbody>
+          </table>
+        </div>
+        <div>
+          <strong>Open blockers</strong>
+          <ul id="acceptance-blockers" class="muted"><li>Loading report…</li></ul>
+        </div>
+      </div>
+      <p class="restricted">Hidden case queries, labels, and per-case results are intentionally not served by this page. The historical held-out split was retired and the independent hidden retrieval was run once.</p>
+    </section>
+
+    <section aria-labelledby="review-heading">
+      <h2 id="review-heading">Reviewed development evidence</h2>
+      <p class="desc">Inspect one approved development question. This picker never includes hidden cases.</p>
+      <div class="controls">
+        <label>Question<select id="case-select" aria-label="Development question"><option>Loading…</option></select></label>
+        <label>Profile<select id="case-profile" aria-label="Retrieval profile"><option value="lexical">Lexical</option><option value="lexical_embedding">Embeddings</option><option value="reranked" selected>Reranked</option></select></label>
+        <button id="review-case">Review evidence</button>
+      </div>
+      <div id="case-detail" class="muted">Choose a reviewed case.</div>
+    </section>
+
     <section>
       <h2>Playground <span id="grounding"></span></h2>
       <p class="desc">
@@ -251,7 +298,7 @@
     function badge(label) {
       if (!label) return "";
       const cls = { strong: "g-strong", weak: "g-weak", none: "g-none" }[label] || "g-none";
-      const txt = { strong: "grounded", weak: "weak grounding", none: "no match" }[label] || label;
+      const txt = { strong: "retrieval match", weak: "weak retrieval match", none: "no match" }[label] || label;
       return `<span class="g-badge ${cls}">${txt}</span>`;
     }
 
@@ -265,6 +312,70 @@
         <div class="hit-text">${esc(hit.text || "")}</div>
       </div>`;
     }
+
+    const pct = (value) => value == null ? "—" : `${(Number(value) * 100).toFixed(1)}%`;
+    const ms = (timing) => timing?.median_query_ms == null ? "—" : `${Number(timing.median_query_ms).toFixed(2)} ms`;
+
+    async function loadAcceptance() {
+      try {
+        const res = await fetch("/api/rag/acceptance-report");
+        const report = await res.json();
+        if (!report.ok) throw new Error(report.error || "report unavailable");
+        const badgeEl = $("acceptance-status");
+        badgeEl.textContent = report.accepted ? "Accepted" : "Not accepted";
+        badgeEl.className = `status ${report.accepted ? "pass" : "fail"}`;
+        const dev = (report.development || []).map((row) => ({...row, set: "development"}));
+        const hidden = (report.independent_hidden?.profiles || []).map((row) => ({...row, set: "independent"}));
+        $("comparison-body").innerHTML = [...dev, ...hidden].map((row) => `<tr>
+          <td>${esc(row.set)} / ${esc(row.profile)}</td>
+          <td class="num">${pct(row.critical_evidence_recall_at_4)}</td>
+          <td class="num">${pct(row.answerable_evidence_recall_at_4)}</td>
+          <td class="num">${pct(row.ndcg_at_4)}</td>
+          <td class="num">${ms(row.timing)}</td>
+        </tr>`).join("");
+        $("acceptance-blockers").innerHTML = (report.failure_analysis || []).map((item) => `<li>${esc(item)}</li>`).join("") || "<li>None.</li>";
+      } catch (err) {
+        $("acceptance-status").textContent = "Unavailable";
+        $("acceptance-status").className = "status fail";
+        $("comparison-body").innerHTML = `<tr><td colspan="5">${esc(err.message)}</td></tr>`;
+      }
+    }
+
+    async function loadCases() {
+      try {
+        const res = await fetch("/api/rag/development-cases");
+        const payload = await res.json();
+        $("case-select").innerHTML = payload.cases.map((item) => `<option value="${esc(item.id)}">${esc(item.id)} · ${esc(item.query)}</option>`).join("");
+      } catch (err) {
+        $("case-select").innerHTML = `<option>Cases unavailable</option>`;
+      }
+    }
+
+    async function reviewCase() {
+      const button = $("review-case");
+      button.disabled = true;
+      button.textContent = "Retrieving…";
+      try {
+        const id = $("case-select").value;
+        const profile = $("case-profile").value;
+        const res = await fetch(`/api/rag/development-case?case_id=${encodeURIComponent(id)}&profile=${encodeURIComponent(profile)}`);
+        if (!res.ok) throw new Error(`request failed (${res.status})`);
+        const payload = await res.json();
+        const found = (payload.found_evidence || []).map((item) => `<span class="chip found">found · ${esc(item)}</span>`).join("");
+        const missing = (payload.missing_evidence || []).map((item) => `<span class="chip missing">missing · ${esc(item)}</span>`).join("");
+        const hits = (payload.hits || []).map((hit, index) => `<details class="evidence"><summary>#${index + 1} · ${esc(hit.source)} · ${(hit.matched_evidence_ids || []).length ? "matched " + esc(hit.matched_evidence_ids.join(", ")) : "unmatched"}</summary><pre>${esc(hit.text || "")}</pre></details>`).join("");
+        const active = payload.retrieval?.active_profile || profile;
+        const fallback = payload.retrieval?.fallback ? ` · fallback: ${esc(payload.retrieval.reason || "unavailable")}` : "";
+        $("case-detail").innerHTML = `<div class="case-copy">${esc(payload.case.query)}</div><div class="muted">requested ${esc(profile)} · active ${esc(active)}${fallback} · recall ${pct(payload.evidence_recall)} · nDCG ${pct(payload.ndcg)}</div><div class="chips">${found}${missing}</div>${hits || '<div class="empty">No passages returned.</div>'}`;
+      } catch (err) {
+        $("case-detail").textContent = `Evidence review failed: ${err.message}`;
+      } finally {
+        button.disabled = false;
+        button.textContent = "Review evidence";
+      }
+    }
+
+    $("review-case").addEventListener("click", reviewCase);
 
     function renderDetail(d) {
       $("grounding").innerHTML = badge(d.grounding);
@@ -365,7 +476,7 @@
       });
     });
 
-    loadStats();
+    Promise.all([loadAcceptance(), loadCases(), loadStats()]);
   </script>
 </body>
 </html>

@@ -21,6 +21,11 @@ sys.path.insert(0, str(ROOT))
 from companion.agent.confirm import set_require_tool_confirm
 from companion.agent.graph import run_agent
 from companion.config import get_settings
+from companion.rag.evidence import (
+    assess_structured_draft,
+    check_and_repair,
+    evidence_catalog,
+)
 from companion.rag.store import corpus_fingerprint, ingest_docs, retrieve
 import companion.tools.cad_fea as cad_fea
 from companion.tools.cad_fea import call_tool
@@ -100,6 +105,14 @@ def main() -> int:
                     blob, case.get("expect_any", [])
                 )
                 detail = f"hits={len(hits)}"
+            elif case["type"] == "query_rewrite":
+                from companion.rag.neural import rewrite_query
+
+                rewritten, rules = rewrite_query(case["query"])
+                ok = case["expect_rule"] in rules and contains_any(
+                    rewritten, case.get("expect_any", [])
+                )
+                detail = f"rules={rules}"
             elif case["type"] == "benchmark_fixture":
                 benchmark = load_benchmark()
                 if case.get("check") == "review_guard":
@@ -233,6 +246,35 @@ def main() -> int:
                         isinstance(body.get(key), list) and len(body[key]) >= n
                         for key, n in case["expect_min_items"].items()
                     )
+            elif case["type"] == "evidence":
+                catalog = evidence_catalog(
+                    case.get("citations") or [], case.get("tool_results") or []
+                )
+                repair_draft = case.get("repair_draft")
+                if repair_draft is not None:
+                    _, result = check_and_repair(
+                        lambda _system, _prompt: str(repair_draft),
+                        str(case.get("query") or ""),
+                        case["draft"],
+                        catalog,
+                    )
+                else:
+                    result = assess_structured_draft(case["draft"], catalog)
+                ok = result["status"] == case["expect_status"]
+                if ok and case.get("answer_must_not_contain"):
+                    ok = not contains_any(
+                        result.get("answer") or "", case["answer_must_not_contain"]
+                    )
+                if ok and case.get("answer_must_contain"):
+                    answer_lower = str(result.get("answer") or "").lower()
+                    ok = all(
+                        str(needle).lower() in answer_lower
+                        for needle in case["answer_must_contain"]
+                    )
+                detail = (
+                    f"status={result['status']} claims={len(result['claims'])} "
+                    f"gaps={len(result['gaps'])}"
+                )
             else:
                 detail = f"unknown type {case['type']}"
         except Exception as exc:  # noqa: BLE001

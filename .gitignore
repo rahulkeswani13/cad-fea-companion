@@ -17,4 +17,5 @@ dist/
 build/
 .zcode/
 data/results/eval_history.jsonl
+data/results/rag_answer_cache.json
 web/node_modules/

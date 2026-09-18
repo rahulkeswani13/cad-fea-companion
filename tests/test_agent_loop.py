@@ -97,7 +97,7 @@ def test_cond_rag_lattice_question_skips_tools(monkeypatch):
         ]
     )
 
-    def fake_retrieve_detail(query: str, k: int = 4):
+    def fake_retrieve_detail(query: str, *, profile: str, k: int = 4):
         return {
             "grounding": "strong",
             "fused": [
@@ -112,7 +112,7 @@ def test_cond_rag_lattice_question_skips_tools(monkeypatch):
         }
 
     monkeypatch.setattr(
-        "companion.agent.graph.retrieve_detail", fake_retrieve_detail
+        "companion.agent.graph.retrieve_profile_detail", fake_retrieve_detail
     )
     g = _graph(llm, tools)
     out = run_agent(
@@ -131,7 +131,7 @@ def test_cond_rag_only_skips_tools(monkeypatch):
         turns=[AgentTurn(content="Mild steel yield is about 250 MPa.", tool_calls=[])]
     )
 
-    def fake_retrieve_detail(query: str, k: int = 4):
+    def fake_retrieve_detail(query: str, *, profile: str, k: int = 4):
         return {
             "grounding": "strong",
             "fused": [
@@ -146,7 +146,7 @@ def test_cond_rag_only_skips_tools(monkeypatch):
         }
 
     monkeypatch.setattr(
-        "companion.agent.graph.retrieve_detail", fake_retrieve_detail
+        "companion.agent.graph.retrieve_profile_detail", fake_retrieve_detail
     )
     g = _graph(llm, tools)
     out = run_agent("What is mild steel yield?", thread_id="rag-only", graph=g)

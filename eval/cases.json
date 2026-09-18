@@ -984,5 +984,133 @@
    "retrieval",
    "fused"
   ]
+ },
+ {
+  "id": "rag_query_rewrite_contract",
+  "type": "query_rewrite",
+  "query": "What are the default cantilever demo beam dimensions?",
+  "expect_rule": "cantilever_default_dimensions",
+  "expect_any": [
+   "length",
+   "width",
+   "height"
+  ]
+ },
+ {
+  "id": "rag_answer_exact_quote_contract",
+  "type": "evidence",
+  "draft": "{\"action\":\"answer\",\"claims\":[{\"text\":\"The teaching value is 250 MPa.\",\"evidence_ids\":[\"D1\"],\"supporting_quotes\":[{\"evidence_id\":\"D1\",\"quote\":\"Mild steel typical yield is approximately 250 MPa.\"}]}],\"gaps\":[],\"answer\":\"\"}",
+  "citations": [
+   {
+    "chunk_id": "eval-steel",
+    "source": "docs/reference/material_allowables.md",
+    "section_id": "docs/reference/material_allowables.md::teaching-values",
+    "text": "Mild steel typical yield is approximately 250 MPa.",
+    "metadata": {
+     "authority": "maintained teaching reference",
+     "applicability": "not a production design allowable"
+    }
+   }
+  ],
+  "expect_status": "supported"
+ },
+ {
+  "id": "rag_answer_span_contract",
+  "type": "evidence",
+  "draft": "{\"action\":\"answer\",\"claims\":[{\"text\":\"The teaching value is 250 MPa.\",\"evidence_span_ids\":[\"D1:S1\"]}],\"gaps\":[],\"answer\":\"\"}",
+  "citations": [
+   {
+    "chunk_id": "eval-steel",
+    "source": "docs/reference/material_allowables.md",
+    "section_id": "docs/reference/material_allowables.md::teaching-values",
+    "text": "Mild steel typical yield is approximately 250 MPa.",
+    "metadata": {
+     "authority": "maintained teaching reference",
+     "applicability": "not a production design allowable"
+    }
+   }
+  ],
+  "expect_status": "supported"
+ },
+ {
+  "id": "rag_answer_normalized_legacy_quote",
+  "type": "evidence",
+  "draft": "{\"action\":\"answer\",\"claims\":[{\"text\":\"The teaching value is 250 MPa.\",\"evidence_ids\":[\"D1\"],\"supporting_quotes\":[{\"evidence_id\":\"D1\",\"quote\":\"Mild steel — typical yield is approximately: 250 MPa\"}]}],\"gaps\":[],\"answer\":\"\"}",
+  "citations": [
+   {
+    "chunk_id": "eval-steel",
+    "source": "docs/reference/material_allowables.md",
+    "section_id": "docs/reference/material_allowables.md::teaching-values",
+    "text": "Mild steel typical yield is approximately 250 MPa.",
+    "metadata": {}
+   }
+  ],
+  "expect_status": "supported"
+ },
+ {
+  "id": "rag_answer_partial_repair_preserves_supported",
+  "type": "evidence",
+  "query": "What is the teaching value and does it certify the design?",
+  "draft": "{\"action\":\"answer\",\"claims\":[{\"text\":\"The teaching value is 250 MPa.\",\"evidence_span_ids\":[\"D1:S1\"]},{\"text\":\"The design is certified.\",\"evidence_span_ids\":[\"D1:S99\"]}],\"gaps\":[],\"answer\":\"\"}",
+  "repair_draft": "{\"action\":\"answer\",\"claims\":[{\"text\":\"The source does not establish certification.\",\"evidence_span_ids\":[\"D1:S2\"]}],\"gaps\":[],\"answer\":\"\"}",
+  "citations": [
+   {
+    "chunk_id": "eval-steel",
+    "source": "docs/reference/material_allowables.md",
+    "section_id": "docs/reference/material_allowables.md::teaching-values",
+    "text": "Mild steel typical yield is approximately 250 MPa. The source does not establish certification.",
+    "metadata": {}
+   }
+  ],
+  "expect_status": "supported",
+  "answer_must_contain": [
+   "The teaching value is 250 MPa.",
+   "The source does not establish certification."
+  ]
+ },
+ {
+  "id": "rag_answer_unsupported_number_removed",
+  "type": "evidence",
+  "draft": "{\"action\":\"answer\",\"claims\":[{\"text\":\"The yield is 355 MPa.\",\"evidence_ids\":[\"D1\"],\"supporting_quotes\":[{\"evidence_id\":\"D1\",\"quote\":\"Mild steel typical yield is approximately 250 MPa.\"}]}],\"gaps\":[],\"answer\":\"\"}",
+  "citations": [
+   {
+    "chunk_id": "eval-steel",
+    "source": "docs/reference/material_allowables.md",
+    "section_id": "docs/reference/material_allowables.md::teaching-values",
+    "text": "Mild steel typical yield is approximately 250 MPa.",
+    "metadata": {}
+   }
+  ],
+  "expect_status": "insufficient",
+  "answer_must_not_contain": [
+   "355"
+  ]
+ },
+ {
+  "id": "http_rag_development_case_catalog",
+  "type": "http",
+  "path": "/api/rag/development-cases",
+  "expect_status": 200,
+  "expect_keys": [
+   "split",
+   "review_status",
+   "cases"
+  ],
+  "expect_min_items": {
+   "cases": 70
+  }
+ },
+ {
+  "id": "http_rag_aggregate_acceptance_report",
+  "type": "http",
+  "path": "/api/rag/acceptance-report",
+  "expect_status": 200,
+  "expect_keys": [
+   "accepted",
+   "development",
+   "independent_hidden",
+   "checks",
+   "restrictions"
+  ]
  }
 ]

@@ -913,6 +913,135 @@ def test_console_sources_and_technical_details(page: Page, test_server_url: str)
     assert len(errors) == 0
 
 
+def _answer_evidence_fixture() -> dict:
+    """One deterministic answer whose retrieval and support states differ."""
+    return {
+        "type": "final",
+        "answer": "The supported value is 250 MPa.",
+        "thread_id": "t",
+        "grounding": "strong",
+        "retrieval": {
+            "requested_profile": "reranked",
+            "active_profile": "lexical",
+            "fallback": True,
+            "reason": "reranker unavailable",
+            "timing_ms": 4.25,
+        },
+        "retrieval_query": {"query": "evidence case"},
+        "answer_evidence": {
+            "status": "partially_supported",
+            "action": "answer",
+            "semantic_check": "pending_manual_or_judge",
+            "repair_attempted": True,
+            "claims": [
+                {
+                    "text": "The supported value is 250 MPa.",
+                    "evidence_ids": ["D1"],
+                    "evidence_span_ids": ["D1:S1"],
+                    "evidence_spans": [
+                        {
+                            "span_id": "D1:S1",
+                            "evidence_id": "D1",
+                            "source": "docs/reference/material_allowables.md",
+                            "text": "Teaching value 250 MPa.",
+                            "kind": "sentence",
+                            "provenance_method": "span",
+                        }
+                    ],
+                    "supporting_quotes": [
+                        {"evidence_id": "D1", "quote": "Teaching value 250 MPa."}
+                    ],
+                    "structurally_supported": True,
+                }
+            ],
+            "gaps": ["Fatigue life is not documented."],
+        },
+        "citations": [
+            {
+                "evidence_id": "D1",
+                "source": "docs/reference/material_allowables.md",
+                "text": "Teaching value 250 MPa.",
+                "rerank_score": 0.92,
+            }
+        ],
+    }
+
+
+def test_console_separates_retrieval_match_from_answer_support(
+    page: Page, test_server_url: str
+):
+    """A good retrieval diagnostic must not masquerade as answer support."""
+    page.route(
+        "**/api/chat/stream",
+        lambda route: route.fulfill(
+            status=200,
+            content_type="text/event-stream",
+            body=_sse_final(_answer_evidence_fixture()),
+        ),
+    )
+    errors = _console_errors(page, test_server_url)
+    _console_send(page, "evidence case")
+
+    msg = page.get_by_test_id("msg-assistant").last
+    expect(msg).to_contain_text("retrieval match")
+    expect(msg).to_contain_text("partial support")
+    details = msg.get_by_test_id("technical-details")
+    details.locator("summary").click()
+    expect(msg.get_by_test_id("retrieval-status")).to_contain_text(
+        "reranked → lexical fallback"
+    )
+    expect(msg.get_by_test_id("retrieval-status")).to_contain_text(
+        "reranker unavailable"
+    )
+    answer_details = msg.get_by_test_id("answer-evidence-details")
+    expect(answer_details).to_contain_text("semantic pending_manual_or_judge")
+    claim_details = answer_details.get_by_test_id("claim-evidence").first
+    expect(claim_details).to_contain_text("kept")
+    expect(claim_details.get_by_test_id("claim-span-ids")).to_contain_text("D1:S1")
+    expect(claim_details.get_by_test_id("evidence-span")).to_contain_text(
+        "Teaching value 250 MPa."
+    )
+    expect(claim_details).to_contain_text("legacy quote · D1 · Teaching value 250 MPa.")
+    expect(msg.locator(".md-body")).not_to_contain_text("Teaching value 250 MPa.")
+    expect(answer_details).to_contain_text("gap · Fatigue life is not documented.")
+    assert errors == []
+
+
+def test_classic_console_separates_retrieval_match_from_answer_support(
+    page: Page, test_server_url: str
+):
+    """The maintained classic console exposes the same honest distinction."""
+    errors: list[str] = []
+    page.on("pageerror", lambda err: errors.append(err.message))
+    page.route(
+        "**/api/chat/stream",
+        lambda route: route.fulfill(
+            status=200,
+            content_type="text/event-stream",
+            body=_sse_final(_answer_evidence_fixture()),
+        ),
+    )
+    page.goto(test_server_url)
+    expect(page.locator("h1")).to_contain_text("CAD/FEA Chat Companion")
+    page.locator("#input").fill("evidence case")
+    page.locator("#send").click()
+
+    msg = page.locator(".msg.assistant").last
+    expect(msg).to_contain_text("retrieval match")
+    expect(msg).to_contain_text("partial support")
+    details = msg.locator("details", has_text="Answer evidence and retrieval profile")
+    details.locator("summary").click()
+    expect(details).to_contain_text("reranked → lexical fallback")
+    expect(details).to_contain_text("semantic pending_manual_or_judge")
+    expect(details.get_by_test_id("claim-span-ids")).to_contain_text("D1:S1")
+    expect(details.get_by_test_id("evidence-span")).to_contain_text(
+        "Teaching value 250 MPa."
+    )
+    expect(msg.locator(".md-body")).not_to_contain_text("Teaching value 250 MPa.")
+    expect(details).to_contain_text("gap · Fatigue life is not documented.")
+    assert errors == []
+
+
 # =========================================================================
 # PART 5: React console session semantics (ADR-017 PR 3) — fresh-on-load,
 # runs in this session, saved-runs disclosure, busy protection, obsolete
@@ -1092,3 +1221,95 @@ def test_console_convergence_subruns_dedup_and_failures(page: Page, test_server_
     expect(session.get_by_text("id r11")).to_have_count(1)
     expect(session).to_contain_text("failed")
     assert len(errors) == 0
+
+
+def test_rag_lab_separates_independent_failure_from_development_review(
+    page: Page, test_server_url: str
+):
+    acceptance = {
+        "ok": True,
+        "accepted": False,
+        "development": [{
+            "profile": "reranked",
+            "critical_evidence_recall_at_4": 1.0,
+            "answerable_evidence_recall_at_4": 0.9919,
+            "ndcg_at_4": 0.8728,
+            "timing": {"median_query_ms": 318.99},
+        }],
+        "independent_hidden": {
+            "profiles": [{
+                "profile": "reranked",
+                "critical_evidence_recall_at_4": 0.775,
+                "answerable_evidence_recall_at_4": 0.8,
+                "ndcg_at_4": 0.6816,
+                "timing": {"median_query_ms": 348.92},
+            }]
+        },
+        "failure_analysis": ["Independent retrieval misses the fixed targets."],
+    }
+    cases = {
+        "split": "development",
+        "review_status": "approved",
+        "cases": [{
+            "id": "mat-008",
+            "query": "What is the teaching value?",
+            "category": "fact",
+            "critical": True,
+        }],
+    }
+    detail = {
+        "case": cases["cases"][0],
+        "profile": "reranked",
+        "found_evidence": ["steel"],
+        "missing_evidence": [],
+        "evidence_recall": 1.0,
+        "precision": 0.25,
+        "ndcg": 1.0,
+        "retrieval": {"active_profile": "reranked", "fallback": False},
+        "hits": [{
+            "source": "docs/reference/material_allowables.md",
+            "text": "Mild steel teaching value is 250 MPa.",
+            "matched_evidence_ids": ["steel"],
+        }],
+    }
+    stats = {
+        "docs": 10,
+        "chunks": 98,
+        "avg_chunk_chars": 500,
+        "retrievers": ["tfidf", "bm25"],
+        "sources": [],
+    }
+
+    def route_rag(route):
+        url = route.request.url
+        if "/api/rag/acceptance-report" in url:
+            payload = acceptance
+        elif "/api/rag/development-case?" in url:
+            payload = detail
+        elif "/api/rag/development-cases" in url:
+            payload = cases
+        elif "/api/rag/stats" in url:
+            payload = stats
+        else:
+            return route.continue_()
+        return route.fulfill(
+            status=200,
+            content_type="application/json",
+            body=json.dumps(payload),
+        )
+
+    page.route("**/api/rag/**", route_rag)
+    errors: list[str] = []
+    page.on("pageerror", lambda err: errors.append(err.message))
+    page.goto(test_server_url + "/static/rag.html")
+
+    expect(page.get_by_role("heading", name="RAG Lab")).to_be_visible()
+    expect(page.get_by_role("status")).to_have_text("Not accepted")
+    expect(page.get_by_text("Hidden case queries, labels, and per-case results")).to_be_visible()
+    expect(page.get_by_role("cell", name="independent / reranked")).to_be_visible()
+    page.get_by_role("button", name="Review evidence").click()
+    expect(page.get_by_text("found · steel")).to_be_visible()
+    evidence = page.locator("details.evidence").first
+    evidence.get_by_text("matched steel").click()
+    expect(evidence).to_contain_text("250 MPa")
+    assert errors == []
