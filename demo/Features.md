@@ -1607,3 +1607,36 @@ held-out tuning? What does a null score mean? Who reviewed the labels? Answer
 honestly: AI drafted them from references; the user delegated a 20-case review
 that checked operational claims against code/tests and material claims against
 supplier data. That sample is not independent validation of the entire dataset.
+
+
+## ADR-018 · Benchmark repair: trustworthy labels and failure diagnosis
+
+**Pitch:** A weak score can mean the retriever failed, but it can also mean the
+benchmark omitted a valid passage or the corpus never contained the required
+guidance. The repair audits those causes separately before more tuning.
+
+**Script:** Open `eval/reviews/rag_benchmark_audit.md` and show the three failure
+classes: corrected labels, final-ranking misses, and top-20 candidate misses.
+Then compare final-four and candidate-pool columns. Explain that a same-document
+hit still earns no credit unless its exact passage is approved. Open the renewed
+20-case review and note that the user accepted it on 2026-09-17 after the corpus
+and label changes invalidated the earlier approval.
+
+**Tests:** `tests/test_rag_benchmark.py` verifies that same-source unjudged hits
+are diagnostics rather than relevance credit, that critical recall is reported,
+and that the top-20 candidate pool is measured independently from final ranking.
+
+**Evals:** `rag_benchmark_fixture_integrity`, `rag_benchmark_review_guard`, and
+`rag_benchmark_candidate_diagnostics`; the generated lexical report performs no
+answer grading or paid API calls.
+
+**Demo prompts:** “Why can candidate recall@20 be high while recall@4 is low?”;
+“Why did changing a label invalidate the old review?”; “Does retrieving another
+section from the right document count as evidence?”
+
+**Likely interview questions:** Did you tune the labels to the retriever? Why is
+the original held-out set retired? Who creates the new hidden set? What separates
+an experimental improvement from accepted RAG? Answer: development labels were
+repaired only when the maintained passage independently supported the expected
+claim; the old hidden cases were already observed, so a reviewer creates a fresh
+30-case set after retrieval freezes and manually reviews every final answer.

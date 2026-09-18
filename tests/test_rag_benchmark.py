@@ -33,11 +33,28 @@ def test_right_document_wrong_section_or_missing_quote_gets_no_credit():
         assert result['ndcg_at_k'] == 0
 
 
+def test_same_source_unjudged_hit_is_review_diagnostic_not_credit():
+    result = score(case(), [hit(section='a.md::other')])
+    row = result['per_query'][0]
+    assert row['unjudged_same_source'] == [{
+        'source': 'a.md', 'section_id': 'a.md::other', 'chunk_id': 'one',
+    }]
+    assert result['queries_with_unjudged_same_source'] == 1
+    assert result['unjudged_same_source_hits'] == 1
+    assert result['evidence_recall_at_k'] == 0
+
+
 def test_group_recall_requires_all_requested_facts():
     result = score(case([group('yield'), group('density')]), [hit()])
     assert result['evidence_recall_at_k'] == 0.5
     assert result['precision_at_k'] == 0.25
     assert result['per_query'][0]['missing_evidence'] == ['density']
+
+
+def test_critical_recall_is_reported_separately():
+    item = {**case(), 'critical': True}
+    result = score(item, [hit()])
+    assert result['critical_evidence_recall_at_k'] == 1
 
 
 def test_one_passage_can_support_multiple_groups():
@@ -155,5 +172,36 @@ def test_review_markdown_reports_approved_status():
         'benchmark_hash': benchmark_hash(benchmark),
     }
     rendered = review_markdown(benchmark)
-    assert 'Status: approved after delegated user review.' in rendered
+    assert 'Status: approved after user review.' in rendered
     assert 'Status: awaiting your review.' not in rendered
+
+
+def test_baseline_reports_candidate_pool_coverage(monkeypatch):
+    from eval import run_rag_benchmark as runner
+
+    item = {
+        **case(), 'split': 'development', 'history': [], 'required_facts': ['yield'],
+        'forbidden_claims': [], 'numeric_expectations': [],
+    }
+    chunk = Chunk('one', 'a.md', 'yield', section_id='a.md::steel')
+
+    class Store:
+        index_metadata = {'fingerprint': 'fixture'}
+        chunks = [chunk]
+
+        @staticmethod
+        def search(query, k=4):
+            return [hit()]
+
+    monkeypatch.setattr(runner, 'get_store', lambda: Store())
+    report = runner.run_baseline({
+        'schema_version': 1,
+        'corpus_fingerprint': 'fixture',
+        'review_case_ids': [],
+        'review': {'status': 'pending'},
+        'cases': [item],
+    })
+    assert report['candidate_pool']['k'] == 20
+    assert report['candidate_pool']['evidence_recall_at_k'] == 1
+    assert report['candidate_pool']['critical_evidence_recall_at_k'] is None
+    assert report['critical_evidence_recall_at_k'] is None

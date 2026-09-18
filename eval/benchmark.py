@@ -174,9 +174,15 @@ def evaluate_evidence(cases: list[dict[str, Any]], retrieve_fn: Callable, k: int
     for case in cases:
         hits = (retrieve_fn(case['query'], k) or [])[:k]
         groups = case['required_evidence']
+        labelled_sources = {
+            alternative['source']
+            for group in groups
+            for alternative in group['alternatives']
+        }
         found: set[str] = set()
         ranked_gains = []
         seen_hits = set()
+        unjudged_same_source = []
         for hit in hits:
             key = (hit.get('source'), hit.get('section_id'), hit.get('chunk_id') or normalized(str(hit.get('text', ''))))
             matched = {g['id'] for g in groups if any(_matches(hit, alt) for alt in g['alternatives'])}
@@ -184,6 +190,11 @@ def evaluate_evidence(cases: list[dict[str, Any]], retrieve_fn: Callable, k: int
             ranked_gains.append(gain)
             seen_hits.add(key)
             found.update(matched)
+            if not matched and hit.get('source') in labelled_sources:
+                unjudged_same_source.append({
+                    name: hit.get(name)
+                    for name in ('source', 'section_id', 'chunk_id')
+                })
         dcg = sum(gain / math.log2(rank + 2) for rank, gain in enumerate(ranked_gains))
         # Gold relevant-passage count is supplied by the runner's corpus census.
         relevant_count = case.get('relevant_chunk_count')
@@ -198,6 +209,9 @@ def evaluate_evidence(cases: list[dict[str, Any]], retrieve_fn: Callable, k: int
             'ndcg': dcg / ideal if ideal else None,
             'found_evidence': sorted(found), 'missing_evidence': [g['id'] for g in groups if g['id'] not in found],
             'retrieved': [{key: hit.get(key) for key in ('source', 'section_id', 'chunk_id')} for hit in hits],
+            # These are review leads, not automatic relevance credit. A hit from
+            # the right source can still be the wrong passage.
+            'unjudged_same_source': unjudged_same_source,
             'answer_evaluation': 'not_run',
         })
     def mean(selected, field):
@@ -209,7 +223,10 @@ def evaluate_evidence(cases: list[dict[str, Any]], retrieve_fn: Callable, k: int
         'unscored_no_evidence': sum(r['evidence_recall'] is None for r in rows),
         'evidence_recall_at_k': mean(rows, 'evidence_recall'),
         'answerable_evidence_recall_at_k': mean([r for r in rows if r['expected_support'] in {'supported', 'partial'}], 'evidence_recall'),
+        'critical_evidence_recall_at_k': mean([r for r in rows if r['critical']], 'evidence_recall'),
         'precision_at_k': mean(rows, 'precision'), 'ndcg_at_k': mean(rows, 'ndcg'),
+        'queries_with_unjudged_same_source': sum(bool(r['unjudged_same_source']) for r in rows),
+        'unjudged_same_source_hits': sum(len(r['unjudged_same_source']) for r in rows),
         'by_category': {category: {'queries': sum(r['category'] == category for r in rows),
             'evidence_recall_at_k': mean([r for r in rows if r['category'] == category], 'evidence_recall')}
             for category in sorted({r['category'] for r in rows})},

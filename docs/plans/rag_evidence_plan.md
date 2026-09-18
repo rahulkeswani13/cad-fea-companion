@@ -2,6 +2,10 @@
 
 Accepted 2026-09-06 after the design interview. Decision: ADR-018.
 
+Amended 2026-09-17 after the first local experiment exposed benchmark defects
+and contaminated the original held-out set. ADR-018 records the decision; this
+is not a new ADR.
+
 ## Scope and ownership
 
 Codex implements five sequential, independently verified PRs. Optional delegated
@@ -25,11 +29,13 @@ results come from tools. Evidence support never implies engineering validation.
    numeric/unit expectations and answer/clarify/abstain behavior. Twenty
    representative development cases require user review before tuning. Twenty
    critical cases span both splits. No benchmark labels enter ingestion.
-3. **Retrieval:** lexical baseline; lexical + local all-MiniLM-L6-v2 embeddings;
+3. **Retrieval:** improve the existing local implementation rather than rewrite
+   it: lexical baseline; lexical + local all-MiniLM-L6-v2 embeddings;
    combined retrieval + ms-marco-MiniLM-L6-v2 cross-encoder. Pin downloaded
    revisions. Ten candidates/retriever, RRF 60, final k=4 as initial settings.
    Select on development quality (critical cases, evidence recall, ranking),
-   then confirm on held-out data. Missing models fall back visibly in chat;
+   then freeze it before independent confirmation on a fresh hidden set. Missing
+   models fall back visibly in chat;
    experiments mark unavailable rather than mislabel a fallback.
 4. **Answers:** resolve follow-ups using current question, recent conversation
    and CAD state; clarify ambiguity. Structured draft claims and evidence IDs,
@@ -51,11 +57,25 @@ Generated-answer judge receives retrieved evidence, actual tool outputs and
 reference expectations. Judge findings are advisory; critical cases also require
 answer review. Do not resample only failures to hide unfavorable outcomes.
 
-Targets: all critical cases pass; >=90% mean required-evidence recall@4 on
-answerable held-out cases; >=90% correct answer/clarify/abstain behavior; >=95%
-supported factual claims in reviewed held-out answers; no unsupported critical
-numeric claims. Report counts and limitations. Do not lower targets after
-observing failures; cases used to fix held-out failures are no longer held out.
+The original held-out split is historical because the local prototypes already
+exercised it. Never rerun or tune against it. After retrieval is frozen, an
+independent reviewer creates a fresh 30-case hidden set and manually reviews all
+30 final answers.
+
+The experimental bar on that fresh set is at least +5 percentage points
+answerable recall@4 over the repaired lexical baseline, higher nDCG, no
+critical-recall regression, and median retrieval below 500 ms. Final acceptance
+requires 100% critical recall@4, >=90% answerable recall@4, >=90% correct
+answer/clarify/refuse behavior, >=95% supported factual claims, zero unsupported
+critical numerical claims, and median retrieval below 500 ms. Report counts and
+limitations. Do not lower targets after observing failures; cases used to fix a
+hidden-set failure are no longer hidden.
+
+Use deterministic query rewriting and evidence-led corpus additions where
+needed. Weak evidence produces a partial answer or refusal. Preserve public
+compatibility with additive fields. Amend ADR-018 for benchmark policy and the
+unpublished ADR-019 through ADR-021 for their stages; create no new ADR unless a
+genuinely new architecture is proposed and approved.
 
 Verify free Gemini model/project eligibility before API evaluations. No billing
 changes or paid fallback. Serial batches of at most ten cases, cached by complete

@@ -1,6 +1,7 @@
 # ADR-018: Curated evidence and evaluated RAG
 
-**Status:** Accepted — user-approved implementation plan, 2026-09-06.
+**Status:** Accepted — user-approved implementation plan, 2026-09-06;
+benchmark-repair amendment accepted 2026-09-17.
 
 The engineering assistant needs current, applicable reference knowledge, not the
 history of implementation decisions. ADRs remain in the repository, but are
@@ -40,6 +41,46 @@ documents and checked against code and authoritative material data.
   supplier-specific PA12 provenance with explicitly provisional screening
   assumptions and states that repeating the current linear-static solve cannot
   verify large-deflection polymer behavior.
+
+### 2026-09-17 benchmark-repair amendment
+
+The first local neural experiment exposed benchmark defects as well as real
+retrieval failures. The development-only audit therefore repairs five cases
+with incomplete evidence alternatives, one wrong section identity, and one
+corpus-coverage gap.
+Those changes invalidate the earlier approval hash and lexical baseline. The
+repaired fixture returns to `pending` until the user reviews every changed case,
+every critical development case, and the selected continuity cases (20 total).
+The user accepted all 20 on 2026-09-17; the fixture records the matching content
+hash, and later label or corpus changes invalidate that approval.
+
+Candidate-pool recall at 20 is reported alongside final recall at four so a
+ranking miss can be distinguished from a candidate-retrieval miss. Hits from a
+labelled source that match no approved passage are review leads only; they never
+receive relevance credit automatically.
+
+The original held-out set is historical because it was already exercised during
+the local experiments. It must not be rerun, tuned against, or used for a fresh
+generalization claim. After the retriever is frozen, an independent reviewer
+creates a new 30-case hidden set and manually reviews all 30 final answers.
+
+Two quality bars apply:
+
+- **Experimental retriever:** on the fresh hidden set, answerable recall@4 must
+  improve by at least five percentage points over the repaired lexical baseline,
+  nDCG must increase, critical recall must not regress, and median retrieval must
+  remain below 500 ms.
+- **Accepted RAG:** 100% critical recall@4, at least 90% answerable recall@4, at
+  least 90% correct answer/clarify/refuse behavior, at least 95% supported factual
+  claims, zero unsupported critical numerical claims, and median retrieval below
+  500 ms.
+
+Retrieval improvements remain local and free. Deterministic query rewriting and
+evidence-led corpus additions are allowed; weak evidence yields a partial answer
+or refusal. Existing stage 3–5 implementations are reusable prototypes, not
+accepted results, and are improved in place while public interfaces remain
+additive. This amendment updates ADR-018; it does not create ADR-022. A genuinely
+different architecture requires a separate decision before implementation.
 
 ## Delivery
 

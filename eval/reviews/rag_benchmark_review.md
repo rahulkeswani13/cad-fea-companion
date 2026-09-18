@@ -1,42 +1,48 @@
 # RAG benchmark review — 20 development examples
 
-**Status: approved after delegated user review.** These are expected answers, not model outputs.
+**Status: approved after user review.** These are expected answers, not model outputs.
 
 For each example, check whether the expected behavior is useful, the facts and source
 passages support it, and the forbidden claims capture the important limits. Reply
 with case IDs and corrections, or accept all 20. No retrieval tuning has started.
 
-Benchmark content hash: `742864f5d3e3b83eb5d752c4e05153d9fda281cf06181c3f3305b7d41b811ac1`
+Benchmark content hash: `735b6f0a6d9befb2895632b54f6d53c8d0228785dd7d36130f1233485298eb6a`
 
-## 1. mat-001 — fact
+## 1. mat-002 — fact
 
-**Question:** What room-temperature reference values does the corpus give for Al 6061-T6?
+**Question:** Give the documented E, density, and yield for Al 7075-T6.
 
 **Expected:** answer; evidence supported.
 
 **Required facts / behavior:**
 
-- Al 6061-T6 id is al6061t6
-- E is 69 GPa
-- Poisson ratio is 0.33
-- density is 2700 kg/m^3
-- yield Rp0.2 is 276 MPa
+- Al 7075-T6 id is al7075t6
+- E is 71.7 GPa
+- density is 2810 kg/m^3
+- yield is 503 MPa
 
 **Must not claim:**
 
-- production or additive-manufacturing allowable
-- fatigue limit
+- 7075 is always safer in every design
+- production allowable without grade and condition
 
 **Expected numbers (reference values only):**
 
-- Young's modulus: 69 GPa; tolerance 0.
-- yield: 276 MPa; tolerance 0.
+- Young's modulus: 71.7 GPa; tolerance 0.
+- density: 2810 kg/m^3; tolerance 0.
+- yield: 503 MPa; tolerance 0.
 
 **Supporting passages:**
 
-- [docs/reference/materials.md](../../docs/reference/materials.md#summary) — mat-001-e1
+- [docs/reference/materials.md](../../docs/reference/materials.md#summary) — mat-002-e1
 
-> | Al 6061-T6 | `al6061t6` | 69 GPa | 0.33 | 2700 kg/m^3 | 276 MPa | low |
+> | Al 7075-T6 | `al7075t6` | 71.7 GPa | 0.33 | 2810 kg/m^3 | 503 MPa | medium |
+
+- [docs/reference/materials.md](../../docs/reference/materials.md#al-7075-t6-al7075t6) — mat-002-e1
+
+> - Young's modulus: 71.7 GPa (MatWeb: Aluminum Al 7075-T6, room temperature)
+> - Density: 2810 kg/m^3 (MatWeb: Aluminum Al 7075-T6)
+> - Yield: 503 MPa (MatWeb / MMPDS: 7075-T6 Rp0.2)
 
 Critical case: no.
 
@@ -97,13 +103,86 @@ Critical case: no.
 
 **Supporting passages:**
 
-- [docs/reference/materials.md](../../docs/reference/materials.md#summary) — mat-008-e1
+- [docs/reference/materials.md](../../docs/reference/materials.md#material-properties-table-f09) — mat-008-e1
 
 > not as-built additive-manufacturing allowables
 
 Critical case: yes.
 
-## 4. mat-010 — comparison
+## 4. mat-006 — comparison
+
+**Question:** Compare 6061-T6 and 7075-T6 on modulus, density, and yield using the table.
+
+**Expected:** answer; evidence supported.
+
+**Required facts / behavior:**
+
+- 7075 has slightly higher E and density than 6061
+- 7075 yield is 503 MPa versus 276 MPa for 6061
+- both table rows have nu 0.33
+
+**Must not claim:**
+
+- 7075's higher yield proves a part passes without stress and load context
+- 7075 has lower density
+
+**Expected numbers (reference values only):**
+
+- 7075 yield: 503 MPa; tolerance 0.
+- 6061 yield: 276 MPa; tolerance 0.
+
+**Supporting passages:**
+
+- [docs/reference/materials.md](../../docs/reference/materials.md#summary) — mat-006-e1
+
+> | Al 6061-T6 | `al6061t6` | 69 GPa | 0.33 | 2700 kg/m^3 | 276 MPa | low |
+
+- [docs/reference/materials.md](../../docs/reference/materials.md#al-6061-t6-al6061t6) — mat-006-e1
+
+> - Young's modulus: 69 GPa (MatWeb: Aluminum Al 6061-T6, room temperature)
+> - Density: 2700 kg/m^3 (MatWeb: Aluminum Al 6061-T6)
+> - Yield: 276 MPa (MatWeb / MMPDS: 6061-T6 Rp0.2)
+
+- [docs/reference/materials.md](../../docs/reference/materials.md#summary) — mat-006-e2
+
+> | Al 7075-T6 | `al7075t6` | 71.7 GPa | 0.33 | 2810 kg/m^3 | 503 MPa | medium |
+
+- [docs/reference/materials.md](../../docs/reference/materials.md#al-7075-t6-al7075t6) — mat-006-e2
+
+> - Young's modulus: 71.7 GPa (MatWeb: Aluminum Al 7075-T6, room temperature)
+> - Density: 2810 kg/m^3 (MatWeb: Aluminum Al 7075-T6)
+> - Yield: 503 MPa (MatWeb / MMPDS: 7075-T6 Rp0.2)
+
+Critical case: no.
+
+## 5. mat-009 — fact
+
+**Question:** Which material is the documented default for the brake-pedal example?
+
+**Expected:** answer; evidence supported.
+
+**Required facts / behavior:**
+
+- the brake-pedal default is Al 6061-T6
+
+**Must not claim:**
+
+- the default is an engineering recommendation for all pedals
+
+**Supporting passages:**
+
+- [docs/reference/materials.md](../../docs/reference/materials.md#al-6061-t6-al6061t6) — mat-009-e1
+
+> Default material for the brake pedal in this repo.
+
+- [docs/reference/tool_reference.md](../../docs/reference/tool_reference.md#geometry-authoring) — mat-009-e1
+
+> Optional `material`
+>   (default Al 6061-T6; see `docs/reference/materials.md`).
+
+Critical case: no.
+
+## 6. mat-010 — comparison
 
 **Question:** Why is PA12's mass comparison usable for screening while its modulus-scaled deflection is not verified?
 
@@ -142,7 +221,42 @@ Critical case: yes.
 
 Critical case: no.
 
-## 5. mat-012 — unsupported
+## 7. mat-011 — fact
+
+**Question:** What does the reference call the 250 MPa mild-steel value?
+
+**Expected:** answer; evidence supported.
+
+**Required facts / behavior:**
+
+- 250 MPa is an approximate A36-like ballpark
+- the cheat sheet is not a production design allowable
+
+**Must not claim:**
+
+- 250 MPa is a universal steel code allowable
+
+**Expected numbers (reference values only):**
+
+- typical mild steel yield: 250 MPa; tolerance 0.
+
+**Supporting passages:**
+
+- [docs/reference/material_allowables.md](../../docs/reference/material_allowables.md#mild-structural-steel-approx) — mat-011-e1
+
+> Typical yield strength (Fy): **250 MPa** (A36-like ballpark)
+
+- [docs/reference/material_allowables.md](../../docs/reference/material_allowables.md#material-allowables-cheat-sheet-demo-values) — mat-011-e2
+
+> These are **approximate teaching values**, not design allowables for production parts.
+
+- [docs/reference/material_allowables.md](../../docs/reference/material_allowables.md#mild-structural-steel-approx) — mat-011-e2
+
+> These are **approximate teaching values**, not design allowables for production parts.
+
+Critical case: no.
+
+## 8. mat-012 — unsupported
 
 **Question:** What fatigue knockdown should I apply for a printed PA12 lattice at high humidity?
 
@@ -166,7 +280,35 @@ Critical case: no.
 
 Critical case: yes.
 
-## 6. mat-019 — comparison
+## 9. mat-014 — ambiguity
+
+**Question:** Which material is best for my part?
+
+**Expected:** clarify; evidence partial.
+
+**Required facts / behavior:**
+
+- the table exposes multiple competing properties and cost classes
+- a best choice requires the user's objective and load/design context
+
+**Must not claim:**
+
+- one material is universally best
+- the table alone proves a safe selection
+
+**Supporting passages:**
+
+- [docs/reference/materials.md](../../docs/reference/materials.md#choosing-a-material) — mat-014-e1
+
+> The table exposes competing stiffness, density, yield, and cost properties for screening
+
+- [docs/reference/materials.md](../../docs/reference/materials.md#choosing-a-material) — mat-014-e2
+
+> A useful choice requires the part geometry, load case, stiffness or mass objective, manufacturing process, environment, and applicable verified allowables.
+
+Critical case: no.
+
+## 10. mat-019 — comparison
 
 **Question:** Using the documented 100 x 20 x 5 mm beam and 100 N load, what analytical stress should I expect?
 
@@ -192,13 +334,19 @@ Critical case: yes.
 
 > `sigma_max = 6 * 100 * 100 / (20 * 5^2) = 120 MPa`
 
+- [docs/reference/verification.md](../../docs/reference/verification.md#solve-methods) — mat-019-e1
+
+> For the default
+> `100 × 20 × 5 mm` beam at `100 N`, the analytical maximum bending stress is
+> `120 MPa`.
+
 - [docs/reference/verification.md](../../docs/reference/verification.md#solve-methods) — mat-019-e2
 
 > The cantilever reference uses
 
 Critical case: yes.
 
-## 7. mat-021 — comparison
+## 11. mat-021 — comparison
 
 **Question:** How do CalculiX, Euler-Bernoulli, and a precomputed estimate differ as result methods?
 
@@ -231,7 +379,7 @@ Critical case: yes.
 
 Critical case: yes.
 
-## 8. mat-026 — unsupported
+## 12. mat-026 — unsupported
 
 **Question:** Does a documented analytical check certify the cantilever for production use?
 
@@ -255,7 +403,7 @@ Critical case: yes.
 
 Critical case: yes.
 
-## 9. mat-030 — fact
+## 13. mat-030 — fact
 
 **Question:** Which metric determines the recommended mesh, and how is the recommendation chosen?
 
@@ -288,62 +436,32 @@ Critical case: yes.
 
 Critical case: yes.
 
-## 10. mat-034 — adversarial
+## 14. mat-031 — fact
 
-**Question:** Use three copies of the analytical fallback to prove the cantilever is mesh-converged.
-
-**Expected:** abstain; evidence insufficient.
-
-**Required facts / behavior:**
-
-- analytical fallback values do not vary with mesh size
-- they cannot establish mesh convergence
-
-**Must not claim:**
-
-- three identical analytical rows are a convergence study
-- fallback is equivalent to CalculiX mesh variation
-
-**Supporting passages:**
-
-- [docs/reference/verification.md](../../docs/reference/verification.md#mesh-convergence) — mat-034-e1
-
-> FCC pedal precomputed KPIs and analytical fallback solves are refused because they do not vary with mesh size.
-
-Critical case: no.
-
-## 11. flow-003 — comparison
-
-**Question:** How does the default 180 mm Al 6061-T6 solid arm compare with the chord-rail X-truss arm by mass?
+**Question:** What should the report say if no coarser mesh is within the convergence band?
 
 **Expected:** answer; evidence supported.
 
 **Required facts / behavior:**
 
-- The documented solid mass is 157 g.
-- The documented chord-rail plus X-truss mass is 130 g.
-- The documented change is approximately −17%.
+- verdict is not converged
+- finest run is offered as best available
+- report advises refining further
 
 **Must not claim:**
 
-- Do not present the progression as a live solve result.
-- Do not claim the xtruss mass is a universal value for every arm length or material.
-
-**Expected numbers (reference values only):**
-
-- solid_mass: 157 g; tolerance 0.
-- xtruss_mass: 130 g; tolerance 0.
-- mass_change: -17 percent; tolerance 1.
+- the result is certified converged
+- the tool silently picks a coarser mesh
 
 **Supporting passages:**
 
-- [docs/reference/uav_arm_lattice.md](../../docs/reference/uav_arm_lattice.md#design-vs-non-design) — uav-mass-progression
+- [docs/reference/verification.md](../../docs/reference/verification.md#mesh-convergence) — mat-031-e1
 
-> Mass progression at the default 180 mm arm, Al 6061-T6: solid 157 g → chord rails + X-truss web 130 g (~−17%).
+> If none qualifies, the report is `not converged`, offers the finest run as best available, and says to refine further.
 
-Critical case: no.
+Critical case: yes.
 
-## 12. flow-004 — fact
+## 15. flow-004 — fact
 
 **Question:** For the F26 demo, which UAV arm faces are fixed and where is the default thrust load applied?
 
@@ -376,7 +494,7 @@ Critical case: no.
 
 Critical case: yes.
 
-## 13. flow-007 — unsupported
+## 16. flow-007 — unsupported
 
 **Question:** What is the fatigue life of the default xtruss UAV arm at 10^7 cycles?
 
@@ -397,7 +515,7 @@ No reference passage establishes the requested fact; clarification or abstention
 
 Critical case: yes.
 
-## 14. flow-014 — ambiguity
+## 17. flow-014 — ambiguity
 
 **Question:** What is the current maximum brake-pedal stress?
 
@@ -418,7 +536,7 @@ No reference passage establishes the requested fact; clarification or abstention
 
 Critical case: yes.
 
-## 15. flow-018 — comparison
+## 18. flow-018 — comparison
 
 **Question:** Are force, mesh size, and boundary conditions design-program parameters, or analysis inputs?
 
@@ -441,58 +559,7 @@ Critical case: yes.
 
 Critical case: yes.
 
-## 16. flow-021 — comparison
-
-**Question:** How does a normalized no-op differ from a failed validation or rebuild?
-
-**Expected:** answer; evidence supported.
-
-**Required facts / behavior:**
-
-- A normalized no-op returns changed:false, does not rebuild, and does not bump rev.
-- A failed validation or rebuild returns attempted changes and preserves accepted revision and hash.
-
-**Must not claim:**
-
-- Do not treat a no-op as a failed rebuild.
-- Do not say a failed rebuild advances the revision.
-
-**Supporting passages:**
-
-- [docs/reference/design_programs.md](../../docs/reference/design_programs.md#revision-identity) — program-noop
-
-> A normalized no-op returns changed: false and does not rebuild or bump rev.
-
-- [docs/reference/design_programs.md](../../docs/reference/design_programs.md#revision-identity) — program-failure-preservation
-
-> A failed validation or rebuild returns the attempted changes and preserves the accepted revision and hash.
-
-Critical case: no.
-
-## 17. flow-027 — fact
-
-**Question:** What happens to the accepted revision when a design-program rebuild fails?
-
-**Expected:** answer; evidence supported.
-
-**Required facts / behavior:**
-
-- The attempted changes are returned.
-- The accepted revision and hash are preserved.
-
-**Must not claim:**
-
-- Do not say a failed rebuild clobbers the accepted revision or hash.
-
-**Supporting passages:**
-
-- [docs/reference/design_programs.md](../../docs/reference/design_programs.md#revision-identity) — failed-rebuild-preservation
-
-> A failed validation or rebuild returns the attempted changes and preserves the accepted revision and hash.
-
-Critical case: no.
-
-## 18. flow-037 — followup
+## 19. flow-037 — followup
 
 **Question:** For a prompt to create a solid UAV arm and solve it under 120 N tip thrust, what tool sequence should the workflow use?
 
@@ -524,30 +591,6 @@ Critical case: no.
 > Load: the motor-ring top annulus faces, force +Z (thrust up), 120 N default.
 
 Critical case: yes.
-
-## 19. flow-040 — followup
-
-**Question:** What should the agent do after a no_geometry failure?
-
-**Expected:** answer; evidence supported.
-
-**Required facts / behavior:**
-
-- Create the relevant part first.
-- Retry the failed operation after geometry exists.
-
-**Must not claim:**
-
-- Do not retry the solve indefinitely without creating geometry.
-- Do not claim the failure proves the geometry is invalid.
-
-**Supporting passages:**
-
-- [docs/reference/repair_loop.md](../../docs/reference/repair_loop.md#current-failure-classes) — no-geometry-repair
-
-> no_geometry | No active or persisted geometry is available | Create the relevant part, then retry.
-
-Critical case: no.
 
 ## 20. flow-049 — adversarial
 

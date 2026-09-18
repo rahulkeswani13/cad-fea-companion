@@ -14,6 +14,10 @@ from companion.rag.store import get_store, ingest_docs
 from eval.benchmark import benchmark_hash, evaluate_evidence, load_benchmark, require_review, resolve_relevance
 
 
+def _mean(values: list[float]) -> float | None:
+    return round(sum(values) / len(values), 4) if values else None
+
+
 def run_baseline(benchmark: dict, split: str = 'development') -> dict:
     if split not in {'development', 'heldout'}:
         raise ValueError('Unknown split')
@@ -23,7 +27,27 @@ def run_baseline(benchmark: dict, split: str = 'development') -> dict:
     if store.index_metadata.get('fingerprint') != benchmark['corpus_fingerprint']:
         raise ValueError('Corpus drift: rebuild and re-review labels before comparing metrics')
     cases = [c for c in benchmark['cases'] if c['split'] == split]
-    scored = evaluate_evidence(resolve_relevance(cases, store.chunks), store.search, k=4)
+    resolved = resolve_relevance(cases, store.chunks)
+    scored = evaluate_evidence(resolved, store.search, k=4)
+    candidate_metrics = evaluate_evidence(resolved, store.search, k=20)
+    candidate_rows = candidate_metrics['per_query']
+    candidate_pool = {
+        'k': 20,
+        'evidence_recall_at_k': candidate_metrics['evidence_recall_at_k'],
+        'answerable_evidence_recall_at_k': candidate_metrics['answerable_evidence_recall_at_k'],
+        'critical_evidence_recall_at_k': _mean([
+            row['evidence_recall'] for row in candidate_rows
+            if row['critical'] and row['evidence_recall'] is not None
+        ]),
+        'per_query': [
+            {
+                'id': row['id'],
+                'evidence_recall': row['evidence_recall'],
+                'missing_evidence': row['missing_evidence'],
+            }
+            for row in candidate_rows
+        ],
+    }
     return {
         'schema_version': 1, 'benchmark_hash': benchmark_hash(benchmark),
         'corpus_fingerprint': benchmark['corpus_fingerprint'],
@@ -31,6 +55,7 @@ def run_baseline(benchmark: dict, split: str = 'development') -> dict:
         'provisional': benchmark['review']['status'] != 'approved',
         'split': split, 'profile': 'lexical', 'query_mode': 'latest_message_only',
         'configuration': {'tfidf_max_features': 4096, 'candidates_per_retriever': 10, 'rrf_k': 60, 'final_k': 4},
+        'candidate_pool': candidate_pool,
         'answer_evaluation': 'not_run',
         'acceptance': 'pending_generated_answer_evaluation_and_critical_review',
         **scored,
@@ -41,7 +66,7 @@ def review_markdown(benchmark: dict) -> str:
     selected = {c['id']: c for c in benchmark['cases']}
     approved = benchmark.get('review', {}).get('status') == 'approved'
     status = (
-        '**Status: approved after delegated user review.** These are expected answers, not model outputs.'
+        '**Status: approved after user review.** These are expected answers, not model outputs.'
         if approved else
         '**Status: awaiting your review.** These are expected answers, not model outputs.'
     )
@@ -98,7 +123,12 @@ def main() -> int:
         if args.review_output:
             args.review_output.parent.mkdir(parents=True, exist_ok=True)
             args.review_output.write_text(review_markdown(benchmark), encoding='utf-8')
-        print(json.dumps({k: v for k, v in report.items() if k != 'per_query'}, indent=2))
+        summary = {k: v for k, v in report.items() if k != 'per_query'}
+        summary['candidate_pool'] = {
+            key: value for key, value in report['candidate_pool'].items()
+            if key != 'per_query'
+        }
+        print(json.dumps(summary, indent=2))
         return 0
     except (ValueError, OSError) as exc:
         print(f'Benchmark not run: {exc}', file=sys.stderr)

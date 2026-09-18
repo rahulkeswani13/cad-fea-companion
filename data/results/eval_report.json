@@ -1,8 +1,8 @@
 {
-  "passed": 74,
+  "passed": 75,
   "failed": 0,
   "skipped": 5,
-  "total": 79,
+  "total": 80,
   "rows": [
     {
       "id": "adv_solve_without_geometry",
@@ -202,7 +202,7 @@
     {
       "id": "f04_get_program_after_create",
       "ok": true,
-      "detail": "{\"ok\": true, \"part\": \"brake_pedal\", \"rev\": 226, \"params_hash\": \"4e8a711c19b3\", \"params\": {\"web_type\": \"xtruss\", \"cell_size_mm\": 15.0, \"strut_radius_mm\": 2.5, \"material\": \"al6061t6\""
+      "detail": "{\"ok\": true, \"part\": \"brake_pedal\", \"rev\": 306, \"params_hash\": \"4e8a711c19b3\", \"params\": {\"web_type\": \"xtruss\", \"cell_size_mm\": 15.0, \"strut_radius_mm\": 2.5, \"material\": \"al6061t6\""
     },
     {
       "id": "f04_update_cell_size",
@@ -212,12 +212,12 @@
     {
       "id": "f04_update_dry_run",
       "ok": true,
-      "detail": "{\"ok\": true, \"changed\": true, \"dry_run\": true, \"part\": \"brake_pedal\", \"current\": {\"rev\": 227, \"params_hash\": \"447503639393\"}, \"proposed\": {\"params\": {\"web_type\": \"xtruss\", \"cell_si"
+      "detail": "{\"ok\": true, \"changed\": true, \"dry_run\": true, \"part\": \"brake_pedal\", \"current\": {\"rev\": 307, \"params_hash\": \"447503639393\"}, \"proposed\": {\"params\": {\"web_type\": \"xtruss\", \"cell_si"
     },
     {
       "id": "f04_update_noop",
       "ok": true,
-      "detail": "{\"ok\": true, \"changed\": false, \"part\": \"brake_pedal\", \"rev\": 227, \"params_hash\": \"447503639393\", \"params\": {\"web_type\": \"xtruss\", \"cell_size_mm\": 12.0, \"strut_radius_mm\": 2.5, \"mat"
+      "detail": "{\"ok\": true, \"changed\": false, \"part\": \"brake_pedal\", \"rev\": 307, \"params_hash\": \"447503639393\", \"params\": {\"web_type\": \"xtruss\", \"cell_size_mm\": 12.0, \"strut_radius_mm\": 2.5, \"mat"
     },
     {
       "id": "f04_update_out_of_range",
@@ -232,7 +232,7 @@
     {
       "id": "f06_query_results_latest",
       "ok": true,
-      "detail": "{\"ok\": true, \"part\": \"brake_pedal\", \"latest\": {\"run_id\": \"20260906T205859_3fba70\", \"ts\": \"2026-09-06T20:58:59+00:00\", \"part\": \"brake_pedal\", \"web_type\": \"xtruss\", \"cell_size_mm\": 1"
+      "detail": "{\"ok\": true, \"part\": \"brake_pedal\", \"latest\": {\"run_id\": \"20260917T175711_b342bb\", \"ts\": \"2026-09-17T17:57:11+00:00\", \"part\": \"brake_pedal\", \"web_type\": \"xtruss\", \"cell_size_mm\": 1"
     },
     {
       "id": "f06_query_results_bad_run_id",
@@ -272,12 +272,12 @@
     {
       "id": "f09_compare_materials",
       "ok": true,
-      "detail": "{\"ok\": true, \"part\": \"brake_pedal\", \"sf_threshold\": 1.5, \"base\": {\"source\": \"run_history\", \"run_id\": \"20260906T205859_3fba70\", \"method\": \"calculix_ccx\", \"mesh_max_size_mm\": 5.0, \"f"
+      "detail": "{\"ok\": true, \"part\": \"brake_pedal\", \"sf_threshold\": 1.5, \"base\": {\"source\": \"run_history\", \"run_id\": \"20260917T175711_b342bb\", \"method\": \"calculix_ccx\", \"mesh_max_size_mm\": 5.0, \"f"
     },
     {
       "id": "f09_set_material_7075_dry_run",
       "ok": true,
-      "detail": "{\"ok\": true, \"changed\": true, \"dry_run\": true, \"part\": \"brake_pedal\", \"current\": {\"rev\": 228, \"params_hash\": \"7f150b9b3923\"}, \"proposed\": {\"params\": {\"web_type\": \"fcc\", \"cell_size_"
+      "detail": "{\"ok\": true, \"changed\": true, \"dry_run\": true, \"part\": \"brake_pedal\", \"current\": {\"rev\": 308, \"params_hash\": \"7f150b9b3923\"}, \"proposed\": {\"params\": {\"web_type\": \"fcc\", \"cell_size_"
     },
     {
       "id": "f09_unknown_material_rejected",
@@ -297,7 +297,7 @@
     {
       "id": "f26_update_uav_arm_cell_size",
       "ok": true,
-      "detail": "{\"ok\": true, \"changed\": false, \"part\": \"uav_arm\", \"rev\": 39, \"params_hash\": \"b7370e994dda\", \"params\": {\"web_type\": \"xtruss\", \"arm_length_mm\": 180.0, \"cell_size_mm\": 12.0, \"strut_ra"
+      "detail": "{\"ok\": true, \"changed\": false, \"part\": \"uav_arm\", \"rev\": 55, \"params_hash\": \"b7370e994dda\", \"params\": {\"web_type\": \"xtruss\", \"arm_length_mm\": 180.0, \"cell_size_mm\": 12.0, \"strut_ra"
     },
     {
       "id": "f26_solve_uav_arm_honesty",
@@ -397,12 +397,17 @@
     {
       "id": "rag_benchmark_fixture_integrity",
       "ok": true,
-      "detail": "100 cases; review=pending"
+      "detail": "100 cases; review=approved"
     },
     {
       "id": "rag_benchmark_review_guard",
       "ok": true,
-      "detail": "100 cases; review=pending"
+      "detail": "100 cases; review=approved"
+    },
+    {
+      "id": "rag_benchmark_candidate_diagnostics",
+      "ok": true,
+      "detail": "100 cases; review=approved"
     }
   ],
   "retrieval": {
@@ -435,8 +440,8 @@
         ],
         "ranked_sources": [
           "docs/reference/materials.md",
-          "docs/reference/materials.md",
           "docs/reference/material_allowables.md",
+          "docs/reference/materials.md",
           "docs/reference/brake_pedal_lattice.md"
         ],
         "first_relevant_rank": 1,
@@ -576,8 +581,8 @@
         "ranked_sources": [
           "docs/reference/uav_arm_lattice.md",
           "docs/reference/ARCHITECTURE.md",
-          "docs/reference/uav_arm_lattice.md",
-          "docs/reference/ARCHITECTURE.md"
+          "docs/reference/ARCHITECTURE.md",
+          "docs/reference/uav_arm_lattice.md"
         ],
         "first_relevant_rank": 1,
         "hit_at_k": true,
@@ -608,8 +613,8 @@
         "ranked_sources": [
           "docs/reference/brake_pedal_lattice.md",
           "docs/reference/freecad_fem_notes.md",
-          "docs/reference/tool_reference.md",
-          "docs/reference/design_programs.md"
+          "docs/reference/design_programs.md",
+          "docs/reference/tool_reference.md"
         ],
         "first_relevant_rank": 1,
         "hit_at_k": true,
@@ -670,7 +675,7 @@
           "docs/reference/repair_loop.md",
           "docs/reference/ARCHITECTURE.md",
           "docs/reference/repair_loop.md",
-          "docs/reference/freecad_fem_notes.md"
+          "docs/reference/repair_loop.md"
         ],
         "first_relevant_rank": 2,
         "hit_at_k": true,
@@ -699,8 +704,8 @@
         ],
         "ranked_sources": [
           "docs/reference/material_allowables.md",
-          "docs/reference/materials.md",
           "docs/reference/brake_pedal_lattice.md",
+          "docs/reference/materials.md",
           "docs/reference/ARCHITECTURE.md"
         ],
         "first_relevant_rank": 1,
@@ -727,10 +732,10 @@
   },
   "evidence_retrieval": {
     "schema_version": 1,
-    "benchmark_hash": "20bea723c37ed04989a606d89b9deaf735e06fbf5480914c6c5c576ed69442db",
-    "corpus_fingerprint": "98e8beb04ad851ce",
-    "review_status": "pending",
-    "provisional": true,
+    "benchmark_hash": "735b6f0a6d9befb2895632b54f6d53c8d0228785dd7d36130f1233485298eb6a",
+    "corpus_fingerprint": "34517bc613faa567",
+    "review_status": "approved",
+    "provisional": false,
     "split": "development",
     "profile": "lexical",
     "query_mode": "latest_message_only",
@@ -740,16 +745,389 @@
       "rrf_k": 60,
       "final_k": 4
     },
+    "candidate_pool": {
+      "k": 20,
+      "evidence_recall_at_k": 0.947,
+      "answerable_evidence_recall_at_k": 0.9435,
+      "critical_evidence_recall_at_k": 0.9091,
+      "per_query": [
+        {
+          "id": "flow-001",
+          "evidence_recall": 1.0,
+          "missing_evidence": []
+        },
+        {
+          "id": "flow-002",
+          "evidence_recall": 1.0,
+          "missing_evidence": []
+        },
+        {
+          "id": "flow-003",
+          "evidence_recall": 1.0,
+          "missing_evidence": []
+        },
+        {
+          "id": "flow-004",
+          "evidence_recall": 1.0,
+          "missing_evidence": []
+        },
+        {
+          "id": "flow-007",
+          "evidence_recall": null,
+          "missing_evidence": []
+        },
+        {
+          "id": "flow-008",
+          "evidence_recall": null,
+          "missing_evidence": []
+        },
+        {
+          "id": "flow-009",
+          "evidence_recall": 1.0,
+          "missing_evidence": []
+        },
+        {
+          "id": "flow-010",
+          "evidence_recall": 0.5,
+          "missing_evidence": [
+            "pedal-thickness"
+          ]
+        },
+        {
+          "id": "flow-011",
+          "evidence_recall": 1.0,
+          "missing_evidence": []
+        },
+        {
+          "id": "flow-013",
+          "evidence_recall": 1.0,
+          "missing_evidence": []
+        },
+        {
+          "id": "flow-014",
+          "evidence_recall": null,
+          "missing_evidence": []
+        },
+        {
+          "id": "flow-016",
+          "evidence_recall": 1.0,
+          "missing_evidence": []
+        },
+        {
+          "id": "flow-018",
+          "evidence_recall": 1.0,
+          "missing_evidence": []
+        },
+        {
+          "id": "flow-019",
+          "evidence_recall": 1.0,
+          "missing_evidence": []
+        },
+        {
+          "id": "flow-020",
+          "evidence_recall": 1.0,
+          "missing_evidence": []
+        },
+        {
+          "id": "flow-021",
+          "evidence_recall": 1.0,
+          "missing_evidence": []
+        },
+        {
+          "id": "flow-022",
+          "evidence_recall": 1.0,
+          "missing_evidence": []
+        },
+        {
+          "id": "flow-023",
+          "evidence_recall": 1.0,
+          "missing_evidence": []
+        },
+        {
+          "id": "flow-024",
+          "evidence_recall": 1.0,
+          "missing_evidence": []
+        },
+        {
+          "id": "flow-025",
+          "evidence_recall": 1.0,
+          "missing_evidence": []
+        },
+        {
+          "id": "flow-027",
+          "evidence_recall": 1.0,
+          "missing_evidence": []
+        },
+        {
+          "id": "flow-028",
+          "evidence_recall": 1.0,
+          "missing_evidence": []
+        },
+        {
+          "id": "flow-029",
+          "evidence_recall": 1.0,
+          "missing_evidence": []
+        },
+        {
+          "id": "flow-030",
+          "evidence_recall": 1.0,
+          "missing_evidence": []
+        },
+        {
+          "id": "flow-031",
+          "evidence_recall": 1.0,
+          "missing_evidence": []
+        },
+        {
+          "id": "flow-033",
+          "evidence_recall": 1.0,
+          "missing_evidence": []
+        },
+        {
+          "id": "flow-035",
+          "evidence_recall": 1.0,
+          "missing_evidence": []
+        },
+        {
+          "id": "flow-036",
+          "evidence_recall": 1.0,
+          "missing_evidence": []
+        },
+        {
+          "id": "flow-037",
+          "evidence_recall": 1.0,
+          "missing_evidence": []
+        },
+        {
+          "id": "flow-038",
+          "evidence_recall": null,
+          "missing_evidence": []
+        },
+        {
+          "id": "flow-039",
+          "evidence_recall": 1.0,
+          "missing_evidence": []
+        },
+        {
+          "id": "flow-040",
+          "evidence_recall": 1.0,
+          "missing_evidence": []
+        },
+        {
+          "id": "flow-041",
+          "evidence_recall": 1.0,
+          "missing_evidence": []
+        },
+        {
+          "id": "flow-046",
+          "evidence_recall": 1.0,
+          "missing_evidence": []
+        },
+        {
+          "id": "flow-049",
+          "evidence_recall": 1.0,
+          "missing_evidence": []
+        },
+        {
+          "id": "mat-001",
+          "evidence_recall": 1.0,
+          "missing_evidence": []
+        },
+        {
+          "id": "mat-002",
+          "evidence_recall": 1.0,
+          "missing_evidence": []
+        },
+        {
+          "id": "mat-003",
+          "evidence_recall": 1.0,
+          "missing_evidence": []
+        },
+        {
+          "id": "mat-004",
+          "evidence_recall": 1.0,
+          "missing_evidence": []
+        },
+        {
+          "id": "mat-005",
+          "evidence_recall": 1.0,
+          "missing_evidence": []
+        },
+        {
+          "id": "mat-006",
+          "evidence_recall": 1.0,
+          "missing_evidence": []
+        },
+        {
+          "id": "mat-007",
+          "evidence_recall": 1.0,
+          "missing_evidence": []
+        },
+        {
+          "id": "mat-008",
+          "evidence_recall": 1.0,
+          "missing_evidence": []
+        },
+        {
+          "id": "mat-009",
+          "evidence_recall": 1.0,
+          "missing_evidence": []
+        },
+        {
+          "id": "mat-010",
+          "evidence_recall": 1.0,
+          "missing_evidence": []
+        },
+        {
+          "id": "mat-011",
+          "evidence_recall": 1.0,
+          "missing_evidence": []
+        },
+        {
+          "id": "mat-012",
+          "evidence_recall": 1.0,
+          "missing_evidence": []
+        },
+        {
+          "id": "mat-013",
+          "evidence_recall": 1.0,
+          "missing_evidence": []
+        },
+        {
+          "id": "mat-014",
+          "evidence_recall": 1.0,
+          "missing_evidence": []
+        },
+        {
+          "id": "mat-015",
+          "evidence_recall": 1.0,
+          "missing_evidence": []
+        },
+        {
+          "id": "mat-016",
+          "evidence_recall": 0.0,
+          "missing_evidence": [
+            "mat-016-e1",
+            "mat-016-e2",
+            "mat-016-e3"
+          ]
+        },
+        {
+          "id": "mat-017",
+          "evidence_recall": 0.5,
+          "missing_evidence": [
+            "mat-017-e2"
+          ]
+        },
+        {
+          "id": "mat-018",
+          "evidence_recall": 1.0,
+          "missing_evidence": []
+        },
+        {
+          "id": "mat-019",
+          "evidence_recall": 1.0,
+          "missing_evidence": []
+        },
+        {
+          "id": "mat-020",
+          "evidence_recall": 1.0,
+          "missing_evidence": []
+        },
+        {
+          "id": "mat-021",
+          "evidence_recall": 1.0,
+          "missing_evidence": []
+        },
+        {
+          "id": "mat-022",
+          "evidence_recall": 0.5,
+          "missing_evidence": [
+            "mat-022-e2"
+          ]
+        },
+        {
+          "id": "mat-023",
+          "evidence_recall": 1.0,
+          "missing_evidence": []
+        },
+        {
+          "id": "mat-024",
+          "evidence_recall": 1.0,
+          "missing_evidence": []
+        },
+        {
+          "id": "mat-025",
+          "evidence_recall": 1.0,
+          "missing_evidence": []
+        },
+        {
+          "id": "mat-026",
+          "evidence_recall": 0.0,
+          "missing_evidence": [
+            "mat-026-e1"
+          ]
+        },
+        {
+          "id": "mat-027",
+          "evidence_recall": 1.0,
+          "missing_evidence": []
+        },
+        {
+          "id": "mat-028",
+          "evidence_recall": 1.0,
+          "missing_evidence": []
+        },
+        {
+          "id": "mat-029",
+          "evidence_recall": 1.0,
+          "missing_evidence": []
+        },
+        {
+          "id": "mat-030",
+          "evidence_recall": 1.0,
+          "missing_evidence": []
+        },
+        {
+          "id": "mat-031",
+          "evidence_recall": 1.0,
+          "missing_evidence": []
+        },
+        {
+          "id": "mat-032",
+          "evidence_recall": 1.0,
+          "missing_evidence": []
+        },
+        {
+          "id": "mat-033",
+          "evidence_recall": 1.0,
+          "missing_evidence": []
+        },
+        {
+          "id": "mat-034",
+          "evidence_recall": 1.0,
+          "missing_evidence": []
+        },
+        {
+          "id": "mat-035",
+          "evidence_recall": 1.0,
+          "missing_evidence": []
+        }
+      ]
+    },
     "answer_evaluation": "not_run",
     "acceptance": "pending_generated_answer_evaluation_and_critical_review",
     "queries": 70,
     "k": 4,
     "scored_queries": 66,
     "unscored_no_evidence": 4,
-    "evidence_recall_at_k": 0.7576,
-    "answerable_evidence_recall_at_k": 0.7667,
-    "precision_at_k": 0.2235,
-    "ndcg_at_k": 0.6453,
+    "evidence_recall_at_k": 0.8333,
+    "answerable_evidence_recall_at_k": 0.8226,
+    "critical_evidence_recall_at_k": 0.7273,
+    "precision_at_k": 0.25,
+    "ndcg_at_k": 0.6825,
+    "queries_with_unjudged_same_source": 44,
+    "unjudged_same_source_hits": 68,
     "by_category": {
       "adversarial": {
         "queries": 4,
@@ -757,11 +1135,11 @@
       },
       "ambiguity": {
         "queries": 4,
-        "evidence_recall_at_k": 0.0
+        "evidence_recall_at_k": 1.0
       },
       "comparison": {
         "queries": 11,
-        "evidence_recall_at_k": 0.7727
+        "evidence_recall_at_k": 0.8182
       },
       "conflict": {
         "queries": 3,
@@ -769,7 +1147,7 @@
       },
       "fact": {
         "queries": 33,
-        "evidence_recall_at_k": 0.7424
+        "evidence_recall_at_k": 0.8182
       },
       "followup": {
         "queries": 5,
@@ -777,7 +1155,7 @@
       },
       "paraphrase": {
         "queries": 5,
-        "evidence_recall_at_k": 0.5
+        "evidence_recall_at_k": 0.7
       },
       "unsupported": {
         "queries": 5,
@@ -786,9 +1164,9 @@
     }
   },
   "corpus": {
-    "fingerprint": "98e8beb04ad851ce",
+    "fingerprint": "34517bc613faa567",
     "documents": 10,
-    "chunks": 97,
+    "chunks": 98,
     "dirs": [
       "docs/reference"
     ]
