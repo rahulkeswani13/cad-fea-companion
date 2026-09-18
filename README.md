@@ -1,30 +1,36 @@
 # CAD/FEA Chat Companion
 
-> **An agentic AI engineering platform for parametric CAD generation, headless FEM simulation, and closed-loop structural optimization.**
+> **An agentic engineering assistant for parametric CAD and linear-static FEA.**
 
 [![CI](https://github.com/rahulkeswani13/cad-fea-companion/actions/workflows/ci.yml/badge.svg)](https://github.com/rahulkeswani13/cad-fea-companion/actions/workflows/ci.yml)
 [![Python](https://img.shields.io/badge/python-3.11+-blue.svg)](requirements.txt)
 [![Solver](https://img.shields.io/badge/solvers-FreeCAD%20%7C%20Gmsh%20%7C%20CalculiX-orange.svg)](companion/tools/)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
+Natural language in the operator console drives parametric design programs, Gmsh meshing, and CalculiX **linear-static** solves. Every result states its method, mesh size when applicable, and what was **not** verified. This is screening FEA, not certification, and not a closed-loop optimizer.
+
+![Operator console after a solve, with KPIs and a NOT VERIFIED caveat](docs/images/console-solve.png)
+
+*React console at `/app`: report cards show origin (live / estimate / fallback), KPIs, and **NOT VERIFIED** caveats.*
+
 **89 behavior evals + 366 unit/integration tests + 66 browser checks gate every push — at zero API cost** (LLM-backed paths fall back to deterministic routing in CI; model-judged evaluations are explicit local opt-ins).
 
-The CAD/FEA Companion bridges **Generative AI** and **Computational Mechanics**. It uses a stateful **LangGraph** agent loop, hybrid **TF-IDF + BM25 retrieval** with optional pinned local embeddings, inspectable deterministic query expansion, and cross-encoder reranking, plus deterministic **geometric guardrails** to orchestrate parametric CAD modeling, Delaunay meshing, and linear static FEA solves from a real-time web console. Neural profiles report timing, applied rewrite rules, and availability and fall back visibly to unchanged lexical retrieval. Answer envelopes expose claim evidence, deterministic canonical source spans, gaps, and pending semantic review; neither retrieval nor provenance checking is engineering verification.
+A LangGraph agent loop orchestrates hybrid **TF-IDF + BM25** retrieval (optional pinned local embeddings and cross-encoder rerank, with visible lexical fallback), geometric guardrails, and a compact tool outcome envelope (one error + one correction). Retrieval and claim-evidence checks are not engineering verification.
 
-> **RAG evaluation status: Not accepted.** The staged experiment improved retrieval but missed the independent retrieval and answer-quality targets. It demonstrates an inspectable evaluation workflow, not production RAG reliability. See [`eval/reports/rag_acceptance_summary.json`](eval/reports/rag_acceptance_summary.json).
+Independent RAG evaluation (reranked profile) vs the committed bar: answerable recall@4 **0.80 / 0.90**, critical recall@4 **0.775 / 1.00**; answer behavior **0.40 / 0.90**, supported factual claims **0.439 / 0.95**. The experiment improved retrieval and left an inspectable workflow; it did not meet those targets. See [`eval/reports/rag_acceptance_summary.json`](eval/reports/rag_acceptance_summary.json).
 
 ---
 
-## 🏗️ AI Engineering Architecture
+## AI Engineering Architecture
 
 See [`docs/reference/ARCHITECTURE.md`](docs/reference/ARCHITECTURE.md) for the 5-layer writeup.
 
 ```mermaid
 flowchart TD
-    User([User Request / Web Console]) --> Agent[LangGraph Agent Loop]
-    
+    User([User Request / Operator Console]) --> Agent[LangGraph Agent Loop]
+
     subgraph Orchestration ["LangGraph State Machine (thread_id Context)"]
-        RAG[TF-IDF Grounded RAG<br/>docs/ corpus] -.->|Domain Grounding| Agent
+        RAG[Hybrid TF-IDF + BM25 RAG<br/>optional embeddings / rerank] -.->|Domain Grounding| Agent
         Agent -->|ReAct Tool Calls| ToolEngine[Tool Execution Engine]
         ToolEngine -->|Compact Envelope<br/>ok, receipt, correction| Agent
         Agent --> Memory[(MemorySaver Checkpointer<br/>Stateful Multi-Turn Session)]
@@ -67,7 +73,11 @@ flowchart TD
 
 ---
 
-## 🚀 Flagship Geometries
+## Flagship Geometries
+
+![UAV X-truss arm in FreeCAD with CalculiX von Mises](docs/images/freecad-uav-xtruss.png)
+
+*UAV arm X-truss in the FreeCAD GUI after `open_in_freecad`: mesh, load arrows, and von Mises pipeline.*
 
 | Geometry | Role | Design Space & Variations | Default Load |
 | :--- | :--- | :--- | :--- |
@@ -77,7 +87,7 @@ flowchart TD
 
 ---
 
-## ⚡ Quickstart
+## Quickstart
 
 ### 1. Installation & Environment Setup
 ```bash
@@ -92,17 +102,19 @@ cp .env.example .env
 ```bash
 ./scripts/run_demo.sh
 ```
-The script creates `.venv` if needed, copies `.env` from `.env.example`, ingests `docs/` into the local TF-IDF store, then starts uvicorn. Open [http://127.0.0.1:8000](http://127.0.0.1:8000) in your browser.
+The script creates `.venv` if needed, copies `.env` from `.env.example`, ingests `docs/` into the local TF-IDF store, then starts uvicorn. Open the **operator console** at [http://127.0.0.1:8000/app](http://127.0.0.1:8000/app). The classic console stays at `/`.
+
+![Empty operator console with journeys, prompt library, and solver status](docs/images/console-empty.png)
 
 ### 3. React Operator Console
-The console at [`/app`](http://127.0.0.1:8000/app) adds a versioned prompt library (dropdown + `⌘K` palette), guided feature walkthroughs, a live state rail (design program / run history / solver status), and FEA report cards. The classic console stays at `/`. The console is built from [`web/`](web/) into `companion/static/app/` (`npm install && npm run build` — node is build-time only; see `docs/adr/ADR-015-react-console.md`).
+[`/app`](http://127.0.0.1:8000/app) adds a versioned prompt library (dropdown + `⌘K` palette), guided feature walkthroughs, a live state rail (design program / run history / solver status), and FEA report cards. Built from [`web/`](web/) into `companion/static/app/` (`npm install && npm run build` — node is build-time only; see [`docs/adr/ADR-015-react-console.md`](docs/adr/ADR-015-react-console.md)).
 
 ### 4. Interactive Aerospace Simulation Console
-Open [`demo/demo_catalog.html`](demo/demo_catalog.html) directly in any browser to explore the full interactive architecture diagram, mission briefing, and 22 prompt teardowns.
+Open [`demo/demo_catalog.html`](demo/demo_catalog.html) directly in any browser to explore the architecture diagram, mission briefing, and 22 shipped prompt teardowns (F27 modal is marked roadmap, not shipped).
 
 ---
 
-## 🧪 Testing & Verification
+## Testing & Verification
 
 ### 1. Headed Playwright Browser UI Automation Suite
 Install the Chromium browser used by the suite, then run it against a deterministic mock harness ([`tests/conftest.py`](tests/conftest.py)) with **zero token cost**:
@@ -121,7 +133,7 @@ Covers tools, graph transitions, outcome envelopes, solver bridges, and the brow
 
 ---
 
-## 🛠️ API & Tool Reference
+## API & Tool Reference
 
 | Tool Name | Feature | Description |
 | :--- | :--- | :--- |
@@ -143,27 +155,31 @@ See [`docs/reference/tool_reference.md`](docs/reference/tool_reference.md) for t
 
 ---
 
-## 📁 Repository Layout
+## Repository Layout
 
 ```
 ├── LICENSE               # MIT
 ├── AGENTS.md             # Contributor guide (humans + AI agents)
 ├── .env.example          # Empty-key env template
+├── web/                  # React operator console (build → companion/static/app)
 ├── companion/
-│   ├── agent/            # LangGraph graph, state definitions, tool schemas, HITL
-│   ├── tools/            # FreeCAD runtime, UAV arm, brake pedal, convergence, materials, estimate
-│   ├── rag/              # Local TF-IDF indexing and retrieval over docs/
+│   ├── agent/            # LangGraph graph, state, tool schemas, HITL
+│   ├── tools/            # FreeCAD runtime, UAV arm, brake pedal, convergence, materials
+│   ├── rag/              # Hybrid retrieval over docs/ (lexical + optional neural)
 │   ├── llm/              # Gemini client integration
-│   └── static/           # Browser Chat UI (HTML / Vanilla CSS / SSE streaming JS)
+│   └── static/
+│       ├── app/          # Built /app console
+│       ├── index.html    # Classic console
+│       └── rag.html      # RAG Lab
 ├── demo/
-│   ├── demo_catalog.html # Aerospace Simulation Console & SVG Architecture Diagram
+│   ├── demo_catalog.html # Aerospace catalog & SVG architecture diagram
 │   ├── DEMO_SCRIPT.md    # Step-by-step presentation guide
-│   └── Features.md       # Pitch, Script, Tests & AI Teardowns for all features
+│   └── Features.md       # Pitch, Script, Tests & AI teardowns
 ├── docs/
-│   ├── ARCHITECTURE.md   # 5-layer architecture writeup
-│   ├── materials.md      # Cited material allowables
-│   └── adr/              # Architecture Decision Records (ADR-001–011)
-├── eval/                 # Eval cases and runner
+│   ├── images/           # README / GitHub screenshots
+│   ├── reference/        # ARCHITECTURE, materials, verification, tools
+│   └── adr/              # Architecture Decision Records (ADR-001–021)
+├── eval/                 # Eval cases, runner, RAG acceptance report
 ├── tests/                # Pytest (unit, integration, Playwright)
 └── scripts/              # Local run scripts and FreeCAD smoke verifications
 ```

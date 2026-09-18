@@ -1,5 +1,7 @@
 # Demo Script — cad-fea-companion (30-minute performance)
 
+> **Honesty:** Segments **1–5** are demoable today (materials RAG, linear-static UAV/pedal/cantilever, guardrails). Segments **6–10** still require unbuilt work (**F12** surrogate, **F16** visual snapshot review, **F27** modal / 240 Hz, **F28** gyroid heat sink). Do not present those as shipped. The live product is parametric CAD + linear-static FEA with solver honesty — not a closed-loop optimizer.
+
 A performance script, not a manual (that's `docs/reference/ARCHITECTURE.md`). Every segment card states the exact
 prompt, what should happen, why it matters to a simulation engineer, and the AI-engineering
 pattern it demonstrates. Feature IDs (`Fxx`) refer to `docs/PLAN.md`; R1–R7 tags refer to
