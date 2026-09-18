@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import statistics
 import sys
@@ -33,6 +34,25 @@ from eval.benchmark import (  # noqa: E402
 )
 
 COMPLEXITY = {"lexical": 0, "lexical_embedding": 1, "reranked": 2}
+MIN_ANSWERABLE_GAIN = 0.05
+MAX_MEDIAN_QUERY_MS = 500.0
+RETRIEVER_SOURCES = (
+    ROOT / "companion" / "rag" / "chunking.py",
+    ROOT / "companion" / "rag" / "neural.py",
+    ROOT / "companion" / "rag" / "store.py",
+)
+
+
+def retriever_fingerprint(paths: tuple[Path, ...] = RETRIEVER_SOURCES) -> str:
+    """Identify frozen retrieval code independently of Git state."""
+    digest = hashlib.sha256()
+    for path in sorted(paths, key=lambda item: str(item)):
+        label = str(path.relative_to(ROOT)) if path.is_relative_to(ROOT) else path.name
+        digest.update(label.encode("utf-8"))
+        digest.update(b"\0")
+        digest.update(path.read_bytes())
+        digest.update(b"\0")
+    return digest.hexdigest()
 
 
 def _mean(values: list[float]) -> float | None:
@@ -109,10 +129,45 @@ def evaluate_profile(
     }
 
 
+def development_gate(row: dict[str, Any], baseline: dict[str, Any]) -> dict[str, Any]:
+    """Apply the approved experimental bar before profile selection."""
+    if not row.get("available"):
+        return {"eligible": False, "reason": "unavailable"}
+    if row["profile"] == "lexical":
+        return {"eligible": False, "reason": "baseline"}
+    metrics = row["metrics"]
+    base_metrics = baseline["metrics"]
+    gain = float(metrics["answerable_evidence_recall_at_k"]) - float(
+        base_metrics["answerable_evidence_recall_at_k"]
+    )
+    checks = {
+        "answerable_gain_at_least_0_05": gain >= MIN_ANSWERABLE_GAIN,
+        "ndcg_improved": float(metrics["ndcg_at_k"]) > float(base_metrics["ndcg_at_k"]),
+        "critical_not_regressed": float(row["critical_evidence_recall_at_4"] or 0.0)
+        >= float(baseline["critical_evidence_recall_at_4"] or 0.0),
+        "median_below_500_ms": float(row["timing"]["median_query_ms"] or float("inf"))
+        < MAX_MEDIAN_QUERY_MS,
+    }
+    return {
+        "eligible": all(checks.values()),
+        "answerable_gain": round(gain, 4),
+        "checks": checks,
+    }
+
+
 def select_profile(rows: list[dict[str, Any]]) -> str:
     available = [row for row in rows if row.get("available")]
     if not available:
         raise ValueError("No retrieval profile is available")
+    baseline = next((row for row in available if row["profile"] == "lexical"), None)
+    if baseline is None:
+        raise ValueError("Lexical baseline is required for profile selection")
+    eligible = [
+        row for row in available
+        if development_gate(row, baseline)["eligible"]
+    ]
+    if not eligible:
+        return "lexical"
 
     def key(row: dict[str, Any]) -> tuple[float, float, float, int]:
         metrics = row["metrics"]
@@ -123,7 +178,7 @@ def select_profile(rows: list[dict[str, Any]]) -> str:
             -COMPLEXITY[row["profile"]],
         )
 
-    return max(available, key=key)["profile"]
+    return max(eligible, key=key)["profile"]
 
 
 def main() -> int:
@@ -132,6 +187,12 @@ def main() -> int:
     parser.add_argument("--download-models", action="store_true")
     parser.add_argument("--run-heldout", action="store_true")
     args = parser.parse_args()
+
+    if args.run_heldout:
+        parser.error(
+            "the original held-out split is retired; freeze the retriever and "
+            "use a fresh independently authored hidden set"
+        )
 
     benchmark = load_benchmark()
     require_review(benchmark)
@@ -149,10 +210,14 @@ def main() -> int:
         for profile in PROFILES
     ]
     selected = select_profile(development)
+    baseline = next(row for row in development if row["profile"] == "lexical")
+    for row in development:
+        row["development_gate"] = development_gate(row, baseline)
     report: dict[str, Any] = {
         "schema_version": 1,
         "benchmark_hash": benchmark_hash(benchmark),
         "corpus_fingerprint": benchmark["corpus_fingerprint"],
+        "retriever_fingerprint": retriever_fingerprint(),
         "selection_order": [
             "critical_evidence_recall_at_4",
             "answerable_evidence_recall_at_4",
@@ -178,14 +243,9 @@ def main() -> int:
         },
         "development": development,
         "selected_profile": selected,
-        "heldout": None,
+        "heldout": {"status": "retired_not_run"},
         "heldout_run_count": 0,
     }
-    if args.run_heldout:
-        report["heldout"] = evaluate_profile(
-            benchmark, "heldout", selected, allow_download=args.download_models
-        )
-        report["heldout_run_count"] = 1
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
     print(json.dumps({

@@ -22,7 +22,9 @@ def run_baseline(benchmark: dict, split: str = 'development') -> dict:
     if split not in {'development', 'heldout'}:
         raise ValueError('Unknown split')
     if split == 'heldout':
-        require_review(benchmark)
+        raise ValueError(
+            'The original held-out split is retired; use a fresh independent hidden set'
+        )
     store = get_store()
     if store.index_metadata.get('fingerprint') != benchmark['corpus_fingerprint']:
         raise ValueError('Corpus drift: rebuild and re-review labels before comparing metrics')

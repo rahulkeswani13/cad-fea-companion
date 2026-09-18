@@ -160,6 +160,17 @@ def _matches(hit: dict[str, Any], alternative: dict[str, Any]) -> bool:
             and normalized(alternative['quote']) in normalized(str(hit.get('text', ''))))
 
 
+def matched_evidence_group_ids(
+    case: dict[str, Any], hit: dict[str, Any]
+) -> list[str]:
+    """Return approved evidence groups matched by one exact retrieved passage."""
+    return sorted(
+        group['id']
+        for group in case.get('required_evidence') or []
+        if any(_matches(hit, alternative) for alternative in group['alternatives'])
+    )
+
+
 def evaluate_evidence(cases: list[dict[str, Any]], retrieve_fn: Callable, k: int = 4) -> dict[str, Any]:
     """Binary passage precision/nDCG and required-group recall, macro averaged.
 

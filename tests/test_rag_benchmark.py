@@ -134,12 +134,11 @@ def test_cross_split_family_leakage_and_bad_quotes_rejected():
         validate_benchmark(benchmark)
 
 
-def test_heldout_runner_blocks_before_retrieval(monkeypatch):
+def test_historical_heldout_runner_is_retired_before_retrieval(monkeypatch):
     from eval import run_rag_benchmark as runner
     monkeypatch.setattr(runner, 'get_store', lambda: pytest.fail('must not load store for unapproved heldout'))
-    with pytest.raises(ValueError, match='review is pending'):
-        benchmark = {**load_benchmark(), 'review': {'status': 'pending'}}
-        runner.run_baseline(benchmark, split='heldout')
+    with pytest.raises(ValueError, match='held-out split is retired'):
+        runner.run_baseline(load_benchmark(), split='heldout')
 
 
 def test_numeric_nan_and_invalid_review_selection_rejected():
