@@ -7,9 +7,9 @@
 [![Solver](https://img.shields.io/badge/solvers-FreeCAD%20%7C%20Gmsh%20%7C%20CalculiX-orange.svg)](companion/tools/)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
-**~72 behavior evals + 262 unit/integration tests + 50 browser checks gate every push — at zero API cost** (LLM-backed paths fall back to deterministic routing in CI; the rubric judge runs locally via `EVAL_JUDGE=1`).
+**81 behavior evals + 323 unit/integration tests + 63 browser checks gate every push — at zero API cost** (LLM-backed paths fall back to deterministic routing in CI; the rubric judge runs locally via `EVAL_JUDGE=1`).
 
-The CAD/FEA Companion bridges **Generative AI** and **Computational Mechanics**. It uses a stateful **LangGraph** agent loop, hybrid **TF-IDF + BM25 retrieval** (RRF-fused, with a grounding-confidence label and an inspectable RAG Lab), and deterministic **geometric guardrails** to orchestrate parametric CAD modeling, Delaunay meshing, and linear static FEA solves from a real-time web console.
+The CAD/FEA Companion bridges **Generative AI** and **Computational Mechanics**. It uses a stateful **LangGraph** agent loop, hybrid **TF-IDF + BM25 retrieval** with optional pinned local embeddings and cross-encoder reranking, and deterministic **geometric guardrails** to orchestrate parametric CAD modeling, Delaunay meshing, and linear static FEA solves from a real-time web console. Neural profiles report timing and availability and fall back visibly to lexical retrieval; retrieval quality is not engineering verification.
 
 ---
 

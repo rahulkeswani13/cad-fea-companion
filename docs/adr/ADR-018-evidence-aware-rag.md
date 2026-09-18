@@ -91,6 +91,10 @@ Five sequential PRs: (1) corpus/index, (2) benchmark and review checkpoint,
 own tests, eval coverage and demo notes. This ADR is amended for findings;
 it does not imply that future phases are already implemented.
 
+PR 3 selected local cross-encoder reranking on development evidence quality;
+ADR-019 records the pinned revisions, timing, one-shot held-out result, and the
+fact that held-out recall remains below the acceptance target.
+
 ## Alternatives and consequences
 
 Keeping ADRs in retrieval preserves historical explanations but mixes outdated

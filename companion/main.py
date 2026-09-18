@@ -6,7 +6,7 @@ import json
 import logging
 import uuid
 from pathlib import Path
-from typing import Any
+from typing import Any, Literal
 
 from fastapi import FastAPI, Request
 from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, StreamingResponse
@@ -173,7 +173,18 @@ def rag_ingest() -> dict[str, Any]:
 
 
 @app.get("/api/rag/search")
-def rag_search(q: str, k: int = 4, detail: int = 0) -> dict[str, Any]:
+def rag_search(
+    q: str, k: int = 4, detail: int = 0,
+    profile: Literal["lexical", "lexical_embedding", "reranked"] = "lexical",
+    strict: int = 0,
+) -> dict[str, Any]:
+    if profile != "lexical":
+        from companion.rag.neural import retrieve_profile_detail
+
+        breakdown = retrieve_profile_detail(q, profile=profile, k=k, strict=bool(strict))
+        return {"query": q, **breakdown} if detail else {
+            "query": q, "hits": breakdown["fused"], "retrieval": breakdown["retrieval"]
+        }
     if detail:
         breakdown = retrieve_detail(q, k=k)
         return {"query": q, **breakdown}

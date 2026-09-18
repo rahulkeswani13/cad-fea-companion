@@ -1,6 +1,7 @@
 # RAG implementation handover
 
-Read `docs/adr/ADR-018-evidence-aware-rag.md` and
+Read `docs/adr/ADR-018-evidence-aware-rag.md`,
+`docs/adr/ADR-019-local-neural-retrieval-selection.md`, and
 `docs/plans/rag_evidence_plan.md` first. This file records the live status as of
 2026-09-17.
 
@@ -8,32 +9,19 @@ Read `docs/adr/ADR-018-evidence-aware-rag.md` and
 |---|---|---|
 | Corpus/index | [PR #5](https://github.com/rahulkeswani13/cad-fea-companion/pull/5) | Merged to `main`. |
 | Original benchmark | [PR #6](https://github.com/rahulkeswani13/cad-fea-companion/pull/6) | Merged to `main`. |
-| Benchmark repair | `codex/rag-benchmark-repair` | Complete locally; all 20 review cases accepted by the user on 2026-09-17. |
-| Retrieval | `codex/rag-neural-retrieval` | Existing local implementation at `f784c76`; preserve and improve after benchmark approval. |
-| Answer evidence | `codex/rag-evidence-answers` | Existing local implementation at `7810e50`; preserve and improve after retrieval. |
-| RAG Lab/acceptance | `codex/rag-demo-acceptance` | Existing local implementation at `c2fbf87`; preserve and improve after answer evidence. |
+| Benchmark repair | `codex/rag-benchmark-repair` | Complete locally; repaired fixture accepted by the user. |
+| Retrieval | `codex/rag-neural-retrieval` | Active; existing implementation rebased for improvement and fresh development comparison. |
+| Answer evidence | `codex/rag-evidence-answers` | Preserved prototype at `7810e50`; improve after retrieval freezes. |
+| RAG Lab/acceptance | `codex/rag-demo-acceptance` | Preserved prototype at `c2fbf87`; improve after answer evidence. |
 
-Immutable recovery names preserve the three local prototypes:
+Recovery branches preserve the original local prototypes:
 `codex/archive-rag-neural-v1`, `codex/archive-rag-answers-v1`, and
-`codex/archive-rag-acceptance-v1`. They are safety snapshots, not branches to
-merge. The active stage branches may be rebased onto the repaired benchmark so
-the existing code is improved instead of rewritten.
+`codex/archive-rag-acceptance-v1`. They are snapshots, not branches to merge.
 
-## Completed checkpoint
+## Approved repaired baseline
 
-The user accepted all 20 selected development cases in
-`eval/reviews/rag_benchmark_review.md` on 2026-09-17. The selection contains
-every changed case, every critical development case, and two PA12 continuity
-cases.
-
-`eval/rag_benchmark.json` records `review.status = approved` and the matching
-content hash. Changes to labels, corpus, or selected review cases invalidate
-approval by design.
-
-## Repaired approved baseline
-
-The development audit and its case-by-case classifications are in
-`eval/reviews/rag_benchmark_audit.md`. The fixed lexical configuration reports:
+The user accepted all 20 selected development cases on 2026-09-17. The fixture
+records the matching content hash. Its fixed lexical development baseline is:
 
 | Metric | Final four | Candidate pool (top 20) |
 |---|---:|---:|
@@ -43,39 +31,30 @@ The development audit and its case-by-case classifications are in
 | Precision | 0.2500 | diagnostic only |
 | nDCG | 0.6825 | diagnostic only |
 
-These measurements are retrieval-only. The large gap between
-top-20 and final-four recall identifies ranking as a major problem, while five
-audited cases also contain evidence absent from the lexical top 20. Because the
-repair changed labels and added maintained evidence, the values are a new
-baseline, not a retriever-only improvement over PR #6.
+The top-20/final-four gap makes ranking a major target. Five audited development
+cases also miss required evidence in the lexical top 20 and need candidate
+coverage, deterministic query rewriting, or evidence-led corpus improvements.
 
-## Important mechanics
+## Retrieval-stage rules
 
-- The fixture has 100 cases: 70 development and 30 historical held-out, with 20
-  critical cases.
-- Passage credit requires the source, section ID, and quote; a right-document,
-  wrong-section result gets no credit.
-- Same-source unmatched hits are review leads only and never gain automatic
-  relevance credit.
-- No-evidence cases keep null retrieval metrics and never become passing answers.
-- The old held-out set stays retired after approval; do not invoke its runner.
-- `eval/rag_labels.json` hit@4/MRR remains document-level continuity data, not
-  answer correctness.
+- Improve the existing local implementation; preserve public lexical behavior
+  and expose neural availability/fallback honestly.
+- Use local/free pinned models only.
+- Select and tune only on development cases.
+- Keep the original held-out split historical. Never rerun it or use it for a
+  new claim.
+- Freeze the retriever before an independent reviewer creates a fresh 30-case
+  hidden set. Manually review every final answer on that set.
+- Experimental bar: +5 percentage points answerable recall@4 over the repaired
+  lexical baseline, higher nDCG, no critical-recall regression, and median
+  retrieval below 500 ms.
+- Final bar: 100% critical recall@4, >=90% answerable recall@4, >=90% correct
+  answer/clarify/refuse behavior, >=95% supported factual claims, zero
+  unsupported critical numerical claims, and median retrieval below 500 ms.
 
-## Next stage after approval
+## ADR handling
 
-Update the existing neural-retrieval implementation on top of the repaired
-benchmark. Keep the lexical fallback visible, use local/free models only, and
-add deterministic query rewriting or evidence-led corpus material where the
-audited misses justify it. Tune only on development data.
-
-Freeze the chosen retriever before an independent reviewer creates a fresh
-30-case hidden set. The experimental bar is +5 percentage points answerable
-recall@4 over the repaired lexical baseline, higher nDCG, no critical-recall
-regression, and median retrieval below 500 ms. Final acceptance has the stricter
-ADR-018 bar and includes manual review of all 30 hidden-set answers.
-
-ADR-018 is amended for this repair. Update unpublished ADR-019, ADR-020, and
-ADR-021 with their corresponding implementation findings. Do not create
-ADR-022 unless the work requires a genuinely new architectural decision, and
-ask the user before doing so.
+ADR-018 records the benchmark repair and evaluation policy. Amend unpublished
+ADR-019 with the new retrieval findings; amend ADR-020 and ADR-021 when their
+stages are improved. Do not create ADR-022 unless a genuinely new architecture
+is proposed and the user approves it.
