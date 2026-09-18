@@ -4,6 +4,8 @@ workspace files existing (CI has none)."""
 
 from __future__ import annotations
 
+import json
+
 import pytest
 from fastapi.testclient import TestClient
 
@@ -95,6 +97,50 @@ def test_rag_neural_profile_exposes_visible_fallback(monkeypatch):
 def test_rag_neural_profile_rejects_unknown_profile():
     res = client.get("/api/rag/search", params={"q": "mesh", "profile": "magic"})
     assert res.status_code == 422
+
+
+def test_rag_lab_lists_only_approved_development_cases():
+    res = client.get("/api/rag/development-cases")
+    assert res.status_code == 200
+    body = res.json()
+    assert body["split"] == "development"
+    assert body["review_status"] == "approved"
+    assert len(body["cases"]) == 70
+    assert all("split" not in case and "required_evidence" not in case for case in body["cases"])
+
+
+def test_rag_lab_never_serves_fresh_hidden_case():
+    res = client.get(
+        "/api/rag/development-case",
+        params={"case_id": "h2_01_uav_golden_solid", "profile": "lexical"},
+    )
+    assert res.status_code == 404
+    assert res.json()["detail"] == "Development case not found"
+
+
+def test_rag_lab_development_case_reports_found_and_missing_evidence():
+    res = client.get(
+        "/api/rag/development-case",
+        params={"case_id": "mat-008", "profile": "lexical"},
+    )
+    assert res.status_code == 200
+    body = res.json()
+    assert body["case"]["id"] == "mat-008"
+    assert isinstance(body["found_evidence"], list)
+    assert isinstance(body["missing_evidence"], list)
+    assert all("matched_evidence_ids" in hit for hit in body["hits"])
+
+
+def test_rag_acceptance_report_hides_all_hidden_case_details():
+    res = client.get("/api/rag/acceptance-report")
+    assert res.status_code == 200
+    body = res.json()
+    assert body["ok"] is True
+    assert body["accepted"] is False
+    assert body["restrictions"]["hidden_case_details_included"] is False
+    serialized = json.dumps(body)
+    assert "per_query" not in serialized
+    assert "h2_" not in serialized
 
 
 def test_prompts_error_is_compact(monkeypatch):

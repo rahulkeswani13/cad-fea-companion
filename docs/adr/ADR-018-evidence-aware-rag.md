@@ -91,9 +91,33 @@ Five sequential PRs: (1) corpus/index, (2) benchmark and review checkpoint,
 own tests, eval coverage and demo notes. This ADR is amended for findings;
 it does not imply that future phases are already implemented.
 
-PR 3 selected local cross-encoder reranking on development evidence quality;
-ADR-019 records the pinned revisions, timing, one-shot held-out result, and the
-fact that held-out recall remains below the acceptance target.
+The repaired retrieval stage selected local cross-encoder reranking on
+development evidence quality. ADR-019 records pinned revisions, inspectable
+deterministic query expansion, timing, and the retirement of the previously
+observed held-out set. On a fresh independently authored 30-case set, the frozen
+reranker passed the experimental gate but missed the accepted-RAG retrieval bar:
+0.7750 critical recall@4 and 0.8000 answerable recall@4. ADR-019 records the full
+result. The hidden set is not a tuning set and must not be rerun.
+
+PR 4 adds bounded follow-up resolution and structured claim/evidence checks.
+ADR-020 records the exact-quote provenance requirement, the one-repair limit,
+reuse of the immutable hidden-v2 retrieval report, and the remaining mandatory
+semantic and manual reviews. Passing the bounded check is not semantic or
+engineering verification.
+
+PR 5 adds a fail-closed aggregate acceptance report and a development-only
+evidence inspector. ADR-021 records the split boundary: development cases are
+inspectable, hidden-v2 is aggregate-only, and development success cannot mask
+independent failure or failed answer review. The current aggregate state is
+**not accepted**; this is a truthful result, not a completed quality claim.
+
+The final hidden-v2 answer run generated all 30 answers. Its advisory judge
+measured 40% semantic accuracy and 47.22% supported factual claims, with zero
+critical numeric violations. A delegated Codex review measured 40% correct
+user-facing behavior and 43.9% supported factual claims, also with zero critical
+numeric violations. Because the review was not independent human sign-off and
+both retrieval and answer targets failed, the five-stage effort closes as a
+documented unsuccessful experiment, not as accepted RAG.
 
 ## Alternatives and consequences
 

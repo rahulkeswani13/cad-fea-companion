@@ -4,10 +4,19 @@ import { ReportCard } from "./ReportCard";
 import { Stamp } from "./primitives";
 
 function GroundingBadge({ grounding }: { grounding?: ChatMessage["grounding"] }) {
+  if (!grounding) return null;
   if (grounding === "weak")
-    return <Stamp kind="caution" label="weak grounding" />;
+    return <Stamp kind="caution" label="weak retrieval match" />;
   if (grounding === "none") return <Stamp kind="caution" label="no retrieval match" />;
-  return <Stamp kind="pass" label="grounded" />;
+  return <Stamp kind="pass" label="retrieval match" />;
+}
+
+function AnswerEvidenceBadge({ evidence }: { evidence?: ChatMessage["answerEvidence"] }) {
+  if (!evidence?.status) return null;
+  if (evidence.status === "supported") return <Stamp kind="pass" label="claims structurally supported" />;
+  if (evidence.status === "partially_supported") return <Stamp kind="caution" label="partial support" />;
+  if (evidence.status === "insufficient") return <Stamp kind="caution" label="insufficient evidence" />;
+  return <Stamp kind="caution" label="evidence check unavailable" />;
 }
 
 /** Compact, always-visible source list (corpus paths). Full excerpts,
@@ -37,7 +46,9 @@ function SourcesLine({ msg }: { msg: ChatMessage }) {
 function TechnicalDetails({ msg }: { msg: ChatMessage }) {
   const cites = msg.citations ?? [];
   const tools = msg.toolResults ?? [];
-  if (tools.length === 0 && cites.length === 0) return null;
+  const retrieval = msg.retrieval;
+  const evidence = msg.answerEvidence;
+  if (tools.length === 0 && cites.length === 0 && !retrieval && !evidence) return null;
   return (
     <details className="mt-2 border border-line rounded-[4px] bg-raised/40" data-testid="technical-details">
       <summary className="cursor-pointer px-3 py-1.5 font-mono text-[10.5px] tracking-[0.1em] text-ink-dim uppercase select-none hover:text-ink">
@@ -45,6 +56,70 @@ function TechnicalDetails({ msg }: { msg: ChatMessage }) {
         hit{cites.length === 1 ? "" : "s"}
       </summary>
       <div className="space-y-3 border-t border-line px-3 py-2">
+        {retrieval && (
+          <section data-testid="retrieval-status">
+            <div className="pb-1 font-mono text-[9.5px] tracking-[0.12em] text-ink-faint uppercase">
+              Retrieval profile
+            </div>
+            <div className="font-mono text-[10.5px] text-ink-dim">
+              {retrieval.requested_profile ?? "unknown"} → {retrieval.active_profile ?? "unknown"}
+              {retrieval.fallback ? " fallback" : ""}
+              {retrieval.timing_ms != null ? ` · ${Number(retrieval.timing_ms).toFixed(2)} ms` : ""}
+              {retrieval.reason ? ` · ${retrieval.reason}` : ""}
+            </div>
+          </section>
+        )}
+        {evidence && (
+          <section data-testid="answer-evidence-details">
+            <div className="pb-1 font-mono text-[9.5px] tracking-[0.12em] text-ink-faint uppercase">
+              Answer evidence · semantic {evidence.semantic_check ?? "not reported"}
+            </div>
+            {(evidence.claims ?? []).map((claim, i) => (
+              <div
+                key={i}
+                className="mb-2 font-mono text-[10.5px] text-ink-dim"
+                data-testid="claim-evidence"
+              >
+                <div>
+                  {claim.structurally_supported === false ? "removed" : "kept"} · {claim.text} · {(claim.evidence_ids ?? []).join(", ") || "no evidence"}
+                </div>
+                {(() => {
+                  const spans = claim.evidence_spans ?? [];
+                  const spanIds = [
+                    ...(claim.evidence_span_ids ?? []),
+                    ...spans.map((span) => span.span_id).filter((id): id is string => Boolean(id)),
+                  ].filter((id, index, ids) => ids.indexOf(id) === index);
+                  return (
+                    <>
+                      {spanIds.length > 0 && (
+                        <div data-testid="claim-span-ids" className="mt-0.5 text-accent">
+                          spans · {spanIds.join(", ")}
+                        </div>
+                      )}
+                      {spans.map((span, spanIndex) => (
+                        <div key={span.span_id ?? spanIndex} data-testid="evidence-span" className="mt-0.5 pl-2 text-ink-dim">
+                          <span className="text-ink-faint">{span.span_id ?? "span"}</span>
+                          {span.source ? ` · ${span.source}` : ""}
+                          {span.kind ? ` · ${span.kind}` : ""}
+                          {span.provenance_method ? ` · ${span.provenance_method}` : ""}
+                          {span.text ? ` · ${span.text}` : ""}
+                        </div>
+                      ))}
+                    </>
+                  );
+                })()}
+                {(claim.supporting_quotes ?? []).map((quote, quoteIndex) => (
+                  <div key={quoteIndex} className="mt-0.5 pl-2 text-ink-faint">
+                    legacy quote · {quote.evidence_id ?? "unknown"} · {quote.quote ?? ""}
+                  </div>
+                ))}
+              </div>
+            ))}
+            {(evidence.gaps ?? []).map((gap, i) => (
+              <div key={i} className="font-mono text-[10.5px] text-caution">gap · {gap}</div>
+            ))}
+          </section>
+        )}
         {tools.length > 0 && (
           <section data-testid="raw-payloads">
             <div className="pb-1 font-mono text-[9.5px] tracking-[0.12em] text-ink-faint uppercase">
@@ -124,6 +199,7 @@ export function Message({ msg }: { msg: ChatMessage }) {
       <div className="flex items-center gap-2">
         <span className="font-mono text-[10px] tracking-[0.14em] text-ink-faint uppercase">agent</span>
         <GroundingBadge grounding={msg.grounding} />
+        <AnswerEvidenceBadge evidence={msg.answerEvidence} />
       </div>
 
       {(msg.toolResults?.length ?? 0) > 0 && (

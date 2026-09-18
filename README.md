@@ -7,9 +7,11 @@
 [![Solver](https://img.shields.io/badge/solvers-FreeCAD%20%7C%20Gmsh%20%7C%20CalculiX-orange.svg)](companion/tools/)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
-**81 behavior evals + 323 unit/integration tests + 63 browser checks gate every push — at zero API cost** (LLM-backed paths fall back to deterministic routing in CI; the rubric judge runs locally via `EVAL_JUDGE=1`).
+**89 behavior evals + 366 unit/integration tests + 66 browser checks gate every push — at zero API cost** (LLM-backed paths fall back to deterministic routing in CI; model-judged evaluations are explicit local opt-ins).
 
-The CAD/FEA Companion bridges **Generative AI** and **Computational Mechanics**. It uses a stateful **LangGraph** agent loop, hybrid **TF-IDF + BM25 retrieval** with optional pinned local embeddings and cross-encoder reranking, and deterministic **geometric guardrails** to orchestrate parametric CAD modeling, Delaunay meshing, and linear static FEA solves from a real-time web console. Neural profiles report timing and availability and fall back visibly to lexical retrieval; retrieval quality is not engineering verification.
+The CAD/FEA Companion bridges **Generative AI** and **Computational Mechanics**. It uses a stateful **LangGraph** agent loop, hybrid **TF-IDF + BM25 retrieval** with optional pinned local embeddings, inspectable deterministic query expansion, and cross-encoder reranking, plus deterministic **geometric guardrails** to orchestrate parametric CAD modeling, Delaunay meshing, and linear static FEA solves from a real-time web console. Neural profiles report timing, applied rewrite rules, and availability and fall back visibly to unchanged lexical retrieval. Answer envelopes expose claim evidence, deterministic canonical source spans, gaps, and pending semantic review; neither retrieval nor provenance checking is engineering verification.
+
+> **RAG evaluation status: Not accepted.** The staged experiment improved retrieval but missed the independent retrieval and answer-quality targets. It demonstrates an inspectable evaluation workflow, not production RAG reliability. See [`eval/reports/rag_acceptance_summary.json`](eval/reports/rag_acceptance_summary.json).
 
 ---
 

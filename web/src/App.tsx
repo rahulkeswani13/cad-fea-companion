@@ -117,6 +117,9 @@ function finalToMessage(data: FinalPayload, failed: boolean): ChatMessage {
     toolResults,
     citations: data.citations ?? [],
     grounding: data.grounding,
+    retrieval: data.retrieval,
+    retrievalQuery: data.retrieval_query,
+    answerEvidence: data.answer_evidence,
     stamp: failed ? "fail" : undefined,
   };
 }

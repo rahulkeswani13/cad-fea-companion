@@ -26,7 +26,15 @@ from companion.llm.providers import (
     ToolCallSpec,
     get_llm_provider,
 )
-from companion.rag.store import retrieve_detail
+from companion.rag.evidence import (
+    EVIDENCE_OUTPUT_INSTRUCTIONS,
+    check_and_repair,
+    evidence_catalog,
+    format_evidence_for_prompt,
+    resolve_retrieval_query,
+    unavailable_assessment,
+)
+from companion.rag.neural import retrieve_profile_detail
 from companion.tools import materials as mats
 from companion.tools import outcome
 from companion.tools.cad_fea import TOOL_SPECS, cad_thread_scope, call_tool, get_state
@@ -39,6 +47,9 @@ class AgentState(TypedDict, total=False):
     message: str
     citations: list[dict[str, Any]]
     grounding: str | None
+    retrieval: dict[str, Any]
+    retrieval_query: dict[str, Any]
+    answer_evidence: dict[str, Any]
     pending_tool_calls: list[dict[str, Any]]
     tool_results: list[dict[str, Any]]
     cad_geometry: dict[str, Any] | None
@@ -327,13 +338,28 @@ def build_graph(
                 if isinstance(msg, HumanMessage):
                     message = _message_content(msg)
                     break
-        detail = retrieve_detail(message, k=4) if message else {"fused": [], "grounding": "none"}
-        hits = detail.get("fused") or []
+        resolved = resolve_retrieval_query(
+            message,
+            state.get("messages") or [],
+            state.get("cad_geometry"),
+            state.get("cad_results"),
+        )
+        detail = (
+            retrieve_profile_detail(resolved["query"], profile="reranked", k=4)
+            if message
+            else {"fused": [], "grounding": "none", "retrieval": {}}
+        )
+        hits = [
+            {**hit, "evidence_id": f"D{index}"}
+            for index, hit in enumerate(detail.get("fused") or [], 1)
+        ]
         # Seed CAD fields from module session if graph state empty (same process demo)
         cad = get_state()
         updates: dict[str, Any] = {
             "citations": hits,
             "grounding": detail.get("grounding") or "none",
+            "retrieval": detail.get("retrieval") or {},
+            "retrieval_query": resolved,
             "message": message,
             "pending_tool_calls": [],
         }
@@ -348,9 +374,18 @@ def build_graph(
         iteration = int(state.get("iteration") or 0) + 1
         message = state.get("message") or ""
         citations = state.get("citations") or []
-        context = "\n\n".join(
-            f"[{c['source']}] (score={c['score']:.3f})\n{c['text']}" for c in citations
+        catalog = evidence_catalog(
+            citations,
+            state.get("tool_results") or [],
+            question=message,
+            cad_state={
+                "geometry": state.get("cad_geometry"),
+                "results": state.get("cad_results"),
+            }
+            if state.get("cad_geometry") or state.get("cad_results")
+            else None,
         )
+        context = format_evidence_for_prompt(catalog)
         base = {
             "agent_visits": visits,
             "iteration": iteration,
@@ -359,10 +394,15 @@ def build_graph(
 
         if iteration > max_rounds:
             err = f"Stopped after {max_rounds} tool rounds (agent_max_tool_rounds)."
+            raw_answer = _finalize_without_llm(state, err)
+            assessment = unavailable_assessment(
+                raw_answer, "answer generation stopped at the tool-round limit"
+            )
             return {
                 **base,
                 "error": err,
-                "answer": _finalize_without_llm(state, err),
+                "answer": assessment["answer"],
+                "answer_evidence": assessment,
                 "pending_tool_calls": [],
                 "messages": [AIMessage(content=err)],
             }
@@ -382,7 +422,7 @@ def build_graph(
                     tools=json.dumps(TOOL_SPECS, indent=2),
                     context=context or "(none)",
                     cad_state=_cad_state_blob(state),
-                )
+                ) + "\n\n" + EVIDENCE_OUTPUT_INSTRUCTIONS
                 history = list(state.get("messages") or [])
                 # Ensure system + latest human are present for this turn.
                 # H1: trim the *sent* payload only — the checkpointed history
@@ -429,13 +469,20 @@ def build_graph(
                     "messages": [AIMessage(**ai_kwargs)],
                 }
                 if not pending:
-                    updates["answer"] = turn.content or _finalize_without_llm(state)
+                    raw_answer = turn.content or _finalize_without_llm(state)
+                    answer, assessment = check_and_repair(
+                        provider.complete, message, raw_answer, catalog
+                    )
+                    updates["answer"] = answer
+                    updates["answer_evidence"] = assessment
                 return updates
             except LLMNotConfiguredError as exc:
+                assessment = unavailable_assessment(str(exc), "LLM provider unavailable")
                 return {
                     **base,
                     "error": str(exc),
-                    "answer": str(exc),
+                    "answer": assessment["answer"],
+                    "answer_evidence": assessment,
                     "messages": [AIMessage(content=str(exc))],
                 }
 
@@ -478,7 +525,12 @@ def build_graph(
             "messages": [AIMessage(**ai_kwargs)],
         }
         if not pending:
-            updates["answer"] = _finalize_without_llm(state, draft)
+            raw_answer = _finalize_without_llm(state, draft)
+            assessment = unavailable_assessment(
+                raw_answer, "LLM evidence draft/check unavailable in offline mode"
+            )
+            updates["answer"] = assessment["answer"]
+            updates["answer_evidence"] = assessment
         return updates
 
     def node_tools(state: AgentState) -> dict[str, Any]:
@@ -695,6 +747,13 @@ def run_agent(
         "usage": usage,
         "citations": (final.get("citations") if isinstance(final, dict) else None) or [],
         "grounding": (final.get("grounding") if isinstance(final, dict) else None) or "none",
+        "retrieval": (final.get("retrieval") if isinstance(final, dict) else None) or {},
+        "retrieval_query": (
+            final.get("retrieval_query") if isinstance(final, dict) else None
+        ) or {},
+        "answer_evidence": (
+            final.get("answer_evidence") if isinstance(final, dict) else None
+        ) or {},
         "tool_calls": (final.get("pending_tool_calls") if isinstance(final, dict) else None)
         or [],
         "tool_results": (final.get("tool_results") if isinstance(final, dict) else None)
@@ -797,6 +856,9 @@ def _stream_agent_events(compiled, stream_input: Any, config: dict[str, Any], ti
         "answer": values.get("answer") or "",
         "citations": values.get("citations") or [],
         "grounding": values.get("grounding") or "none",
+        "retrieval": values.get("retrieval") or {},
+        "retrieval_query": values.get("retrieval_query") or {},
+        "answer_evidence": values.get("answer_evidence") or {},
         "tool_results": values.get("tool_results") or [],
         "cad_geometry": values.get("cad_geometry"),
         "cad_results": values.get("cad_results"),

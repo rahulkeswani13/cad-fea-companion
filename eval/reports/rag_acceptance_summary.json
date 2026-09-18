@@ -1,0 +1,147 @@
+{
+  "schema_version": 2,
+  "accepted": false,
+  "selected_profile": "reranked",
+  "configuration": {
+    "candidates_per_retriever": 10,
+    "rrf_k": 60,
+    "final_k": 4,
+    "timing_note": "Process-order wall timings; later profiles may reuse framework, model, and operating-system caches.",
+    "embedding_model": {
+      "id": "sentence-transformers/all-MiniLM-L6-v2",
+      "revision": "1110a243fdf4706b3f48f1d95db1a4f5529b4d41"
+    },
+    "reranker_model": {
+      "id": "cross-encoder/ms-marco-MiniLM-L6-v2",
+      "revision": "233902d25c440f23af6f7d6e94d2946bac0bee0a"
+    }
+  },
+  "development": [
+    {
+      "profile": "lexical",
+      "available": true,
+      "critical_evidence_recall_at_4": 0.7273,
+      "answerable_evidence_recall_at_4": 0.8226,
+      "precision_at_4": 0.25,
+      "ndcg_at_4": 0.6825,
+      "timing": {
+        "model_load_ms": 0.0,
+        "queries": 70,
+        "mean_query_ms": 0.71,
+        "median_query_ms": 0.66,
+        "p95_query_ms": 0.94
+      }
+    },
+    {
+      "profile": "lexical_embedding",
+      "available": true,
+      "critical_evidence_recall_at_4": 0.8636,
+      "answerable_evidence_recall_at_4": 0.9274,
+      "precision_at_4": 0.2879,
+      "ndcg_at_4": 0.7697,
+      "timing": {
+        "model_load_ms": 4144.54,
+        "queries": 70,
+        "mean_query_ms": 23.52,
+        "median_query_ms": 6.55,
+        "p95_query_ms": 10.57
+      }
+    },
+    {
+      "profile": "reranked",
+      "available": true,
+      "critical_evidence_recall_at_4": 1.0,
+      "answerable_evidence_recall_at_4": 0.9919,
+      "precision_at_4": 0.303,
+      "ndcg_at_4": 0.8728,
+      "timing": {
+        "model_load_ms": 92.05,
+        "queries": 70,
+        "mean_query_ms": 356.28,
+        "median_query_ms": 318.99,
+        "p95_query_ms": 535.36
+      }
+    }
+  ],
+  "independent_hidden": {
+    "fixture_id": "rag-hidden-v2-independent-2026-09-17",
+    "profiles": [
+      {
+        "profile": "lexical",
+        "available": true,
+        "critical_evidence_recall_at_4": 0.675,
+        "answerable_evidence_recall_at_4": 0.65,
+        "precision_at_4": 0.2083,
+        "ndcg_at_4": 0.565,
+        "timing": {
+          "median_query_ms": 0.65,
+          "mean_query_ms": 0.67,
+          "p95_query_ms": 0.92
+        }
+      },
+      {
+        "profile": "reranked",
+        "available": true,
+        "critical_evidence_recall_at_4": 0.775,
+        "answerable_evidence_recall_at_4": 0.8,
+        "precision_at_4": 0.2417,
+        "ndcg_at_4": 0.6816,
+        "timing": {
+          "median_query_ms": 348.92,
+          "mean_query_ms": 368.23,
+          "p95_query_ms": 632.14
+        }
+      }
+    ],
+    "experimental_gate": {
+      "passed": true,
+      "answerable_gain": 0.15,
+      "checks": {
+        "answerable_gain_at_least_0_05": true,
+        "ndcg_improved": true,
+        "critical_not_regressed": true,
+        "reranked_median_below_500_ms": true
+      }
+    }
+  },
+  "answer_evaluation": {
+    "generated": 30,
+    "semantic_cases_graded": 30,
+    "structural_behavior_accuracy": 0.8,
+    "advisory_supported_factual_claim_rate": 0.4722,
+    "advisory_critical_numeric_violations": 0,
+    "manual_reviewed_cases": 30,
+    "manual_reviewer_type": "delegated_ai",
+    "manual_behavior_accuracy": 0.4,
+    "manual_supported_factual_claim_rate": 0.439,
+    "manual_critical_numeric_violations": 0,
+    "manual_review_validation_errors": []
+  },
+  "targets": {
+    "answerable_evidence_recall_at_4": 0.9,
+    "critical_evidence_recall_at_4": 1.0,
+    "median_retrieval_ms_below": 500,
+    "answer_behavior_accuracy": 0.9,
+    "supported_factual_claim_rate": 0.95,
+    "critical_numeric_violations": 0,
+    "manual_reviewed_cases": 30
+  },
+  "checks": {
+    "retrieval": "fail",
+    "answer_evaluation": "fail",
+    "semantic_judge": "complete",
+    "manual_review": "delegated_ai_complete"
+  },
+  "failure_analysis": [
+    "Independent retrieval misses the 90% answerable-recall and/or 100% critical-recall target.",
+    "The delegated AI review is complete but is not independent human sign-off.",
+    "Answer behavior, factual support, or critical-number targets failed."
+  ],
+  "restrictions": {
+    "hidden_case_details_included": false,
+    "historical_heldout_not_run": true,
+    "hidden_retrieval_not_rerun": true,
+    "answer_report_included": true,
+    "manual_review_included": true
+  }
+}

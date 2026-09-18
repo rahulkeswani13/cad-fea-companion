@@ -34,15 +34,19 @@ first natural frequency fall under the rotor's excitation." Two objectives, one 
 
 ## Core cut (~33 min, 11 segments)
 
-### 1 — Grounded materials answer (2 min) — *demoable today*
+### 1 — Evidence-aware materials answer + RAG Lab (3 min) — *demoable today*
 - **Prompt:** `What yield strength should I assume for aluminum 6061-T6?`
-- **What happens:** Answer ~276 MPa **with citations** to `docs/` snippets. Follow up:
-  `And for 7075-T6?` → the agent states what the corpus does and doesn't support rather than
-  inventing a number.
+- **What happens:** Answer ~276 MPa with named evidence and an applicability caveat. Follow up:
+  `And for 7075-T6?` → the bounded prior question resolves the material context. Expand
+  Technical details and distinguish the **retrieval match** from the structural
+  **answer evidence** result; point to the readable span ID and canonical source text.
+  Open RAG Lab: development evidence is inspectable, independent
+  evidence is aggregate-only, and the current top-level status is **Not accepted**.
 - **Significance:** An engineering agent that never invents material data — the failure mode
   everyone fears about LLMs in engineering.
-- **AI-engineering lesson:** retrieval-grounded answering with an anti-hallucination contract.
-- **Keys:** R1 · **Features:** existing RAG; upgraded by F14/F15.
+- **AI-engineering lesson:** retrieval diagnostics, bounded provenance, and acceptance are
+  three separate claims; none is engineering certification.
+- **Keys:** R1 · **Features:** ADR-018 through ADR-021.
 - **Risk/fallback:** none (local).
 
 ### 2 — Flagship part, solid baseline + pre-flight estimate (3 min) — needs F26, F07

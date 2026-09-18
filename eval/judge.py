@@ -39,6 +39,18 @@ _JUDGE_SYSTEM = (
     "No markdown fences, no extra text."
 )
 
+_RAG_JUDGE_SYSTEM = (
+    "You are a strict evidence judge. Use only the supplied retrieved evidence "
+    "and actual tool outputs. Check expected answer/clarify/refuse behavior, "
+    "required facts, forbidden claims, numeric values and units, and whether "
+    "each factual claim is entailed by its cited evidence under the stated "
+    "authority and applicability conditions. Resolved canonical spans—and legacy "
+    "exact or normalized quotes—prove source linkage, not entailment. Return ONLY "
+    "JSON with: pass (boolean), action_correct "
+    "(boolean), supported_claims (integer), factual_claims (integer), "
+    "critical_numeric_violation (boolean), and notes (string)."
+)
+
 
 def judge_enabled(settings: Settings | None = None) -> bool:
     """Judge runs only when explicitly requested AND a key is configured."""
@@ -147,6 +159,85 @@ def _sum_usage(samples: list[dict[str, Any]]) -> dict[str, int] | None:
         for key in ("input_tokens", "output_tokens", "total_tokens"):
             out[key] = out.get(key, 0) + int(usage.get(key) or 0)
     return out
+
+
+def rag_answer_judge_prompt(
+    case: dict[str, Any],
+    answer: str,
+    assessment: dict[str, Any],
+    evidence: list[dict[str, Any]],
+    tool_outputs: list[dict[str, Any]],
+) -> str:
+    """Keep every grading input explicit and versionable for cache identity."""
+    return json.dumps({
+        "question": case.get("query"),
+        "history": case.get("history") or [],
+        "answer": answer,
+        "answer_assessment": assessment,
+        "retrieved_evidence": evidence,
+        "actual_tool_outputs": tool_outputs,
+        "reference_expectations": {
+            "expected_behavior": case.get("expected_behavior") or case.get("expected_action"),
+            "required_facts": case.get("required_facts") or [],
+            "forbidden_claims": case.get("forbidden_claims") or [],
+            "numeric_expectations": case.get("numeric_expectations") or [],
+            "critical": case.get("critical") is True,
+        },
+    }, sort_keys=True, default=str)
+
+
+def judge_rag_answer_case(
+    case: dict[str, Any],
+    answer: str,
+    assessment: dict[str, Any],
+    evidence: list[dict[str, Any]],
+    tool_outputs: list[dict[str, Any]],
+    api_key: str,
+    model: str,
+) -> dict[str, Any]:
+    """Advisory semantic/citation grade; errors remain pending, never passing."""
+    from langchain_core.messages import HumanMessage, SystemMessage
+
+    empty = {"model": model, "usage": None, "pass": None, "verdict": "error"}
+    try:
+        from langchain_google_genai import ChatGoogleGenerativeAI
+
+        llm = ChatGoogleGenerativeAI(
+            model=model, google_api_key=api_key, temperature=0
+        )
+        result = llm.invoke([
+            SystemMessage(content=_RAG_JUDGE_SYSTEM),
+            HumanMessage(content=rag_answer_judge_prompt(
+                case, answer, assessment, evidence, tool_outputs
+            )),
+        ])
+        text = _extract_text(result).strip()
+        if "```" in text:
+            text = next(
+                (
+                    part.removeprefix("json").strip()
+                    for part in text.split("```")
+                    if part.removeprefix("json").strip().startswith("{")
+                ),
+                text,
+            )
+        start, end = text.find("{"), text.rfind("}")
+        payload = json.loads(text[start : end + 1])
+        if not isinstance(payload, dict) or not isinstance(payload.get("pass"), bool):
+            raise ValueError("judge response lacks boolean pass")
+        return {
+            "model": model,
+            "usage": _extract_usage(result),
+            "pass": payload["pass"],
+            "verdict": "graded",
+            "action_correct": payload.get("action_correct"),
+            "supported_claims": payload.get("supported_claims"),
+            "factual_claims": payload.get("factual_claims"),
+            "critical_numeric_violation": payload.get("critical_numeric_violation"),
+            "notes": str(payload.get("notes") or "")[:500],
+        }
+    except Exception as exc:  # noqa: BLE001
+        return {**empty, "notes": f"{type(exc).__name__}: {exc}"[:200]}
 
 
 def judge_agent_case(

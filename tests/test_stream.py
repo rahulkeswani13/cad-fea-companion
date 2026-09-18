@@ -23,8 +23,8 @@ def test_stream_event_order(monkeypatch):
     )
 
     monkeypatch.setattr(
-        "companion.agent.graph.retrieve_detail",
-        lambda query, k=4: {
+        "companion.agent.graph.retrieve_profile_detail",
+        lambda query, profile, k=4: {
             "grounding": "strong",
             "fused": [
                 {"source": "demo.md", "text": "cantilever notes", "score": 0.5}
